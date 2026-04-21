@@ -1,0 +1,2274 @@
+
+
+
+
+NCEF Comprehensive Specification v2
+
+
+Complete Technical & UI/UX Requirements for Claude Design & Engineering Teams
+**Document Version:** 2.0 (Enriched & Detailed)  
+**Last Updated:** April 19, 2026  
+**Audience:** Claude Design, Engineering Teams, Project Managers, Business Analysts
+---
+
+
+Table of Contents
+1. [Executive Summary](#executive-summary)
+2. [System Architecture & Technology Stack](#system-architecture)
+3. [User Personas & Access Control](#user-personas)
+4. [Core Modules & Detailed Workflows](#core-modules)
+5. [Data Models & Form Specifications](#data-models)
+6. [Business Rules & Validation Logic](#business-rules)
+7. [Integration Specifications](#integrations)
+8. [UI/UX Components & Screens](#ui-ux-components)
+9. [Non-Functional Requirements](#non-functional)
+10. [Appendices](#appendices)
+---
+
+
+Executive Summary
+The NCEF (New Communications Equipment Framework) Online Registration System is a comprehensive, centralized, web-based platform designed to manage the entire lifecycle of communications equipment registration in Malaysia. The system replaces legacy manual processes and the previous SIRIM system, providing MCMC with enhanced regulatory oversight, improved service delivery, and AI-powered efficiency.
+**Key Objectives:**
+
+
+Streamline end-to-end registration and monitoring processes
+
+
+Enhance regulatory oversight through comprehensive data management and audit trails
+
+
+Improve service delivery through transparent, accessible, and responsive digital platform
+
+
+Integrate seamlessly with MCMC and external partner systems (SIRIM, RMCD, SSM, MCMC Pay)
+
+
+Leverage Artificial Intelligence for document validation, risk assessment, and decision support
+
+
+Ensure security and compliance with Malaysian Personal Data Protection Act (PDPA) 2010
+**Project Timeline:** Commenced January 12, 2026; Target Pilot Launch: November 9, 2026
+---
+
+
+System Architecture
+
+
+Technology Stack (from SDD v1.4)
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| Frontend | React.js / Vue.js | Web portal UI |
+| Mobile | React Native / Flutter | Native iOS/Android/Huawei apps |
+| Backend API | Node.js / Python FastAPI | RESTful API services |
+| Database | PostgreSQL | Primary data store (replacing SIRIM legacy system) |
+| File Storage | MinIO | Secure document and file storage |
+| AI/ML Engine | Python (TensorFlow/PyTorch) | Document validation, risk scoring |
+| Payment Gateway | MCMC Pay API | Payment processing |
+| Authentication | Azure Active Directory (AAD) | SSO for internal users |
+| Deployment | Docker / Kubernetes | Container orchestration |
+
+
+Logical Architecture
+The system consists of four primary portals:
+1. **Internal Portal (MCMC Officers)**
+   - System Administrators, OICs, Recommenders, Verifiers, Approvers
+   - Task management, application review, analytics, system configuration
+2. **External Portal (Applicants)**
+   - Suppliers, Principals, Consultants
+   - Application submission, status tracking, document management, payment
+3. **Public Portal**
+   - General public access
+   - Equipment search, verification, guidelines, FAQs, AI chatbot
+4. **Mobile Applications**
+   - Native iOS, Android, Huawei apps
+   - Public search, push notifications, on-the-go access
+---
+
+
+User Personas & Access Control
+
+
+External User Categories
+| Category | Description | Registration Requirements |
+|----------|-------------|--------------------------|
+| **Category A** | Registered Company (Commercial) | Company registration number, business address, director details |
+| **Category B** | Individual (Non-Commercial) | Full name, NRIC, address, contact details |
+| **Category C** | Institution (Non-Commercial) | Institution name, registration number, authorized representative details |
+| **Category D** | Consultant | Professional credentials, company affiliation, scope of consultancy |
+
+
+Internal User Roles & Permissions
+| Role | Level | Key Responsibilities | Modules Access |
+|------|-------|---------------------|-----------------|
+| **System Administrator** | P1-P4 | User management, system configuration, audit logs, fee management | All modules |
+| **Officer in Charge (OIC)** | P5-P6 | Application review, iteration requests, compliance verification | Applications, Dashboard, Reporting |
+| **Recommender** | P5-P6 | Recommendations for complex/prohibited equipment | Applications, Compliance |
+| **Verifier** | P7 | Final compliance verification before approval | Applications, Documents |
+| **Approver** | P8 | Final acceptance/rejection authority | Applications, Compliance |
+
+
+Authentication Methods
+**External Users:**
+
+
+**First Login:** Email + OTP (One-Time Password)
+
+
+**Subsequent Logins:** Email + Password
+
+
+**2FA Enabled:** Yes, mandatory
+
+
+**Session Timeout:** 30 minutes of inactivity
+**Internal Users:**
+
+
+**SSO Integration:** Azure Active Directory (AAD)
+
+
+**Session Management:** Synchronized with MCMC corporate policies
+
+
+**Multi-factor Authentication:** Required per MCMC security standards
+---
+
+
+Core Modules & Detailed Workflows
+
+
+1. User Management & Registration Module
+#### 1.1 Supplier Registration Flow (External Users)
+**Screen 1: Account Creation (Layer 1)**
+
+
+Full Name (Text, required)
+
+
+Email Address (Email, required, unique validation)
+
+
+Phone Number (Tel, required, Malaysian format validation)
+
+
+Password (Password, required, min 12 chars, complexity rules)
+
+
+Security Question (Dropdown, required)
+
+
+Security Answer (Text, required)
+
+
+Terms & Conditions (Checkbox, required)
+**Screen 2: Email Verification**
+
+
+Verification link sent to registered email
+
+
+Link valid for 24 hours
+
+
+Resend option available
+
+
+Countdown timer displayed
+
+
+Upon verification: Redirect to login
+**Screen 3: Account Registration (Layer 2)**
+
+
+Login with verified email and password
+
+
+2FA: OTP sent to registered email
+
+
+OTP input field (6-digit code)
+
+
+Resend OTP option (max 3 times)
+**Screen 4: Application Category Selection**
+
+
+Radio buttons or card selection:
+  - Company (Commercial)
+  - Individual (Non-Commercial)
+  - Institution (Non-Commercial)
+  - Consultant
+**Screen 5: Information Submission (Category-Specific)**
+**For Company (Category A):**
+
+
+Company Name (Text, required)
+
+
+Company Registration Number (BRN) (Text, required)
+
+
+Business Address (Address, required)
+
+
+Director Name (Text, required)
+
+
+Director NRIC (Text, required)
+
+
+Contact Person (Text, required)
+
+
+Contact Email (Email, required)
+
+
+Contact Phone (Tel, required)
+
+
+Business Type (Dropdown, required)
+
+
+Document Upload: Company registration certificate (PDF/Image, required)
+
+
+Document Upload: Director ID copy (PDF/Image, required)
+**For Individual (Category B):**
+
+
+Full Name (Text, required)
+
+
+NRIC Number (Text, required, validation against format)
+
+
+Date of Birth (Date picker, required)
+
+
+Address (Address, required)
+
+
+Contact Email (Email, required)
+
+
+Contact Phone (Tel, required)
+
+
+Document Upload: NRIC copy (PDF/Image, required)
+
+
+Document Upload: Passport (if applicable) (PDF/Image, optional)
+**For Institution (Category C):**
+
+
+Institution Name (Text, required)
+
+
+Institution Registration Number (Text, required)
+
+
+Institution Type (Dropdown: University, Government, NGO, Other)
+
+
+Address (Address, required)
+
+
+Authorized Representative Name (Text, required)
+
+
+Authorized Representative Title (Text, required)
+
+
+Contact Email (Email, required)
+
+
+Contact Phone (Tel, required)
+
+
+Document Upload: Institution registration (PDF/Image, required)
+
+
+Document Upload: Authorization letter (PDF/Image, required)
+**For Consultant (Category D):**
+
+
+Consultant Name (Text, required)
+
+
+Professional License Number (Text, required)
+
+
+Company Affiliation (Dropdown, required)
+
+
+Scope of Consultancy (Text Area, required)
+
+
+Contact Email (Email, required)
+
+
+Contact Phone (Tel, required)
+
+
+Document Upload: Professional credentials (PDF/Image, required)
+**Screen 6: AI Validation & Acceptance**
+
+
+System performs SSM/ROC/ROB validation
+
+
+AI Confidence Score calculated (0-100%)
+
+
+If Score > 90%: Auto-accept, display Registration ID
+
+
+If Score 70-89%: Flag for priority review, display pending status
+
+
+If Score < 70%: Route to manual review, display pending status
+
+
+Display AI summary of findings
+**Screen 7: Confirmation & Registration ID**
+
+
+Registration successful message
+
+
+Unique Supplier ID displayed (format: SUP-MMYY-XXXXX)
+
+
+Email confirmation sent
+
+
+Link to dashboard
+---
+#### 1.2 Principal & Consultant Management
+**Principal Association Screen:**
+
+
+Dropdown: Select existing Principal (format: [Company Name] [Principal ID])
+
+
+OR Option: Register new Principal
+  - Principal Company Name (Text, required)
+  - Principal Address (Address, required)
+  - Principal Contact (Email, required)
+
+
+Document Upload: Letter of Undertaking (PDF, required)
+
+
+Document Upload: Letter of Authorisation (PDF, required)
+
+
+Terms & Conditions acknowledgment (Checkbox, required)
+
+
+Action: Add Principal button
+
+
+Confirmation: "Principal added successfully"
+
+
+System sends notification to Principal
+**Consultant Association Screen:**
+
+
+Dropdown: Select pre-registered Consultant only
+
+
+Note: "Consultants must register independently first"
+
+
+Action: Add Consultant button
+
+
+Confirmation: "Consultant added successfully"
+
+
+System sends notification to Consultant
+**Principal/Consultant Removal:**
+
+
+List of current associations with Remove buttons
+
+
+Confirmation dialog: "Are you sure you want to remove [Name]?"
+
+
+Upon confirmation: Relationship unlinked, notification sent to Principal/Consultant
+---
+
+
+2. Equipment Registration Module (SDoC)
+#### 2.1 Scheme A: SDoC with Certification (High Risk)
+**Workflow Steps:**
+**Step 1: Equipment Details**
+
+
+Equipment Category (Dropdown: Mobile Phones, Tablets, IoT Devices, etc., required)
+
+
+Brand/Manufacturer (Dropdown/Autocomplete, required)
+
+
+Model Name (Text, required)
+
+
+Model Number (Text, required)
+
+
+Marketing Name (Text, optional)
+
+
+Purpose of Usage (Text Area, required)
+
+
+Frequency Band (Dropdown, required)
+
+
+Output Power (Numeric, required, unit selector)
+
+
+Technical Code (Auto-populated from system, read-only)
+**Step 2: Technical Specifications**
+
+
+Certifying Agency (Multi-select Dropdown, required)
+  - Options: SIRIM, TÜV, SGS, etc.
+
+
+Certificate of Conformity Number (Text, required)
+
+
+Certificate Issuance Date (Date picker, required)
+
+
+Certificate Expiry Date (Date picker, required)
+
+
+Supported SIMs (Multi-select: GSM, 3G, 4G, 5G, etc.)
+
+
+Document Upload: Technical Brochure (PDF, required)
+
+
+Document Upload: Test Report (PDF, required, validation: from accredited lab, issued within 6 months)
+
+
+Document Upload: Product Photos (Multi-angle, JPG/PNG, required, min 3 photos)
+**Step 3: Labelling Information**
+
+
+Labelling ID (Auto-populated: Supplier ID or Principal ID, read-only)
+
+
+Label Type (Radio: Physical or Electronic, required)
+
+
+Label Location (Dropdown: Box/Packaging, On Product, User Manual, Warranty Card, required)
+
+
+Registration Period (Dropdown: 1-5 years, required, default 1 year)
+**Step 4: Declaration & Digital Signature**
+
+
+Declaration Text (Read-only, pre-filled)
+
+
+Checkbox: "I confirm the accuracy of the above information"
+
+
+Digital Signature (Integration with licensed CA, required)
+
+
+Signature Timestamp (Auto-populated)
+**Step 5: Payment**
+
+
+Fee Calculation (Auto-calculated based on equipment type and registration period)
+
+
+Fee Breakdown (Display table: Registration Fee, Admin Fee, Total)
+
+
+Payment Method: MCMC Pay (Redirect to payment gateway)
+
+
+Payment Status: Pending → Processing → Completed
+
+
+Receipt Generation (Upon successful payment)
+**Step 6: AI Validation & Officer Review**
+
+
+AI Confidence Score displayed (0-100%)
+
+
+AI Summary Report (Key findings, potential issues, compliance status)
+
+
+Officer Assignment (System assigns to available OIC)
+
+
+Status: Under Review
+**Step 7: OIC Review & Decision**
+
+
+Application data displayed in split-view layout
+
+
+Documents displayed in PDF viewer with annotation tools
+
+
+AI Insights panel (Confidence score, risk flags, recommendations)
+
+
+Officer Actions:
+  - **Approve:** Issue Registration Certification Number (RCN)
+  - **Reject:** Provide rejection reason (mandatory text field)
+  - **Request Iteration:** Provide detailed comments (mandatory text field), set iteration deadline (default 60 days)
+
+
+Status Updated: Approved / Rejected / Iteration Required
+**Step 8: Certificate Issuance**
+
+
+RCN Format: RCN-MMYY-XXXXX (e.g., RCN-0426-00001)
+
+
+Certificate PDF generated and sent to applicant email
+
+
+Certificate includes: RCN, Equipment details, Certifying Agency, Validity period, Supplier details
+
+
+Applicant can download certificate from dashboard
+---
+#### 2.2 Scheme B: SDoC with Verification (Medium Risk)
+**Workflow:** Similar to Scheme A, with the following differences:
+**Additional Feature: Reclassification**
+
+
+OIC can reclassify to Scheme A or Scheme C
+
+
+Upon reclassification: System notifies applicant
+
+
+Applicant must submit updated information
+
+
+Reclassification applies to all schemes
+**AI Validation Threshold:**
+
+
+Score > 90%: Proceed to approval
+
+
+Score 70-89%: Flag for priority review
+
+
+Score < 70%: Standard manual review
+---
+#### 2.3 Scheme C: SDoC (Low Risk) - AI Auto-Acceptance
+**Workflow:** Similar to Scheme B, with key difference:
+**AI Auto-Acceptance Logic:**
+
+
+Confidence Score > 90%: **Auto-Accept**
+  - RCN issued automatically
+  - Certificate generated and sent to applicant
+  - Status: Approved (no officer review required)
+  - Notification sent to applicant
+
+
+Confidence Score 70-89%: **Priority Review**
+  - Routed to OIC for expedited review
+  - Status: Under Review (Priority)
+
+
+Confidence Score < 70%: **Standard Review**
+  - Routed to OIC for full review
+  - Status: Under Review
+**AI Scoring Criteria (Scheme C):**
+| Criteria | Weight | Validation Logic |
+|----------|--------|------------------|
+| SSM/ROC/ROB Validation | 20% | Real-time database validation confirms legitimate entity |
+| Address & Director Match | 10% | Information matches official SSM records |
+| Completeness of Technical Specs | 15% | All required technical fields populated |
+| Brand & Model Consistency | 10% | Consistent naming across documents, not on blacklist |
+| Test Report & Lab Verification | 15% | Report from accredited lab, valid report number |
+| Standards Compliance | 10% | Equipment tested against latest MCMC standards |
+| Supplier's Past Performance | 10% | Historical compliance record analysis |
+| Completeness & Consistency | 10% | All fields correctly filled, no contradictions |
+**Threshold Rules:**
+
+
+90%+: Auto-accept
+
+
+70-89%: Priority review queue
+
+
+<70%: Standard review queue
+
+
+If any 10% criterion missing entirely: Require manual review
+---
+
+
+3. Special Approval Module
+#### 3.1 Special Approval - Low/Medium Risk Equipment
+**Workflow Steps:**
+**Step 1: Purpose of Usage Selection**
+
+
+Radio/Card Selection:
+  - Personal (Individual/Company)
+  - Demonstration
+  - Trial
+  - Market Survey
+  - Proof of Concept (PoC)
+  - Research and Development (R&D)
+**Step 2: Equipment Information**
+
+
+Equipment Category (Dropdown, required)
+
+
+Brand/Manufacturer (Dropdown/Autocomplete, required)
+
+
+Model Name (Text, required)
+
+
+Quantity (Numeric, required)
+
+
+Purpose Details (Text Area, required)
+
+
+Usage Location (Address, required)
+
+
+Usage Period From (Date picker, required)
+
+
+Usage Period To (Date picker, required)
+
+
+Document Upload: Proposal/Technical Data Sheet (PDF, required)
+
+
+Document Upload: Letter of Undertaking (PDF, required)
+**Step 3: IMEI/Serial Number Entry**
+
+
+IMEI/Serial Number (Bulk upload CSV or manual entry)
+
+
+CSV Template Download available
+
+
+Validation: Format check, duplication check against registered numbers
+
+
+Display: Validation results, any errors highlighted
+**Step 4: Payment**
+
+
+Fee Calculation (Based on equipment type, quantity, IMEI/SN count)
+
+
+Fee Breakdown displayed
+
+
+Payment via MCMC Pay
+
+
+Receipt generated upon completion
+**Step 5: AI Evaluation & Officer Review**
+
+
+AI Summary Report generated
+
+
+Assigned to OIC for review
+
+
+Status: Under Review
+**Step 6: OIC Decision**
+
+
+Officer Actions:
+  - **Accept:** Issue Special Approval Certificate (SA-MMYY-XXXXX)
+  - **Reject:** Provide rejection reason
+  - **Request Iteration:** Provide comments, set 60-day deadline
+**Step 7: Certificate Issuance**
+
+
+SA Certificate Format: SA-MMYY-XXXXX
+
+
+Certificate includes: SA ID, Equipment details, Quantity, IMEI/SN list, Validity period, Purpose
+
+
+Sent to applicant email
+
+
+Downloadable from dashboard
+---
+#### 3.2 Special Approval - High Risk Equipment
+**Workflow:** Similar to Low/Medium Risk, with differences:
+**Additional Officer Level:**
+
+
+OIC Review → Recommender Review → Verifier Review → Approver Final Decision
+
+
+Higher fee structure
+
+
+More stringent document requirements
+
+
+Output: Special Approval Letter (instead of certificate)
+---
+#### 3.3 Special Approval - Prohibited Equipment
+**Workflow:** Multi-level offline + online process
+**Step 1-4:** Same as Low/Medium Risk (Application, Documents, IMEI/SN, Payment)
+**Step 5: Offline Acceptance (Offline Process)**
+
+
+MCMC conducts physical meeting to discuss application
+
+
+Decision formally minuted
+
+
+Minutes document prepared
+**Step 6: Acceptance Document Upload**
+
+
+Recommender (P5/P6) logs into system
+
+
+Uploads official meeting minutes or acceptance document (PDF, required)
+
+
+Status: Awaiting Multi-level Verification
+**Step 7: Multi-level Verification (Online)**
+
+
+**Recommender (P5/P6):** Initiates digital acceptance process
+  - Reviews uploaded acceptance document
+  - Action: Approve/Reject
+  - Status: Awaiting Verifier Review
+
+
+**Verifier (P7):** Reviews application and acceptance document
+  - Action: Approve/Reject
+  - Status: Awaiting Approver Review
+
+
+**Approver (P8):** Provides final acceptance
+  - Action: Approve/Reject
+  - Status: Approved (if all levels approve)
+**Step 8: SA Letter Generation & Publication**
+
+
+System generates draft Special Approval Letter (editable)
+
+
+OIC reviews and can edit letter content
+
+
+OIC publishes SA Letter
+
+
+Status: Published
+
+
+Certificate/Letter sent to applicant
+---
+
+
+4. Renewal Module
+#### 4.1 Supplier/Principal/Consultant Account Renewal
+**Automated Notification (30 days before expiry):**
+
+
+Email notification to registered email
+
+
+In-app notification on dashboard
+
+
+Renewal link provided
+**Renewal Application Screen:**
+
+
+Display current profile information
+
+
+Option to update profile details
+
+
+Renewal Period Selection (Radio: 1 year, 2 years, 3 years, 4 years, 5 years)
+
+
+Default: 1 year
+
+
+Terms & Conditions acknowledgment (Checkbox, required)
+
+
+Action: Proceed to Payment
+**Payment:**
+
+
+Fee Calculation (Based on renewal period)
+
+
+Fee Breakdown displayed
+
+
+Payment via MCMC Pay
+
+
+Upon successful payment: Account status reverts to "Active"
+
+
+Renewal confirmation email sent
+---
+#### 4.2 Equipment Registration Renewal (Scheme A, B, C)
+**Automated Notification (6 months before expiry):**
+
+
+Email notification
+
+
+In-app notification
+
+
+Renewal link provided
+**Renewal Application Screen:**
+
+
+Display current certificate details
+
+
+Renewal Period Selection (Dropdown: 1-5 years, default 1 year)
+
+
+For Scheme A: Document Upload field (Updated Certificate of Conformity required)
+
+
+For Scheme B & C: No document upload required
+
+
+AI Compliance Check (Automatic validation against latest standards)
+
+
+Action: Proceed to Payment
+**Payment:**
+
+
+Fee Calculation (Based on equipment type and renewal period)
+
+
+Payment via MCMC Pay
+
+
+Upon successful payment: Certificate renewed, new validity period recorded
+
+
+New certificate PDF generated and sent to applicant
+---
+
+
+5. IMEI/Serial Number Registration Module
+**Workflow Steps:**
+**Step 1: RCN Entry**
+
+
+RCN Input Field (Text, required)
+
+
+Validation: Check RCN exists in system, belongs to applicant
+
+
+Error handling: Display "Invalid RCN" if not found
+**Step 2: Equipment Declaration**
+
+
+Display equipment details associated with RCN
+
+
+Quantity Declaration (Numeric, required)
+
+
+Field: "How many units do you want to register?"
+**Step 3: Bulk Upload Template**
+
+
+Download CSV Template button
+
+
+Template columns: IMEI/Serial Number, Equipment Model, Quantity
+
+
+Upload CSV File (File picker, required)
+
+
+Validation: Format check, duplicate check, format validation
+**Step 4: IMEI/SN Validation**
+
+
+System validates each IMEI/SN:
+  - Format validation (IMEI: 15 digits, Serial: variable)
+  - Duplication check (against existing registered numbers)
+  - Display results: Valid count, Invalid count
+  - Highlight invalid entries with error messages
+  - Allow correction and re-upload
+**Step 5: Payment**
+
+
+Fee Calculation:
+  - IMEI: RM 0.50 per number
+  - Serial Number: RM 0.15 per number
+  - Total fee displayed
+
+
+Payment via MCMC Pay
+**Step 6: Completion**
+
+
+Reference Number generated (format: IMEI-MMYY-XXXXX)
+
+
+Confirmation email sent
+
+
+Downloadable receipt with list of registered IMEI/SN
+---
+
+
+6. Modification of Registration Module
+**Workflow Steps:**
+**Step 1: RCN Entry**
+
+
+RCN Input Field (Text, required)
+
+
+Validation: Check RCN exists, belongs to applicant
+
+
+Upon validation: Display current equipment information
+**Step 2: Modification Type Selection**
+
+
+Checkboxes (Multi-select):
+  - Major Modification (e.g., change equipment model, certifying agency)
+  - Minor Modification (e.g., update contact details, labelling information)
+  - Others (e.g., administrative updates)
+**Step 3: Modification Details**
+
+
+Display form fields based on modification type selected
+
+
+For Major: Redirect to new registration interface (no officer review)
+
+
+For Minor/Others: Provide fields for modification details (Text Area, required)
+**Step 4: Officer Review (Minor/Others only)**
+
+
+Application assigned to designated MCMC officer
+
+
+Officer reviews and approves/rejects
+
+
+Status: Under Review → Approved/Rejected
+**Step 5: Version Control**
+
+
+System maintains modification history:
+  - Original registration details
+  - Modified details
+  - Officer responsible
+  - Date and time of change
+  - Modification nature
+
+
+Audit trail accessible from dashboard
+---
+
+
+7. Importation Module
+**Workflow Steps:**
+**Step 1: Permit Type Selection**
+
+
+Applicant automatically assigned to MCMC as Permit Issuance Agency
+
+
+Dropdown: Select Permit Type
+  - Scheme A Import Permit
+  - Scheme B Import Permit
+  - Scheme C Import Permit
+  - Special Approval Import Permit
+**Step 2: RCN/Reference Number Validation**
+
+
+RCN Input Field (Text, required)
+
+
+Real-time validation: Check RCN validity, equipment details, quantity
+
+
+Display: Equipment name, quantity, IMEI/SN list
+
+
+For Special Approval: Special Approval Reference Number validation
+**Step 3: Trader Information**
+
+
+Consignor Details:
+  - Company Name (Text, required)
+  - ROC/ROB Number (Text, required)
+  - Address (Address, required)
+  - Contact Person (Text, required)
+  - Contact Email (Email, required)
+  - Contact Phone (Tel, required)
+
+
+Consignee Details:
+  - Company Name (Text, required)
+  - ROC/ROB Number (Text, required)
+  - Address (Address, required)
+  - Contact Person (Text, required)
+
+
+Agent Details:
+  - Agent Name (Text, required)
+  - Agent Code (Text, required)
+  - Agent Address (Address, required)
+
+
+Logistics Details:
+  - Mode of Transport (Dropdown: Air, Sea, Land, required)
+  - Purpose of Import (Dropdown: Commercial, Personal, Demonstration, required)
+  - Country/Place of Origin (Dropdown, required)
+  - Custom Station (Dropdown: Port Klang, KLIA, Johor Bahru, etc., required)
+**Step 4: RMCD Integration**
+
+
+System extracts data and sends to RMCD MyOGA system
+
+
+RMCD acknowledges receipt
+
+
+Status: Submitted to RMCD
+**Step 5: Certificate of Approval (CoA) Issuance**
+
+
+Upon RMCD acknowledgement: System generates CoA
+
+
+CoA Format: CoA-MMYY-123456
+
+
+CoA includes: Equipment details, Tariff Codes, CIF Valuation, Permit validity
+
+
+CoA sent to applicant email
+
+
+Downloadable from dashboard
+**Step 6: Customs Clearance Workflow**
+
+
+Applicant presents CoA at customs
+
+
+RMCD verifies CoA against NCEF data
+
+
+Upon clearance: RMCD updates clearance status back to NCEF
+
+
+Status displayed on applicant dashboard: "Cleared" or "Pending"
+---
+
+
+8. Post-Market Surveillance (PMS) Module
+**Officer Dashboard - PMS Section:**
+**8.1 Audit Proposal Generation**
+
+
+AI-Assisted Proposal List
+
+
+Criteria for audit selection:
+  - Equipment risk classification (Scheme A/B/C)
+  - Supplier compliance history
+  - Registration volume and frequency
+  - Random sampling algorithms
+  - Custom parameters (configurable by admin)
+
+
+Display: Proposed audit list with AI reasoning
+
+
+Officer Actions: Review, Modify, Confirm audit list
+
+
+Upon confirmation: Supplier notifications triggered
+**8.2 Product Sampling Proposal**
+
+
+Officer defines sampling percentage (e.g., 5%, 10%, 20%)
+
+
+System auto-generates product sampling list
+
+
+Display: List of products selected for sampling
+
+
+Officer Actions: Review, Modify, Confirm sampling list
+
+
+Upon confirmation: Supplier notifications triggered
+**8.3 Supplier Notification**
+
+
+Notification Template (Pre-filled, editable)
+
+
+Officer reviews and edits notification content
+
+
+Delivery channels: Email + In-app notification
+
+
+Notification includes: Audit/Sampling details, deadline, required documents
+**8.4 Audit Findings & Document Upload**
+
+
+Officer Interface for recording audit activities
+
+
+Fields:
+  - Audit Date (Date picker, required)
+  - Audit Location (Text, required)
+  - Auditor Name (Text, required)
+  - Findings Summary (Text Area, required)
+  - Compliance Checklist (Multi-checkbox, required)
+  - Observations & Discrepancies (Text Area, optional)
+  - Remarks (Text Area, optional)
+
+
+Document Upload: Audit reports, test results (PDF/Image, optional)
+
+
+Files stored securely in MinIO
+**8.5 Audit History & Non-Compliance Records**
+
+
+Immutable audit history maintained
+
+
+Non-compliance records automatically feed into AI Risk Scoring Engine
+
+
+Impact: Affects future Scheme C auto-acceptance decisions
+
+
+Dashboard displays: Audit history, compliance trends, risk profile updates
+---
+
+
+9. Complaint & Surveillance Module
+**Officer Dashboard - Complaint Section:**
+**9.1 Complaint Management**
+
+
+Officer Interface for capturing complaints
+
+
+Fields:
+  - Complaint Date (Date picker, required)
+  - Supplier Name (Dropdown/Autocomplete, required)
+  - Equipment Brand (Text, required)
+  - Equipment Model (Text, required)
+  - IMEI/Serial Number (Text, optional)
+  - Complaint Category (Dropdown: Technical Issue, Non-Compliance, Safety Hazard, Other, required)
+  - Complaint Description (Text Area, required)
+  - Source of Complaint (Dropdown: Public Report, Web Crawling, Internal, Other, required)
+  - Severity Level (Radio: Low, Medium, High, Critical, required)
+
+
+Document Upload: Supporting evidence (PDF/Image, optional)
+**9.2 Complaint Tracking**
+
+
+Dashboard displays: Received complaints, investigation status, linked equipment/supplier profiles
+
+
+Status workflow: New → Under Investigation → Resolved → Closed
+
+
+Officer can update status and add investigation notes
+
+
+High-severity complaints trigger automatic PMS audit proposals
+**9.3 Integration with PMS**
+
+
+High-severity complaints automatically flag equipment/supplier for audit
+
+
+Recurring complaint patterns trigger immediate audit proposals
+
+
+Complaint data feeds into AI Risk Scoring Engine
+---
+
+
+10. Compliance Status Management Module
+**Officer Interface - Compliance Status:**
+**Status Categories:**
+
+
+Active (Equipment/Supplier in good standing)
+
+
+Under Surveillance (Flagged for monitoring)
+
+
+Suspended (Temporarily restricted)
+
+
+Cancelled (Registration terminated)
+**Status Update Process:**
+
+
+Officer selects equipment/supplier
+
+
+Current status displayed
+
+
+Dropdown: Select new status
+
+
+Reason for Change (Text Area, required)
+
+
+Confirmation dialog before applying change
+
+
+System records:
+  - New status
+  - Reason for change
+  - Officer responsible
+  - Date and time of update
+  - Previous status (for audit trail)
+**Status Change History:**
+
+
+Complete history maintained and displayed
+
+
+Immutable records for audit purposes
+
+
+Used for regulatory monitoring and decision-making
+---
+
+
+11. Public Module
+**11.1 Public Landing Page**
+
+
+Professional, user-friendly design
+
+
+Latest announcements banner
+
+
+Regulatory updates section
+
+
+Quick links to key features:
+  - Equipment Search
+  - Guidelines & Standards
+  - FAQ
+  - Contact Information
+
+
+AI Chatbot widget (persistent, bottom-right corner)
+**11.2 Equipment Certification Search & Verification**
+
+
+Search Parameters (Any combination):
+  - Brand (Autocomplete dropdown)
+  - Model (Autocomplete dropdown)
+  - IMEI/Serial Number (Text field)
+  - Supplier ID (Text field)
+  - Registration Certification Number (RCN) (Text field)
+
+
+Search Results Display:
+  - Equipment name and model
+  - Certification status (Active, Expired, Suspended, Cancelled)
+  - Registration date
+  - Expiry date
+  - Supplier name
+  - Certifying agency
+  - Download certificate option (if applicable)
+**11.3 Guidelines, Standards & Reference Documents**
+
+
+Repository of NCEF guidelines
+
+
+Technical standards documents
+
+
+Application procedures
+
+
+Fee schedules
+
+
+Downloadable PDFs
+
+
+Search functionality
+**11.4 Application Process Overview**
+
+
+Step-by-step visual guide
+
+
+Processing timelines for each scheme
+
+
+Fee structure table
+
+
+Links to registration portal
+**11.5 AI-Powered Chatbot**
+
+
+Floating widget on all public pages
+
+
+Common inquiries:
+  - "What is NCEF?"
+  - "How do I register equipment?"
+  - "What are the fees?"
+  - "How long does processing take?"
+  - "What documents do I need?"
+
+
+Natural language processing
+
+
+Escalation to human support if needed
+
+
+Available 24/7
+**11.6 FAQ Section**
+
+
+Searchable FAQ database
+
+
+Categories:
+  - Registration Scope & Exemptions
+  - Application Process
+  - Renewal
+  - Fees & Payment
+  - Importation
+  - Compliance & Enforcement
+
+
+Expandable Q&A format
+
+
+Related questions suggestions
+**11.7 Contact Information**
+
+
+MCMC contact details
+
+
+Email support address
+
+
+Phone number
+
+
+Office hours
+
+
+Physical address
+---
+
+
+12. Mobile Application
+**Platforms:** iOS, Android, Huawei
+**Key Features:**
+
+
+**Public Search:** Equipment verification on-the-go
+
+
+**Push Notifications:** MCMC announcements and updates
+
+
+**Application Status:** Real-time tracking of submitted applications
+
+
+**Document Upload:** Simplified document submission
+
+
+**Payment:** Quick access to payment status and receipts
+
+
+**Notifications:** In-app alerts for application updates
+
+
+**Offline Mode:** Limited functionality when offline, sync when online
+**UI/UX Considerations:**
+
+
+Touch-optimized interface
+
+
+Responsive design for various screen sizes
+
+
+Fast loading times
+
+
+Minimal data usage
+
+
+Biometric authentication (fingerprint/face recognition)
+---
+
+
+Data Models & Form Specifications
+
+
+Supplier Entity
+```
+Supplier {
+  supplier_id: String (Primary Key, format: SUP-MMYY-XXXXX)
+  category: Enum (Company, Individual, Institution, Consultant)
+  full_name: String
+  email: String (Unique)
+  phone: String
+  address: String
+  company_name: String (if applicable)
+  company_registration_number: String
+  director_name: String
+  director_nric: String
+  business_type: String
+  registration_date: DateTime
+  status: Enum (Active, Inactive, Suspended, Cancelled)
+  ai_confidence_score: Float (0-100)
+  created_at: DateTime
+  updated_at: DateTime
+  associated_principals: Array[Principal]
+  associated_consultants: Array[Consultant]
+}
+```
+
+
+Equipment Registration Entity
+```
+EquipmentRegistration {
+  rcn: String (Primary Key, format: RCN-MMYY-XXXXX)
+  supplier_id: String (Foreign Key)
+  scheme: Enum (A, B, C)
+  equipment_category: String
+  brand: String
+  model_name: String
+  model_number: String
+  marketing_name: String (optional)
+  purpose_of_usage: String
+  frequency_band: String
+  output_power: Float
+  technical_code: String
+  certifying_agency: Array[String]
+  certificate_of_conformity_number: String
+  certificate_issuance_date: Date
+  certificate_expiry_date: Date
+  supported_sims: Array[String]
+  labelling_id: String
+  label_type: Enum (Physical, Electronic)
+  label_location: String
+  registration_period: Integer (1-5 years)
+  registration_date: DateTime
+  expiry_date: DateTime
+  status: Enum (Active, Expired, Suspended, Cancelled, Under Review, Iteration Required, Rejected)
+  ai_confidence_score: Float (0-100)
+  documents: Array[Document]
+  created_at: DateTime
+  updated_at: DateTime
+}
+```
+
+
+Application Entity
+```
+Application {
+  application_id: String (Primary Key, format: APP-MMYY-XXXXX)
+  supplier_id: String (Foreign Key)
+  application_type: Enum (SDoC, Special Approval, Renewal, Modification, IMEI Registration, Importation)
+  status: Enum (Draft, Under Review, Iteration Required, Approved, Rejected)
+  payment_status: Enum (Pending, Completed, Failed)
+  payment_amount: Float
+  payment_date: DateTime
+  payment_receipt_number: String
+  ai_validation_score: Float (0-100)
+  ai_summary: String
+  assigned_officer_id: String (Foreign Key)
+  assigned_date: DateTime
+  officer_comments: String
+  decision_date: DateTime
+  decision_type: Enum (Approved, Rejected, Iteration Required)
+  iteration_deadline: DateTime
+  created_at: DateTime
+  updated_at: DateTime
+  documents: Array[Document]
+}
+```
+
+
+Document Entity
+```
+Document {
+  document_id: String (Primary Key)
+  application_id: String (Foreign Key)
+  document_type: String (Technical Brochure, Test Report, Certificate, Photo, etc.)
+  file_name: String
+  file_path: String (MinIO storage path)
+  file_size: Integer (bytes)
+  mime_type: String
+  upload_date: DateTime
+  uploaded_by: String
+  validation_status: Enum (Valid, Invalid, Pending Review)
+  validation_notes: String (optional)
+}
+```
+---
+
+
+Business Rules & Validation Logic
+
+
+Registration Validation Rules
+| Rule | Condition | Action |
+|------|-----------|--------|
+| **Email Uniqueness** | Email already exists in system | Reject registration, prompt user to login or use different email |
+| **BRN Validation** | Company registration number format invalid | Display error, request correct format |
+| **SSM Verification** | BRN not found in SSM database | Flag for manual verification, allow continuation with manual entry |
+| **Document Age** | Document issued more than 6 months ago | Reject document, request updated version |
+| **Passport Validity** | Passport expired | Reject, request valid passport |
+| **Phone Format** | Phone number not in Malaysian format | Display error, show format example |
+| **Password Strength** | Password < 12 characters or lacks complexity | Display error, show requirements |
+
+
+Application Validation Rules
+| Rule | Condition | Action |
+|------|-----------|--------|
+| **RCN Validity** | RCN not found or expired | Display error, prevent application submission |
+| **Duplicate IMEI** | IMEI already registered for same RCN | Highlight in validation results, allow user to correct |
+| **Payment Completion** | Payment not completed within 14 days | Auto-delete draft, send notification |
+| **Iteration Deadline** | Applicant exceeds 60-day iteration period | Auto-cancel application, send notification |
+| **Document Completeness** | Required documents missing | Display error, list missing documents |
+| **AI Confidence Score** | Score < 70% for Scheme C | Route to manual review queue |
+| **Prohibited Equipment** | Offline acceptance not uploaded | Block online workflow progression |
+
+
+SLA & Deadline Rules
+| Process | SLA | Action on Breach |
+|---------|-----|-----------------|
+| **Draft Retention** | 14 days | Auto-delete if payment not completed |
+| **Iteration Period** | 60 days | Auto-cancel application, send notification |
+| **Officer Review** | 10 working days (target) | Escalate to supervisor, notify applicant |
+| **Renewal Reminder** | 30 days before expiry | Send email + in-app notification |
+| **Certificate Validity** | As per Certificate of Conformity | Auto-expire, send renewal reminder 6 months before |
+---
+
+
+Integration Specifications
+
+
+SSM Integration (Company Verification)
+**API Endpoint:** `/api/integrations/ssm/validate`
+**Request:**
+```json
+{
+  "company_registration_number": "123456-78-9012",
+  "company_name": "ABC Technology Sdn Bhd"
+}
+```
+**Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "company_name": "ABC Technology Sdn Bhd",
+    "registration_number": "123456-78-9012",
+    "business_address": "123 Jalan Teknologi, Cyberjaya, 63000",
+    "registration_date": "2015-06-15",
+    "status": "Active",
+    "directors": [
+      {
+        "name": "John Doe",
+        "nric": "123456-12-1234"
+      }
+    ]
+  }
+}
+```
+**UI Impact:**
+
+
+Auto-populate company details in registration form
+
+
+Lock fields from manual editing if verified
+
+
+Display verification badge
+---
+
+
+MCMC Pay Integration
+**API Endpoint:** `/api/integrations/mcmc-pay/initiate-payment`
+**Request:**
+```json
+{
+  "application_id": "APP-0426-00001",
+  "amount": 150.00,
+  "currency": "MYR",
+  "description": "Equipment Registration - Scheme A",
+  "return_url": "https://ncef.mcmc.gov.my/payment-confirmation"
+}
+```
+**Response:**
+```json
+{
+  "status": "success",
+  "payment_id": "PAY-0426-00001",
+  "payment_url": "https://mcmc-pay.gov.my/checkout?session=xyz123",
+  "expires_at": "2026-04-20T12:00:00Z"
+}
+```
+**Webhook for Payment Confirmation:**
+```json
+{
+  "event": "payment.completed",
+  "payment_id": "PAY-0426-00001",
+  "application_id": "APP-0426-00001",
+  "amount": 150.00,
+  "status": "success",
+  "receipt_number": "RCP-0426-00001",
+  "timestamp": "2026-04-19T10:30:00Z"
+}
+```
+**UI Impact:**
+
+
+Seamless redirect to payment gateway
+
+
+Real-time status update on dashboard
+
+
+Receipt generation and download
+---
+
+
+RMCD MyOGA Integration (Customs)
+**API Endpoint:** `/api/integrations/rmcd/submit-import-permit`
+**Request:**
+```json
+{
+  "application_id": "APP-0426-00002",
+  "rcn": "RCN-0426-00001",
+  "equipment_details": {
+    "brand": "Samsung",
+    "model": "Galaxy S24",
+    "quantity": 100,
+    "imei_list": ["123456789012345", "123456789012346"]
+  },
+  "consignor": {
+    "name": "ABC Technology Sdn Bhd",
+    "roc_number": "123456-78-9012",
+    "address": "123 Jalan Teknologi, Cyberjaya"
+  },
+  "consignee": {
+    "name": "XYZ Retail Sdn Bhd",
+    "roc_number": "987654-32-1098",
+    "address": "456 Jalan Retail, Kuala Lumpur"
+  }
+}
+```
+**Response:**
+```json
+{
+  "status": "success",
+  "coa_number": "CoA-0426-123456",
+  "rmcd_reference": "RMCD-0426-00001",
+  "status_message": "Import permit submitted to RMCD"
+}
+```
+**Webhook for Customs Clearance:**
+```json
+{
+  "event": "customs.clearance_status_updated",
+  "coa_number": "CoA-0426-123456",
+  "application_id": "APP-0426-00002",
+  "clearance_status": "cleared",
+  "clearance_date": "2026-04-20T14:30:00Z"
+}
+```
+**UI Impact:**
+
+
+Display customs clearance status on dashboard
+
+
+Real-time updates on importation progress
+---
+
+
+SIRIM Integration (Legacy Data Migration)
+**Process:** Secure ETL (Extract, Transform, Load)
+**Data to Migrate:**
+
+
+Supplier records
+
+
+Equipment registrations (SDoC certificates)
+
+
+Historical compliance data
+
+
+Document archives
+**Validation:**
+
+
+Data integrity checks
+
+
+Duplicate detection
+
+
+Format validation
+
+
+Mapping to new data model
+**Outcome:**
+
+
+Historical data available in new system
+
+
+Audit trail preserved
+
+
+Supplier continuity maintained
+---
+
+
+MCMC SIFS Integration (Financial Consolidation)
+**API Endpoint:** `/api/integrations/mcmc-sifs/submit-payment-data`
+**Request:**
+```json
+{
+  "payment_id": "PAY-0426-00001",
+  "amount": 150.00,
+  "payment_date": "2026-04-19",
+  "payment_type": "Equipment Registration",
+  "supplier_id": "SUP-0426-00001",
+  "receipt_number": "RCP-0426-00001"
+}
+```
+**UI Impact:**
+
+
+Payment data automatically consolidated into MCMC financial system
+
+
+No manual reconciliation required
+---
+
+
+UI/UX Components & Screens
+
+
+Global Navigation & Layout
+**Header:**
+
+
+MCMC Logo (top-left)
+
+
+System Title: "NCEF Online Registration System"
+
+
+User Profile Dropdown (top-right)
+  - Logged-in user name
+  - Profile link
+  - Logout link
+
+
+Notification Bell Icon (top-right, with badge count)
+**Sidebar (Internal Portal):**
+
+
+Dashboard
+
+
+Applications (Inbox, Under Review, Completed)
+
+
+Post-Market Surveillance
+
+
+Compliance Management
+
+
+Analytics & Reporting
+
+
+System Configuration (Admin only)
+
+
+Help & Support
+**Sidebar (External Portal):**
+
+
+Dashboard
+
+
+My Applications
+
+
+New Application (Dropdown: SDoC, Special Approval, Renewal, etc.)
+
+
+My Profile
+
+
+Support & FAQ
+**Footer:**
+
+
+Copyright notice
+
+
+Links: Privacy Policy, Terms & Conditions, Contact Us
+
+
+Version information
+---
+
+
+Dashboard Components
+**Applicant Dashboard:**
+
+
+**Quick Stats:** Active applications, Pending actions, Completed registrations
+
+
+**Recent Applications:** Table with columns: Application ID, Type, Status, Submission Date, Last Updated
+
+
+**Notifications:** List of recent notifications with timestamps
+
+
+**Quick Actions:** Buttons for common tasks (New Application, Renew Certificate, etc.)
+
+
+**Payment History:** Table of recent payments with receipts
+
+
+**Certificates:** List of active certificates with download links
+**Officer Dashboard:**
+
+
+**Task Queue:** Inbox with pending applications, sortable by priority/date
+
+
+**KPI Metrics:** Applications processed today, average processing time, SLA compliance
+
+
+**Alerts:** High-risk applications, overdue applications, system notifications
+
+
+**Quick Stats:** Total applications, approval rate, rejection rate
+
+
+**Audit Proposals:** AI-generated audit list for review
+
+
+**Compliance Status:** Overview of supplier/equipment compliance
+---
+
+
+Status Indicators & Visual Cues
+| Status | Color | Icon | Meaning |
+|--------|-------|------|---------|
+| Draft | Gray | ⚪ | Application not yet submitted |
+| Under Review | Blue | 🔵 | Officer reviewing application |
+| Iteration Required | Orange | 🟠 | Applicant action required |
+| Approved | Green | ✅ | Application accepted |
+| Rejected | Red | ❌ | Application rejected |
+| Expired | Dark Gray | ⏰ | Certificate/Registration expired |
+| Suspended | Purple | 🛑 | Temporarily restricted |
+| Cancelled | Black | ✗ | Registration terminated |
+---
+
+
+Error Handling & Validation Messages
+**Format:**
+
+
+Error messages displayed in red banner at top of form
+
+
+Field-level errors shown below respective fields in red text
+
+
+Validation occurs on blur and form submission
+
+
+Clear, user-friendly language with suggested corrections
+**Examples:**
+
+
+"Email address already registered. Please log in or use a different email."
+
+
+"Password must be at least 12 characters and include uppercase, lowercase, numbers, and special characters."
+
+
+"RCN format invalid. Expected format: RCN-MMYY-XXXXX"
+
+
+"File size exceeds 10MB limit. Please upload a smaller file."
+
+
+"IMEI number already registered for this RCN."
+---
+
+
+Accessibility Features
+
+
+WCAG 2.1 AA compliance
+
+
+Keyboard navigation support
+
+
+Screen reader compatibility
+
+
+High contrast mode option
+
+
+Font size adjustment
+
+
+Alt text for all images
+
+
+Descriptive link text (avoid "Click here")
+
+
+Form labels associated with input fields
+
+
+Error messages linked to form fields
+---
+
+
+Non-Functional Requirements
+
+
+Performance
+
+
+**Page Load Time:** < 3 seconds (target)
+
+
+**API Response Time:** < 500ms (95th percentile)
+
+
+**Database Query Time:** < 200ms (average)
+
+
+**Concurrent Users:** Support 1,000+ concurrent users
+
+
+**File Upload:** Support files up to 50MB
+
+
+Security
+
+
+**Encryption:** TLS 1.3 for data in transit, AES-256 for data at rest
+
+
+**Authentication:** 2FA for external users, SSO for internal users
+
+
+**Authorization:** Role-based access control (RBAC)
+
+
+**Audit Logging:** All user actions logged and immutable
+
+
+**Data Privacy:** PDPA 2010 compliance
+
+
+**Vulnerability Scanning:** Regular penetration testing and security audits
+
+
+**API Security:** Rate limiting, input validation, SQL injection prevention
+
+
+Availability & Reliability
+
+
+**Uptime SLA:** 99.5% availability
+
+
+**Backup & Recovery:** Daily automated backups, RTO < 4 hours, RPO < 1 hour
+
+
+**Disaster Recovery:** Geographically distributed data centers
+
+
+**Load Balancing:** Auto-scaling infrastructure
+
+
+**Monitoring:** 24/7 system monitoring and alerting
+
+
+Scalability
+
+
+**Horizontal Scaling:** Stateless application design
+
+
+**Database Scaling:** Read replicas, sharding for large tables
+
+
+**Caching:** Redis for session and data caching
+
+
+**CDN:** Content delivery network for static assets
+
+
+Usability
+
+
+**Responsive Design:** Mobile, tablet, desktop support
+
+
+**Accessibility:** WCAG 2.1 AA compliance
+
+
+**Localization:** English primary, Bahasa Malaysia support
+
+
+**Help & Support:** Integrated help system, chatbot, email support
+
+
+**User Training:** Video tutorials, user guides, documentation
+---
+
+
+Appendices
+
+
+Appendix A: User Access Matrix
+| Module | Admin | OIC | Recommender | Verifier | Approver | Supplier | Public |
+|--------|-------|-----|-------------|----------|----------|----------|--------|
+| User Management | Full | - | - | - | - | - | - |
+| Equipment Registration | View | Full | View | View | - | Full | View |
+| Special Approval | View | Full | Full | View | Full | Full | - |
+| Renewal | View | Full | View | - | - | Full | - |
+| IMEI Registration | View | View | - | - | - | Full | - |
+| Modification | View | Full | - | - | - | Full | - |
+| Importation | View | Full | - | - | - | Full | - |
+| PMS | Full | Full | View | - | - | - | - |
+| Complaints | Full | Full | View | - | - | - | - |
+| Compliance | Full | Full | View | View | Full | - | - |
+| Public Search | View | - | - | - | - | - | Full |
+| Analytics | Full | View | - | - | - | View | - |
+| Configuration | Full | - | - | - | - | - | - |
+---
+
+
+Appendix B: Fee Structure
+| Service | Category | Fee (RM) | Notes |
+|---------|----------|----------|-------|
+| **User Registration** | All | 0.00 | Free |
+| **Equipment Registration (SDoC)** | Scheme A (High Risk) | 300.00 | Per equipment, per year |
+| | Scheme B (Medium Risk) | 150.00 | Per equipment, per year |
+| | Scheme C (Low Risk) | 50.00 | Per equipment, per year |
+| **Renewal** | All Schemes | 50% of registration fee | Per year |
+| **IMEI Registration** | Per IMEI | 0.50 | Minimum 100 IMEIs |
+| **Serial Number Registration** | Per Serial | 0.15 | Minimum 100 serials |
+| **Special Approval** | Low/Medium Risk | 200.00 | Per application |
+| | High Risk | 500.00 | Per application |
+| | Prohibited | 1,000.00 | Per application |
+| **Importation Permit** | All | 100.00 | Per permit |
+| **Modification** | Major | 0.00 | Treated as new registration |
+| | Minor/Others | 25.00 | Per modification |
+---
+
+
+Appendix C: AI Scoring Mechanism (Detailed)
+**Scoring Criteria Breakdown:**
+1. **SSM/ROC/ROB Validation (20%)**
+   - Real-time database lookup
+   - Confirmation of legitimate business entity
+   - Score: 0% if validation fails, 20% if successful
+2. **Address & Director Match (10%)**
+   - Compare submitted address with SSM records
+   - Match director NRIC with SSM records
+   - Score: 0% if no match, 10% if full match
+3. **Completeness of Technical Specifications (15%)**
+   - Check all required technical fields populated
+   - Validate field formats and ranges
+   - Score: 15% * (fields_populated / total_required_fields)
+4. **Brand & Model Consistency (10%)**
+   - Verify brand and model consistency across documents
+   - Check against known blacklist
+   - Score: 0% if inconsistency/blacklist, 10% if consistent
+5. **Test Report & Lab Verification (15%)**
+   - Validate test report from accredited lab
+   - Verify report number format and validity
+   - Check report date within acceptable range
+   - Score: 0% if invalid, 15% if valid
+6. **Standards Compliance (10%)**
+   - Verify equipment tested against latest MCMC standards
+   - Check standards version and applicability
+   - Score: 0% if non-compliant, 10% if compliant
+7. **Supplier's Past Performance (10%)**
+   - Analyze historical compliance record
+   - Check for previous rejections or issues
+   - Score: 10% * (compliant_applications / total_applications)
+8. **Completeness & Consistency (10%)**
+   - Check all form fields correctly filled
+   - Detect contradictions between fields
+   - Score: 10% * (consistent_fields / total_fields)
+**Threshold Logic:**
+
+
+**90%+:** Auto-accept (Scheme C only)
+
+
+**70-89%:** Priority review queue
+
+
+**<70%:** Standard review queue
+
+
+**Missing 10% criterion:** Require manual review
+---
+
+
+Appendix D: Diagram Legend & Symbols
+**Flowchart Symbols:**
+| Symbol | Meaning |
+|--------|---------|
+| 🔵 Circle | Start/End point |
+| ▭ Rectangle | Process/Activity |
+| ◇ Diamond | Decision/Condition |
+| ▭ Rounded Rectangle | Subprocess/Module |
+| → Arrow | Flow direction |
+| 📄 Document | Document/Data |
+| 👤 Person | User/Actor |
+| 🔄 Circular Arrow | Loop/Iteration |
+---
+
+
+Appendix E: System Constraints & Limitations
+**Current Constraints:**
+
+
+Maximum file upload size: 50MB
+
+
+Maximum concurrent users: 1,000
+
+
+Database query timeout: 30 seconds
+
+
+Session timeout: 30 minutes of inactivity
+
+
+Bulk upload limit: 10,000 records per file
+
+
+API rate limit: 1,000 requests per minute per user
+**Known Limitations:**
+
+
+Offline functionality limited to mobile app
+
+
+Real-time notifications may have 1-2 minute delay
+
+
+Historical data from SIRIM system may have gaps
+
+
+Some integrations depend on external system availability
+---
+
+
+Appendix F: Glossary of Terms
+| Term | Definition |
+|------|-----------|
+| **RCN** | Registration Certification Number - unique identifier for equipment registration |
+| **SDoC** | Supplier's Declaration of Conformity - equipment certification document |
+| **IMEI** | International Mobile Equipment Identity - unique identifier for cellular devices |
+| **CoA** | Certificate of Approval - customs clearance document |
+| **SA** | Special Approval - permit for non-standard equipment importation |
+| **OIC** | Officer in Charge - first-level reviewer of applications |
+| **AI Confidence Score** | Percentage score (0-100%) indicating AI validation confidence |
+| **Iteration** | Process of applicant correcting and resubmitting application |
+| **PMS** | Post-Market Surveillance - monitoring of equipment post-registration |
+| **PDPA** | Personal Data Protection Act - Malaysian privacy legislation |
+---
+**End of Comprehensive Specification Document**
+*This document is intended for use by Claude Design, engineering teams, and project stakeholders. All information is current as of April 19, 2026 and based on URS v1.7 and SDD v1.4.*
+

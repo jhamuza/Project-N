@@ -1,0 +1,200 @@
+
+
+
+
+NCEF Combined Specification (URS v1.7 & SDD v1.4)
+
+
+1. Executive Summary
+
+
+The NCEF is a new regulatory framework established by the Malaysian Communications and Multimedia Commission (MCMC) to modernize and regulate the registration of communications equipment in Malaysia. The development of a centralized online system is the cornerstone of this initiative, replacing legacy systems and manual workflows. This project is aligned with MCMC’s and the nation’s digital transformation goals to enhance public service delivery through efficient, secure, and intelligent technology.
+
+
+2. System Objectives
+
+
+The primary objectives of the NCEF system design are to: - Streamline Operations: Design an efficient, automated, and user-centric platform that simplifies the end-to-end registration process for all stakeholders. - Enhance Regulatory Oversight: Architect a system with robust data management, audit trails, and reporting capabilities to provide MCMC with comprehensive oversight of the equipment lifecycle. - Improve Service Delivery: Create a transparent, accessible, and responsive system that improves the user experience for applicants and the public. - Integrate Seamlessly: Design a well-defined integration architecture to connect with critical internal (MCMC SIFS) and external (SIRIM, RMCD, SSM, MCMC Pay) systems. - Leverage AI: Incorporate Artificial Intelligence to enhance efficiency and accuracy in document validation, risk assessment, and decision support. - Ensure Security and Compliance: Build a secure, scalable, and reliable platform that complies with the Malaysian Personal Data Protection Act (PDPA) 2010 and best-in-class security standards.
+
+
+3. System Architecture
+
+
+The NCEF Online Registration System is a comprehensive, web-based platform designed to manage the entire lifecycle of communications equipment registration in Malaysia.
+
+
+3.1 Logical Architecture
+
+
+The system is composed of several key portals and applications: - Internal Portal: A secure portal for MCMC officers (System Administrators, OICs, Recommenders, Verifiers, Approvers) to manage applications, configure system settings, monitor operations via dashboards, and perform all back-office functions. - External Portal: A self-service portal for applicants (Suppliers, Principals, Consultants) to register accounts, submit and manage equipment registration applications (SDoC), special approval, renewals, and modifications. It includes a personalized dashboard for tracking application status and managing payments. - Public Portal: An open-access portal for the public to search and verify the certification status of equipment, access regulatory documents (guidelines, standards), view FAQs, and interact with an AI-powered chatbot. - Mobile Applications: Native mobile apps (Android, iOS, Huawei) providing key functionalities on the go, including public search and push notifications for MCMC announcements.
+
+
+4. Key Business Process Flows
+
+
+supplier_registration
+
+
+flowchart TD    Start([Start]) --> A[Account CreationFull Name, EmailPhone Number,PasswordSecurity Question]    A --> B[Email VerificationClick verification link]    B --> C[Account RegistrationLogin with Email & Password]    C --> D[Application Category Selection]    D --> E{Select Category}        E -->|Company| F[Information SubmissionCompany Details]    E -->|Consultant| F    E -->|Institution| G[Information SubmissionInstitution Details]    E -->|Individual| H[Information SubmissionIndividual Details]        F --> I{SSM Registered?}    I -->|No| J[Key in Company Registration Number]    J --> K[Upload Company Report]    K --> L[ICR reads document]    L --> M[Auto-fill form]        I -->|Yes| N[Key in Company Registration Number]    N --> O[Validate SSM BRN]    O --> P{Upload Document?}    P -->|Manual| K    P -->|Direct Purchase| Q[Purchase via API]    Q --> M        M --> R[Acknowledgement and eSign]    G --> R    H --> R        R --> S[Payment]    S --> T{Payment Complete?}    T -->|No| S    T -->|Yes| U[Receipt Generated]        U --> V[AI Document Verification]    V --> W[Summarise score and share to Officer]    W --> X{AI provides confidence score}        X -->|>90%| Y[Application Accepted and Issuance of Registration ID]    X -->|<90%| Z{Potential fraud/fake application}        Z -->|Yes| AA[Notify MCMC Officer to not accept application and justify]    Z -->|No| AB[Notify Applicant for Modification]        AB --> AC[Applicant Submits Updated Document]    AC --> AD{Submit within 14 days?}        AD -->|Yes| V    AD -->|> 14 Days| AE[Notify MCMC Officer to remove application]        Y --> End([End])    AA --> End    AE --> End        %% Waiver Flow    W1[OIC goes to Waiver module] -.-> W2[OIC generates Waiver link/flow]    W2 -.-> W3[OIC provide link/code to applicant]        classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px;    classDef decision fill:#ffcc00,stroke:#333,stroke-width:1px;    classDef startend fill:#ffffff,stroke:#333,stroke-width:1px,rx:20,ry:20;        class E,I,P,T,X,Z,AD decision;    class Start,End startend;
+
+
+scheme_a
+
+
+flowchart TD    Start([Start]) --> A[Applicant inputs purpose of usage and usage information]    A --> B[Applicant inputs model name]    B --> C{System checks if model exists in database}        C -->|Exists| D[System autofills form]    C -->|Non-registered| E[Applicant fills form manually]        D --> F[Applicant uploads relevant documents]    E --> F        F --> G[Applicant signs declaration and submits]    G --> H[System issues quotation and leads to checkout page]        H --> I{Payment received?}    I -->|No| J[Application stays in draft for 14 daysStatus: Draft]    J --> End([End])        I -->|Yes| K[AI validates and checks informationProvides risk score and summaryAssigns to officerStatus: Under Review]    K --> L[Officer evaluates application for compliance]    L --> M{Application complies?}        M -->|Yes - Approved| N[Status: ApprovedSDoC Certificate GeneratedInclude Attachment Optional]    N --> End        M -->|No| O{Officer chooses action}        O -->|Not Approved| P[Application not approved with justificationInclude attachment optionalStatus: Not Approved]    P --> End        O -->|Request Iteration| Q[Officer provides justification on which part requires iterationInclude attachment optionalStatus: Iteration Required]        Q --> R[Applicant proceeds with iterationTo be completed within 60 days]    R --> S[Applicant signs declaration and submits]    S --> T[AI validates and checks informationProvides risk score and summaryAssigns to officerStatus: Under Review]        T --> U{Officer review result}    U -->|Approved| V[Status: ApprovedSDoC Certificate Generated]    V --> End        U -->|Not Approved| W[Application not approved with justificationInclude attachment optionalStatus: Not Approved]    W --> End        U -->|Request Iteration| X[Loop back to iterationTo be completed within 60 days]    X --> R        classDef decision fill:#ffcc00,stroke:#333,stroke-width:1px;    classDef approved fill:#4caf50,stroke:#333,stroke-width:1px,color:white;    classDef rejected fill:#f44336,stroke:#333,stroke-width:1px,color:white;        class C,I,M,O,U decision;    class N,V approved;    class P,W rejected;
+
+
+special_approval
+
+
+flowchart TD    Start([Start]) --> A[Applicant inputs purpose of usage and usage information]    A --> B[Applicant inputs model name]    B --> C{System checks if model exists in database}        C -->|Exists| D[System autofills form]    C -->|Non-registered| E[Applicant fills form manually]        D --> F[Applicant uploads relevant documents]    E --> F        F --> G[Applicant signs declaration and submits]    G --> H[System issues quotation and leads to checkout page]        H --> I{Payment received?}    I -->|No| J[Application stays in draft for 14 daysStatus: Draft]    J --> End([End])        I -->|Yes| K[AI validates and checks informationProvides risk score and summaryAssigns to officerStatus: Under Review]    K --> L[Officer evaluates application for compliance]    L --> M{Application complies?}        M -->|Yes - Approved| N[Status: ApprovedSA Certificate GeneratedInclude Attachment Optional]    N --> End        M -->|No| O{Officer chooses action}        O -->|Not Approved| P[Application not approved with justificationInclude attachment optionalStatus: Not Approved]    P --> End        O -->|Request Iteration| Q[Officer provides justification on which part requires iterationInclude attachment optionalStatus: Iteration Required]        Q --> R[Applicant proceeds with iterationTo be completed within 60 days]    R --> S[Applicant signs declaration and submits]    S --> T[AI validates and checks informationProvides risk score and summaryAssigns to officerStatus: Under Review]        T --> U{Officer review result}    U -->|Approved| V[Status: ApprovedSA Certificate Generated]    V --> End        U -->|Not Approved| W[Application not approved with justificationInclude attachment optionalStatus: Not Approved]    W --> End        U -->|Request Iteration| X[Loop back to iterationTo be completed within 60 days]    X --> R        classDef decision fill:#ffcc00,stroke:#333,stroke-width:1px;    classDef approved fill:#4caf50,stroke:#333,stroke-width:1px,color:white;    classDef rejected fill:#f44336,stroke:#333,stroke-width:1px,color:white;        class C,I,M,O,U decision;    class N,V approved;    class P,W rejected;
+
+
+imei_registration
+
+
+flowchart TD    Start([Start]) --> A[RCN EntryApplicant enters RCN]    A --> B{RCN Validation}        B -->|Invalid| C[Re-enter RCN]    C --> B        B -->|Valid| D[Equipment DeclarationDeclare quantity of equipment]    D --> E[Use Template for Bulk Upload]    E --> F{IMEI/SN Validation}        F -->|Some Invalid| G[System Highlights Issue]    G --> E        F -->|Valid| H[Final PaymentApplicant makes payment]    H --> I[CompletionGenerate Reference Number]    I --> End([End])        classDef decision fill:#ffcc00,stroke:#333,stroke-width:1px;    class B,F decision;
+
+
+5. Integration Architecture
+
+
+5.1 High Level Integration Flow from NCEF - RMCD
+
+
+sequenceDiagram    participant App as Applicant    participant NCEF as NCEF System    participant RMCD as RMCD MyOGA System        App->>NCEF: 1. Submit Import Permit Application    NCEF->>NCEF: 2. Validate Application & Payment    NCEF->>RMCD: 3. Send Approved Import Permit Data (API)    RMCD-->>NCEF: 4. Acknowledge Receipt        Note over App,RMCD: Customs Clearance Phase    App->>RMCD: 5. Present Goods at Customs    RMCD->>RMCD: 6. Verify Permit against NCEF Data    RMCD->>NCEF: 7. Update Clearance Status    NCEF-->>App: 8. Notify Clearance Status
+
+
+5.2 Payment Flow for MCMC Pay
+
+
+sequenceDiagram    participant App as Applicant    participant NCEF as NCEF System    participant Pay as MCMC Pay    participant Bank as Payment Gateway/Bank        App->>NCEF: 1. Initiate Payment    NCEF->>Pay: 2. Generate Payment Request    Pay-->>App: 3. Redirect to Payment Page    App->>Bank: 4. Enter Payment Details    Bank-->>Pay: 5. Payment Authorization    Pay->>NCEF: 6. Payment Callback/Status Update    NCEF-->>App: 7. Display Receipt & Update Status
+
+
+5.3 SSM Service Provider Flow for SSM Validation
+
+
+sequenceDiagram    participant App as Applicant    participant NCEF as NCEF System    participant SSM as SSM Service Provider        App->>NCEF: 1. Enter Company Registration No.    NCEF->>SSM: 2. Request Company Details (API)    SSM-->>NCEF: 3. Return Company Data    NCEF->>NCEF: 4. Auto-fill Registration Form    App->>NCEF: 5. Confirm Details
+
+
+6. Functional Modules
+
+
+6.1 Equipment Registration Module (SDoC)
+
+
+The Equipment Registration Module is the core component for managing the Supplier’s Declaration of Conformity (SDoC). The system provides different workflows based on the risk level of the equipment, categorized into Scheme A, Scheme B, and Scheme C.
+
+
+6.2 Special Approval Module
+
+
+The Special Approval module provides a dedicated workflow for the importation of equipment that does not fall under standard SDoC registration. This includes Low/Medium Risk, High Risk, and Prohibited equipment.
+
+
+6.3 Post-Market Surveillance (PMS) Module
+
+
+Source: SDD Section 5.8 The PMS module enables MCMC to monitor and track equipment compliance after registration. It includes functionalities for scheduling surveillance activities, tracking compliance status, and managing enforcement actions.
+
+
+6.4 Complaint & Surveillance Module
+
+
+Source: SDD Section 5.9 This module handles complaints from the public or industry regarding non-compliant equipment. It provides workflows for investigation, escalation, and resolution tracking.
+
+
+6.5 Compliance Status Management Module
+
+
+Source: SDD Section 5.10 Manages the overall compliance status of registered equipment and suppliers, linking with the PMS and Complaint modules to provide a holistic view of compliance.
+
+
+6.6 Public Module & Mobile Application
+
+
+Source: SDD Sections 5.10 & 5.11 Provides an open-access portal and native mobile applications (Android, iOS, Huawei) for the public to search and verify equipment certification status, access regulatory documents, and receive push notifications.
+
+
+7. AI-Enabled Features
+
+
+The system incorporates Artificial Intelligence to enhance efficiency:
+
+
+AI Document Validation: Automatically extracts and validates information from uploaded documents using Intelligent Character Recognition (ICR).
+
+
+Risk Scoring & Assessment: Analyzes application data against historical patterns to assign a risk score.
+
+
+Auto-Acceptance Thresholds (Scheme C): Applications with a confidence score >90% are automatically accepted.
+
+
+Fraud Detection: Identifies potential fraudulent or fake applications.
+
+
+AI Chatbot/Assistant: Provides instant support on the public portal.
+
+
+8. Appendices
+
+
+Appendix A: AI Scoring Mechanism
+
+
+Detailed scoring criteria for AI validation
+
+
+Criteria
+
+
+Score Range
+
+
+Description
+
+
+Document Completeness
+
+
+0-30
+
+
+Checks if all required documents are present and legible
+
+
+Data Consistency
+
+
+0-40
+
+
+Cross-references data across different documents and forms
+
+
+Historical Compliance
+
+
+0-20
+
+
+Evaluates the applicant’s past compliance record
+
+
+Risk Profile
+
+
+0-10
+
+
+Assesses the inherent risk of the equipment type
+
+
+Total Confidence Score
+
+
+0-100
+
+
+>90% required for auto-acceptance

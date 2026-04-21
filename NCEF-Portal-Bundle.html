@@ -1,0 +1,3150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>NCEF Portal · MCMC</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Ant Design 5 -->
+<link rel="stylesheet" href="https://unpkg.com/antd@5.12.8/dist/reset.css">
+
+<!-- Tokens -->
+<style>/* NCEF Design Tokens — evolved from existing frontend/src/styles/design-tokens.css */
+:root {
+  --color-primary: #0B4F91;
+  --color-primary-hover: #0A4783;
+  --color-primary-dark: #073863;
+  --color-primary-subtle: #E3F0FA;
+  --color-primary-soft: #F1F7FD;
+  --color-accent: #C62828;
+  --color-success: #1B7F48;
+  --color-success-bg: #E5F6EE;
+  --color-warning: #B87200;
+  --color-warning-bg: #FFF5E5;
+  --color-danger: #C62828;
+  --color-danger-bg: #FDEBEC;
+  --color-info: #0F6ABF;
+  --color-info-bg: #E6F2FC;
+  --color-bg-base: #F5F8FB;
+  --color-bg-subtle: #EDF2F7;
+  --color-bg-elevated: #FFFFFF;
+  --color-border: #D3DEE8;
+  --color-border-strong: #B4C2CF;
+  --color-divider: #E2E8F0;
+  --color-text-primary: #1B2833;
+  --color-text-secondary: #4A5B6B;
+  --color-text-muted: #6B7A89;
+  --color-text-inverse: #FFFFFF;
+  --color-link: #0B5FCC;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --elevation-1: 0 1px 2px rgba(10,40,80,0.06);
+  --elevation-2: 0 2px 8px rgba(10,40,80,0.08);
+  --elevation-3: 0 6px 20px rgba(10,40,80,0.12);
+
+  --font-body: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+
+  --header-gradient: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+}
+
+html, body, #root { margin: 0; padding: 0; min-height: 100%; }
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Status pills */
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 10px; font-size: 12px; font-weight: 600;
+  border-radius: 999px; letter-spacing: .2px;
+  border: 1px solid transparent;
+}
+.status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.status-pill.draft    { background: #EEF2F6; color: #5A6B7B; border-color: #D3DEE8; }
+.status-pill.review   { background: var(--color-info-bg); color: var(--color-info); border-color: #BCDAF2; }
+.status-pill.iteration{ background: var(--color-warning-bg); color: var(--color-warning); border-color: #F6D9A8; }
+.status-pill.approved { background: var(--color-success-bg); color: var(--color-success); border-color: #BEE5CF; }
+.status-pill.rejected { background: var(--color-danger-bg); color: var(--color-danger); border-color: #F2C4C5; }
+.status-pill.expired  { background: #EEF2F6; color: #4A5B6B; border-color: #C9D3DE; }
+.status-pill.priority { background: #FFF0E5; color: #B35A00; border-color: #F6CFA8; }
+
+/* Scheme badges */
+.scheme-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 8px; font-size: 11px; font-weight: 700; letter-spacing: .5px;
+  border-radius: 4px; text-transform: uppercase;
+}
+.scheme-badge.a { background: #FDEBEC; color: #B02020; }
+.scheme-badge.b { background: #FFF5E5; color: #B87200; }
+.scheme-badge.c { background: var(--color-success-bg); color: var(--color-success); }
+.scheme-badge.sa{ background: #EDE7F6; color: #5E35B1; }
+
+/* Scroll */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Ant overrides */
+.ant-btn-primary { background: var(--color-primary) !important; }
+.ant-btn-primary:hover:not(:disabled) { background: var(--color-primary-hover) !important; }
+.ant-menu-inline .ant-menu-item { border-radius: 8px !important; margin: 4px 8px !important; width: calc(100% - 16px) !important; }
+.ant-menu-inline .ant-menu-item-selected { background: var(--color-primary-subtle) !important; color: var(--color-primary) !important; font-weight: 600; }
+.ant-table-thead > tr > th { background: var(--color-bg-subtle) !important; font-weight: 600 !important; color: var(--color-text-secondary) !important; font-size: 12px !important; letter-spacing: .3px; text-transform: uppercase; }
+.ant-card { border-color: var(--color-border) !important; }
+.ant-steps-item-process .ant-steps-item-icon { background: var(--color-primary) !important; border-color: var(--color-primary) !important; }
+.ant-steps-item-finish .ant-steps-item-icon { border-color: var(--color-primary) !important; }
+.ant-steps-item-finish .ant-steps-item-icon > .ant-steps-icon { color: var(--color-primary) !important; }
+
+/* Compact density */
+.ncef-compact .ant-btn { height: 32px; }
+.ncef-compact .ant-card-body { padding: 16px; }
+
+/* Page headers */
+.page-header {
+  background: var(--color-bg-elevated);
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--color-divider);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.page-header h1 { font-size: 22px; font-weight: 600; margin: 0; color: var(--color-text-primary); }
+.page-header .crumb { font-size: 12px; color: var(--color-text-muted); margin-bottom: 4px; letter-spacing: .3px; text-transform: uppercase; }
+
+/* Subtle outline card */
+.outline-card {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+/* KPI card */
+.kpi-card {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  transition: all .2s;
+  cursor: pointer;
+}
+.kpi-card:hover { border-color: var(--color-primary); box-shadow: var(--elevation-2); }
+.kpi-card .kpi-label { font-size: 12px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .4px; font-weight: 600; }
+.kpi-card .kpi-value { font-size: 28px; font-weight: 700; color: var(--color-text-primary); line-height: 1.2; margin-top: 6px; }
+.kpi-card .kpi-delta { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
+
+/* Score gauge (CSS) */
+.score-gauge { position: relative; width: 120px; height: 120px; }
+.score-gauge .bg { fill: none; stroke: var(--color-bg-subtle); stroke-width: 10; }
+.score-gauge .fg { fill: none; stroke: var(--color-primary); stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+.score-gauge.success .fg { stroke: var(--color-success); }
+.score-gauge.warning .fg { stroke: var(--color-warning); }
+.score-gauge.danger  .fg { stroke: var(--color-danger); }
+
+/* Stepper pill bar */
+.wizard-pill-bar {
+  display: flex; gap: 4px; padding: 4px; background: var(--color-bg-subtle);
+  border-radius: 999px; width: fit-content;
+}
+.wizard-pill-bar .pill {
+  padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--color-text-muted);
+  border-radius: 999px; cursor: pointer; transition: all .15s;
+}
+.wizard-pill-bar .pill.active { background: var(--color-bg-elevated); color: var(--color-primary); box-shadow: var(--elevation-1); }
+.wizard-pill-bar .pill.done { color: var(--color-success); }
+
+/* Floating chatbot */
+.mina-fab {
+  position: fixed; bottom: 24px; right: 24px; z-index: 100;
+  width: 56px; height: 56px; border-radius: 28px;
+  background: var(--color-primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--elevation-3); cursor: pointer;
+  font-size: 22px; border: 3px solid #fff;
+  transition: all .2s;
+}
+.mina-fab:hover { transform: scale(1.05); background: var(--color-primary-hover); }
+.mina-fab .pulse { position: absolute; inset: -3px; border-radius: 28px; border: 2px solid var(--color-primary); animation: pulse 2s infinite; opacity: 0; }
+@keyframes pulse { 0% { opacity: .6; transform: scale(1); } 100% { opacity: 0; transform: scale(1.4); } }
+
+/* Doc tile */
+.doc-tile {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px;
+  background: var(--color-bg-elevated);
+  transition: all .15s;
+}
+.doc-tile:hover { border-color: var(--color-primary); background: var(--color-primary-soft); }
+.doc-tile .icon { width: 36px; height: 36px; border-radius: 6px; background: var(--color-primary-subtle); color: var(--color-primary); display: flex; align-items: center; justify-content: center; }
+
+/* Steps safety — prevent horizontal overflow on narrow viewports */
+.ant-steps-horizontal { flex-wrap: wrap; row-gap: 12px; }
+.ant-steps-item-title { font-size: 12px !important; white-space: nowrap; }
+.ant-steps-small.ant-steps-horizontal .ant-steps-item-title { line-height: 1.3 !important; }
+
+/* Officer split layout */
+.officer-split { display: grid; grid-template-columns: 1fr 380px; gap: 0; height: calc(100vh - 140px); }
+@media (max-width: 1280px) { .officer-split { grid-template-columns: 1fr; height: auto; } }
+</style>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/dayjs@1.11.10/dayjs.min.js"></script>
+<script src="https://unpkg.com/antd@5.12.8/dist/antd.min.js"></script>
+<script src="https://unpkg.com/@ant-design/icons@5.3.7/dist/index.umd.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+// Realistic Malaysian mock data for NCEF prototype
+window.MOCK = {
+  currentUser: {
+    name: 'Nurul Aisyah binti Ahmad',
+    role: 'supplier',
+    company: 'Axiata Digital Sdn Bhd',
+    supplierId: 'SUP-0426-00142',
+    email: 'nurul.aisyah@axiatadigital.com.my',
+  },
+  assessments: [
+    { id: 'APP-0426-00087', rcn: 'RCN-0326-00451', scheme: 'A', status: 'under_review', product: 'Samsung Galaxy S24 Ultra', brand: 'Samsung', model: 'SM-S928B', updated: '2026-04-18T10:30:00', submitted: '2026-04-15T14:20:00', aiScore: 87, officer: 'En. Faisal Rahman', priority: 'normal' },
+    { id: 'APP-0426-00088', rcn: null, scheme: 'B', status: 'draft', product: 'Huawei Mate 60 Pro', brand: 'Huawei', model: 'BRA-LX9', updated: '2026-04-17T09:15:00', aiScore: null, priority: 'normal' },
+    { id: 'APP-0426-00085', rcn: 'RCN-0326-00449', scheme: 'C', status: 'approved', product: 'Mi Band 9 Pro', brand: 'Xiaomi', model: 'M2320B1', updated: '2026-04-10T16:45:00', submitted: '2026-04-08T11:00:00', aiScore: 94, priority: 'normal' },
+    { id: 'APP-0426-00083', rcn: null, scheme: 'A', status: 'iteration_required', product: 'Apple Watch Ultra 3', brand: 'Apple', model: 'A3145', updated: '2026-04-09T13:20:00', submitted: '2026-04-05T10:15:00', aiScore: 62, priority: 'high', iterationDue: '2026-06-04' },
+    { id: 'APP-0426-00082', rcn: null, scheme: 'SA', status: 'rejected', product: 'Jammer Device (R&D)', brand: 'Unknown', model: 'JM-2024', updated: '2026-04-08T09:00:00', submitted: '2026-04-02T14:00:00', aiScore: 41, priority: 'critical' },
+    { id: 'APP-0426-00079', rcn: 'RCN-0326-00442', scheme: 'A', status: 'approved', product: 'OPPO Find X7 Ultra', brand: 'OPPO', model: 'CPH2583', updated: '2026-04-05T12:00:00', submitted: '2026-04-01T09:30:00', aiScore: 91, priority: 'normal' },
+  ],
+  officerQueue: [
+    { id: 'APP-0426-00087', scheme: 'A', applicant: 'Axiata Digital Sdn Bhd', product: 'Samsung Galaxy S24 Ultra', submitted: '2026-04-15T14:20:00', aiScore: 87, priority: 'normal', slaHours: 18, assignedTo: 'me' },
+    { id: 'APP-0426-00091', scheme: 'B', applicant: 'Celcom Axiata Berhad', product: 'HP LaserJet Pro MFP', submitted: '2026-04-16T11:05:00', aiScore: 78, priority: 'normal', slaHours: 36, assignedTo: 'me' },
+    { id: 'APP-0426-00092', scheme: 'C', applicant: 'TM Technology Services', product: 'Unifi Router AX3000', submitted: '2026-04-17T08:30:00', aiScore: 96, priority: 'low', slaHours: 60, assignedTo: 'me' },
+    { id: 'APP-0426-00094', scheme: 'SA', applicant: 'Maxis Broadband Sdn Bhd', product: '5G mmWave Test Unit', submitted: '2026-04-18T10:15:00', aiScore: 65, priority: 'high', slaHours: 8, assignedTo: 'unassigned' },
+    { id: 'APP-0426-00095', scheme: 'A', applicant: 'Digi Telecommunications', product: 'Ericsson AIR 6419', submitted: '2026-04-18T15:42:00', aiScore: 83, priority: 'normal', slaHours: 48, assignedTo: 'unassigned' },
+  ],
+  aiReasoning: [
+    { category: 'SSM/ROC/ROB Validation', score: 18, max: 20, note: 'BRN 201901023456 verified; entity active since 2019.', pass: true },
+    { category: 'Address & Director Match', score: 10, max: 10, note: 'Director (Tan Sri Dato\u2019 Sri Jamaludin Ibrahim) and address match SSM records.', pass: true },
+    { category: 'Completeness of Technical Specs', score: 13, max: 15, note: 'Output power (26 dBm) present but frequency band missing secondary range.', pass: false },
+    { category: 'Brand & Model Consistency', score: 10, max: 10, note: 'SM-S928B consistent across brochure, test report, and photos.', pass: true },
+    { category: 'Test Report & Lab Verification', score: 14, max: 15, note: 'SIRIM QAS (Accreditation #LM-15-004) report dated 2026-03-12.', pass: true },
+    { category: 'Standards Compliance', score: 8, max: 10, note: 'MCMC MTSFB TC G015:2022 \u2014 one clause marked "N/A" without justification.', pass: false },
+    { category: 'Supplier Past Performance', score: 9, max: 10, note: '47 prior approvals; 0 rejections in the last 24 months.', pass: true },
+    { category: 'Completeness & Consistency', score: 5, max: 10, note: '"Marketing Name" field left blank; permitted but may delay label registry.', pass: false },
+  ],
+  documents: [
+    { name: 'Company_Registration_SSM.pdf', type: 'Company Registration', size: '2.1 MB', ocrStatus: 'verified', uploaded: '2026-04-15T14:05:00' },
+    { name: 'Technical_Brochure_S24Ultra.pdf', type: 'Technical Brochure', size: '4.8 MB', ocrStatus: 'verified', uploaded: '2026-04-15T14:08:00' },
+    { name: 'Test_Report_SIRIM_2026.pdf', type: 'Test Report', size: '1.9 MB', ocrStatus: 'verified', uploaded: '2026-04-15T14:12:00' },
+    { name: 'Product_Photo_Front.jpg', type: 'Product Photo', size: '0.8 MB', ocrStatus: 'pending', uploaded: '2026-04-15T14:15:00' },
+    { name: 'Product_Photo_Back.jpg', type: 'Product Photo', size: '0.9 MB', ocrStatus: 'pending', uploaded: '2026-04-15T14:15:00' },
+    { name: 'Product_Photo_Label.jpg', type: 'Product Photo (Label)', size: '0.6 MB', ocrStatus: 'verified', uploaded: '2026-04-15T14:16:00' },
+  ],
+  kpi: {
+    supplier: { totalApps: 23, approved: 17, pending: 3, expiringSoon: 2 },
+    officer: { pending: 5, approvedToday: 8, rejectedToday: 1, avgTurnaround: 4.2 },
+  },
+  // Existing supplier directory (onboarding picker)
+  supplierDirectory: [
+    { id: 'SUP-0126-00087', name: 'Axiata Digital Sdn Bhd', brn: '201901023456', category: 'A', since: '2019-03-14', approvals: 47, active: true, address: 'Level 21, Axiata Tower, KL Sentral' },
+    { id: 'SUP-0322-00045', name: 'Celcom Axiata Berhad', brn: '199201015249', category: 'A', since: '2022-08-21', approvals: 32, active: true, address: 'Menara Celcom, Jalan Semangat, PJ' },
+    { id: 'SUP-0420-00012', name: 'Maxis Broadband Sdn Bhd', brn: '234582400900', category: 'A', since: '2020-01-07', approvals: 58, active: true, address: 'Menara Maxis, KLCC' },
+    { id: 'SUP-0621-00091', name: 'TM Technology Services', brn: '198401023456', category: 'A', since: '2021-06-15', approvals: 21, active: true, address: 'TM Tower, Jalan Pantai Baharu' },
+    { id: 'SUP-0823-00210', name: 'Digi Telecommunications', brn: '199701009694', category: 'A', since: '2023-09-04', approvals: 9, active: true, address: 'D\'House, Shah Alam' },
+    { id: 'SUP-0224-00142', name: 'Huawei Technologies (M) Sdn Bhd', brn: '200101020034', category: 'A', since: '2024-02-19', approvals: 14, active: true, address: 'Level 9, Quill 7 Tower, KL Sentral' },
+  ],
+  // Team members for current supplier account
+  teamMembers: [
+    { id: 1, name: 'Nurul Aisyah binti Ahmad', email: 'nurul.aisyah@axiatadigital.com.my', role: 'Administrator', status: 'active', lastActive: '2026-04-19T08:15:00', joined: '2024-01-15' },
+    { id: 2, name: 'Kamarul Ariffin bin Osman', email: 'kamarul.a@axiatadigital.com.my', role: 'PIC (Technical)', status: 'active', lastActive: '2026-04-18T16:40:00', joined: '2024-03-22' },
+    { id: 3, name: 'Lee Wei Ming', email: 'lee.wm@axiatadigital.com.my', role: 'Submitter', status: 'active', lastActive: '2026-04-17T11:20:00', joined: '2024-07-01' },
+    { id: 4, name: 'Siti Hajar Binti Mohd Nor', email: 'siti.h@axiatadigital.com.my', role: 'Finance', status: 'active', lastActive: '2026-04-15T09:00:00', joined: '2025-02-14' },
+    { id: 5, name: 'Rajesh Kumar a/l Muthu', email: 'rajesh.k@axiatadigital.com.my', role: 'Submitter', status: 'invited', lastActive: null, joined: '2026-04-14' },
+  ],
+  // Certificates
+  certificates: [
+    { rcn: 'RCN-0326-00449', app: 'APP-0426-00085', scheme: 'C', product: 'Mi Band 9 Pro', brand: 'Xiaomi', model: 'M2320B1', issued: '2026-04-10', expires: '2029-04-09', status: 'active', labelType: 'e-label' },
+    { rcn: 'RCN-0326-00442', app: 'APP-0426-00079', scheme: 'A', product: 'OPPO Find X7 Ultra', brand: 'OPPO', model: 'CPH2583', issued: '2026-04-05', expires: '2029-04-04', status: 'active', labelType: 'physical' },
+    { rcn: 'RCN-0125-00198', app: 'APP-0125-00198', scheme: 'A', product: 'Samsung Galaxy S23', brand: 'Samsung', model: 'SM-S911B', issued: '2025-01-18', expires: '2026-06-12', status: 'expiring', labelType: 'physical' },
+    { rcn: 'RCN-1124-00612', app: 'APP-1124-00612', scheme: 'B', product: 'Ericsson Router 6672', brand: 'Ericsson', model: 'KRY-901-6672', issued: '2024-11-02', expires: '2026-05-28', status: 'expiring', labelType: 'physical' },
+    { rcn: 'RCN-0823-00084', app: 'APP-0823-00084', scheme: 'C', product: 'TP-Link Archer AX73', brand: 'TP-Link', model: 'AX5400', issued: '2023-08-14', expires: '2026-08-13', status: 'active', labelType: 'e-label' },
+    { rcn: 'RCN-0722-00021', app: 'APP-0722-00021', scheme: 'A', product: 'Huawei P50 Pocket', brand: 'Huawei', model: 'BAL-L49', issued: '2022-07-05', expires: '2025-07-04', status: 'expired', labelType: 'physical' },
+  ],
+  // Payments
+  payments: [
+    { id: 'PAY-0426-00088', date: '2026-04-18', app: 'APP-0426-00087', method: 'FPX', amount: 1200, status: 'paid', invoice: 'INV-2026-0418-88' },
+    { id: 'PAY-0426-00079', date: '2026-04-01', app: 'APP-0426-00079', method: 'Corporate Invoice', amount: 1200, status: 'paid', invoice: 'INV-2026-0401-79' },
+    { id: 'PAY-0326-00055', date: '2026-03-14', app: 'APP-0326-00055', method: 'Card (Visa •• 4521)', amount: 600, status: 'paid', invoice: 'INV-2026-0314-55' },
+    { id: 'PAY-0226-00032', date: '2026-02-20', app: 'APP-0226-00032', method: 'FPX', amount: 2500, status: 'paid', invoice: 'INV-2026-0220-32' },
+    { id: 'PAY-0126-00018', date: '2026-01-09', app: 'APP-0126-00018', method: 'DuitNow QR', amount: 1200, status: 'paid', invoice: 'INV-2026-0109-18' },
+    { id: 'PAY-0426-00091', date: '2026-04-19', app: 'APP-0426-00091', method: 'Corporate Invoice', amount: 1800, status: 'pending', invoice: 'INV-2026-0419-91' },
+  ],
+  // Monthly application trend data (Jan–Apr 2026)
+  monthlyTrend: [
+    { month: 'Jan', submitted: 38, approved: 31, rejected: 3, aiAutoAccepted: 12 },
+    { month: 'Feb', submitted: 44, approved: 36, rejected: 4, aiAutoAccepted: 15 },
+    { month: 'Mar', submitted: 52, approved: 43, rejected: 5, aiAutoAccepted: 19 },
+    { month: 'Apr', submitted: 29, approved: 22, rejected: 1, aiAutoAccepted: 11 },
+  ],
+  // Officer performance
+  officerPerformance: [
+    { name: 'En. Faisal Rahman', id: 'OFF-001', approved: 48, rejected: 6, avgTurnaround: 4.2, slaCompliance: 96, aiOverrides: 3 },
+    { name: 'Pn. Rosnah Idris', id: 'OFF-002', approved: 41, rejected: 4, avgTurnaround: 5.8, slaCompliance: 92, aiOverrides: 7 },
+    { name: 'En. Syahrul Azlan', id: 'OFF-003', approved: 35, rejected: 8, avgTurnaround: 3.9, slaCompliance: 98, aiOverrides: 1 },
+  ],
+  // Top applicants by volume (for Reports screen)
+  topApplicants: [
+    { name: 'Axiata Digital Sdn Bhd', id: 'SUP-0126-00087', submissions: 23, approved: 19, aiAvg: 88 },
+    { name: 'Maxis Broadband Sdn Bhd', id: 'SUP-0420-00012', submissions: 18, approved: 15, aiAvg: 91 },
+    { name: 'Celcom Axiata Berhad', id: 'SUP-0322-00045', submissions: 14, approved: 12, aiAvg: 85 },
+    { name: 'TM Technology Services', id: 'SUP-0621-00091', submissions: 11, approved: 9, aiAvg: 79 },
+    { name: 'Digi Telecommunications', id: 'SUP-0823-00210', submissions: 8, approved: 7, aiAvg: 83 },
+  ],
+  // Audit log entries
+  auditLog: [
+    { id: 'AUD-20260419-001', ts: '2026-04-19T09:14:22', event: 'Certificate Issued', actor: 'En. Faisal Rahman', actorRole: 'Officer', appId: 'APP-0426-00079', detail: 'RCN-0326-00442 issued for OPPO Find X7 Ultra. Scheme A.', ip: '10.10.1.42' },
+    { id: 'AUD-20260419-002', ts: '2026-04-19T08:55:10', event: 'Application Approved', actor: 'En. Faisal Rahman', actorRole: 'Officer', appId: 'APP-0426-00079', detail: 'Decision: Approve. AI score 91/100. Certificate generation triggered.', ip: '10.10.1.42' },
+    { id: 'AUD-20260418-001', ts: '2026-04-18T16:20:05', event: 'User Login', actor: 'Nurul Aisyah binti Ahmad', actorRole: 'Supplier', appId: null, detail: 'Successful login from Chrome / macOS. MFA verified via Authenticator App.', ip: '115.164.32.88' },
+    { id: 'AUD-20260418-002', ts: '2026-04-18T14:32:00', event: 'Payment Received', actor: 'System', actorRole: 'System', appId: 'APP-0426-00087', detail: 'FPX payment RM 1,200.00 confirmed. Invoice INV-2026-0418-88 marked paid.', ip: '10.10.0.1' },
+    { id: 'AUD-20260418-003', ts: '2026-04-18T10:31:15', event: 'Application Opened for Review', actor: 'En. Faisal Rahman', actorRole: 'Officer', appId: 'APP-0426-00087', detail: 'Application assigned and opened in review console. SLA: 48 hours.', ip: '10.10.1.42' },
+    { id: 'AUD-20260415-001', ts: '2026-04-15T14:21:08', event: 'AI Validation Complete', actor: 'Qwen2.5-VL', actorRole: 'System', appId: 'APP-0426-00087', detail: 'AI confidence score: 87/100. 2 criteria flagged (frequency band, standards clause). Routed to priority queue.', ip: '10.10.0.5' },
+    { id: 'AUD-20260415-002', ts: '2026-04-15T14:20:44', event: 'Application Submitted', actor: 'Nurul Aisyah binti Ahmad', actorRole: 'Supplier', appId: 'APP-0426-00087', detail: 'SDoC application submitted. Scheme A. 6 documents attached. Payment RM 1,200 pending.', ip: '115.164.32.88' },
+    { id: 'AUD-20260409-001', ts: '2026-04-09T13:25:00', event: 'Iteration Requested', actor: 'En. Faisal Rahman', actorRole: 'Officer', appId: 'APP-0426-00083', detail: 'Issues: missing Wi-Fi 6E secondary band, MTSFB G015:2022 clause N/A without justification. Resubmit by 04 Jun 2026.', ip: '10.10.1.42' },
+    { id: 'AUD-20260408-001', ts: '2026-04-08T09:05:33', event: 'Application Rejected', actor: 'Pn. Rosnah Idris', actorRole: 'Officer', appId: 'APP-0426-00082', detail: 'Scheme SA prohibited equipment — jammer classification confirmed. Import not permitted for stated purpose.', ip: '10.10.1.55' },
+    { id: 'AUD-20260405-001', ts: '2026-04-05T12:01:00', event: 'Certificate Issued', actor: 'En. Syahrul Azlan', actorRole: 'Officer', appId: 'APP-0426-00079', detail: 'AI auto-accept eligible (score 91). Certificate RCN-0326-00442 issued without officer review (Scheme C threshold met).', ip: '10.10.1.61' },
+    { id: 'AUD-20260401-001', ts: '2026-04-01T09:32:15', event: 'Application Submitted', actor: 'Kamarul Ariffin bin Osman', actorRole: 'Supplier', appId: 'APP-0426-00079', detail: 'SDoC application submitted. Scheme A. OPPO Find X7 Ultra. 5 documents attached.', ip: '115.164.99.12' },
+    { id: 'AUD-20260320-001', ts: '2026-03-20T11:14:02', event: 'Data Export', actor: 'Nurul Aisyah binti Ahmad', actorRole: 'Supplier', appId: null, detail: 'Exported 12 certificate records as CSV. Filter: All active. IP logged per PDPA audit requirement.', ip: '115.164.32.88' },
+  ],
+};
+
+</script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+// Shared components: AI score visualisations, status pills, page shell
+const { Layout, Menu, Button, Avatar, Dropdown, Badge, Tag, Space, Typography, Breadcrumb, Input, Select, Tooltip, Progress, Card, Row, Col, Statistic, Table, Steps, Form, Upload, Modal, Drawer, Alert, Radio, Checkbox, DatePicker, Divider, List, Tabs, Empty, Segmented } = antd;
+const { Header, Sider, Content } = Layout;
+const { Title, Text, Paragraph } = Typography;
+const { TextArea } = Input;
+
+// --- STATUS PILL ---
+function StatusPill({ status }) {
+  const map = {
+    draft:              { cls: 'draft',     label: 'Draft' },
+    under_review:       { cls: 'review',    label: 'Under Review' },
+    submitted:          { cls: 'review',    label: 'Submitted' },
+    iteration_required: { cls: 'iteration', label: 'Iteration Required' },
+    approved:           { cls: 'approved',  label: 'Approved' },
+    rejected:           { cls: 'rejected',  label: 'Rejected' },
+    expired:            { cls: 'expired',   label: 'Expired' },
+    priority:           { cls: 'priority',  label: 'Priority Review' },
+  };
+  const s = map[status] || { cls: 'draft', label: status };
+  return <span className={`status-pill ${s.cls}`}><span className="dot" />{s.label}</span>;
+}
+
+function SchemeBadge({ scheme }) {
+  const cls = scheme?.toLowerCase();
+  const label = scheme === 'SA' ? 'Special Approval' : `Scheme ${scheme}`;
+  return <span className={`scheme-badge ${cls}`}>{label}</span>;
+}
+
+// --- AI SCORE (3 variants, controlled via viz prop) ---
+function AiScoreCard({ score, reasoning, viz = 'gauge', compact = false }) {
+  const tone = score >= 90 ? 'success' : score >= 70 ? 'warning' : 'danger';
+  const verdict = score >= 90 ? 'Auto-accept eligible' : score >= 70 ? 'Priority review' : 'Standard review';
+  const toneColor = { success: 'var(--color-success)', warning: 'var(--color-warning)', danger: 'var(--color-danger)' }[tone];
+  const [expanded, setExpanded] = React.useState(false);
+
+  const Header = (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: .5, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>AI Confidence Score</div>
+        <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 2 }}>Qwen2.5-VL · 8 criteria</div>
+      </div>
+      <Tag color={tone === 'success' ? 'green' : tone === 'warning' ? 'orange' : 'red'} style={{ margin: 0, fontWeight: 600 }}>{verdict}</Tag>
+    </div>
+  );
+
+  const Gauge = () => {
+    const r = 52, c = 2 * Math.PI * r;
+    return (
+      <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+        <svg className={`score-gauge ${tone}`} viewBox="0 0 120 120" width={120} height={120}>
+          <circle className="bg" cx="60" cy="60" r={r} />
+          <circle className="fg" cx="60" cy="60" r={r} strokeDasharray={c} strokeDashoffset={c * (1 - score / 100)} transform="rotate(-90 60 60)" />
+          <text x="60" y="58" textAnchor="middle" fontSize="28" fontWeight="700" fill="var(--color-text-primary)">{score}</text>
+          <text x="60" y="76" textAnchor="middle" fontSize="11" fill="var(--color-text-muted)">/ 100</text>
+        </svg>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>Verdict</div>
+          <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4, color: toneColor }}>{verdict}</div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 8 }}>
+            {tone === 'success' && 'Exceeds 90% threshold. Officer review optional for Scheme C.'}
+            {tone === 'warning' && '70–89% band. Routes to priority queue.'}
+            {tone === 'danger' && 'Below 70%. Standard officer review required.'}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const Bar = () => (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 36, fontWeight: 700, color: toneColor, lineHeight: 1 }}>{score}</span>
+        <span style={{ fontSize: 14, color: 'var(--color-text-muted)' }}>/ 100</span>
+        <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 600, color: toneColor }}>{verdict}</span>
+      </div>
+      <div style={{ position: 'relative', height: 10, background: 'var(--color-bg-subtle)', borderRadius: 999 }}>
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, var(--color-danger) 0%, var(--color-danger) 69%, var(--color-warning) 70%, var(--color-warning) 89%, var(--color-success) 90%, var(--color-success) 100%)`, opacity: .18, borderRadius: 999 }} />
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${score}%`, background: toneColor, borderRadius: 999, transition: 'width .8s' }} />
+        <div style={{ position: 'absolute', left: '70%', top: -4, bottom: -4, width: 1, background: 'var(--color-border-strong)' }} />
+        <div style={{ position: 'absolute', left: '90%', top: -4, bottom: -4, width: 1, background: 'var(--color-border-strong)' }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--color-text-muted)', marginTop: 4, fontWeight: 600 }}>
+        <span>0</span><span>70 priority</span><span>90 auto-accept</span><span>100</span>
+      </div>
+    </div>
+  );
+
+  const Verdict = () => (
+    <div style={{ textAlign: 'center', padding: '12px 0' }}>
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderRadius: 999, background: `${toneColor}15`, border: `1px solid ${toneColor}40` }}>
+        <span style={{ width: 10, height: 10, borderRadius: '50%', background: toneColor }} />
+        <span style={{ fontSize: 13, fontWeight: 700, color: toneColor, letterSpacing: .3 }}>{verdict.toUpperCase()}</span>
+      </div>
+      <div style={{ fontSize: 56, fontWeight: 800, color: toneColor, lineHeight: 1.1, marginTop: 12, fontFeatureSettings: '"tnum"' }}>{score}<span style={{ fontSize: 20, color: 'var(--color-text-muted)', fontWeight: 500 }}> / 100</span></div>
+      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>Generated 2 minutes ago · 8 criteria evaluated</div>
+    </div>
+  );
+
+  return (
+    <Card size="small" bordered style={{ borderColor: 'var(--color-border)' }}>
+      {Header}
+      <div style={{ marginTop: 16 }}>
+        {viz === 'gauge' && <Gauge />}
+        {viz === 'bar' && <Bar />}
+        {viz === 'verdict' && <Verdict />}
+      </div>
+      {!compact && (
+        <>
+          <Divider style={{ margin: '16px 0 12px' }} />
+          <Button type="link" size="small" style={{ padding: 0 }} onClick={() => setExpanded(!expanded)}>
+            {expanded ? 'Hide' : 'Show'} reasoning ({reasoning.length} criteria)
+          </Button>
+          {expanded && (
+            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {reasoning.map((r, i) => (
+                <div key={i} style={{ padding: 10, background: r.pass ? 'var(--color-success-bg)' : 'var(--color-warning-bg)', borderRadius: 8, borderLeft: `3px solid ${r.pass ? 'var(--color-success)' : 'var(--color-warning)'}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <span style={{ fontSize: 12, fontWeight: 600 }}>{r.category}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: r.pass ? 'var(--color-success)' : 'var(--color-warning)' }}>{r.score}/{r.max}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 4, lineHeight: 1.5 }}>{r.note}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
+Object.assign(window, { StatusPill, SchemeBadge, AiScoreCard });
+
+</script>
+<script type="text/babel">
+// Screens: Dashboard, Applications list, Onboarding, SDoC Wizard, Special Approval, Officer Review
+const SCREENS = {};
+
+// ============ DASHBOARD ============
+SCREENS.dashboard = function Dashboard({ nav, tweaks }) {
+  const k = MOCK.kpi.supplier;
+  const recent = MOCK.assessments.slice(0, 5);
+  const kpis = [
+    { label: 'Total Applications', value: k.totalApps, delta: '+3 this month', icon: '📋', to: 'applications' },
+    { label: 'Approved Certificates', value: k.approved, delta: '2 renewing in 30d', icon: '✓', to: 'applications' },
+    { label: 'Pending Action', value: k.pending, delta: '1 needs iteration', icon: '⚠', to: 'applications', warn: true },
+    { label: 'Expiring Soon', value: k.expiringSoon, delta: 'Within 90 days', icon: '⏰', to: 'applications' },
+  ];
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Supplier Dashboard · {MOCK.currentUser.supplierId}</div>
+        <Title level={2} style={{ margin: '4px 0 0', fontWeight: 600 }}>Selamat datang, {MOCK.currentUser.name.split(' ')[0]}</Title>
+        <Text type="secondary">Axiata Digital Sdn Bhd · Active supplier since Jan 2024</Text>
+      </div>
+
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        {kpis.map((kpi, i) => (
+          <Col xs={12} md={6} key={i}>
+            <div className="kpi-card" onClick={() => nav(kpi.to)}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div className="kpi-label">{kpi.label}</div>
+                  <div className="kpi-value" style={kpi.warn ? { color: 'var(--color-warning)' } : {}}>{kpi.value}</div>
+                  <div className="kpi-delta">{kpi.delta}</div>
+                </div>
+                <div style={{ fontSize: 20, opacity: .5 }}>{kpi.icon}</div>
+              </div>
+            </div>
+          </Col>
+        ))}
+      </Row>
+
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={16}>
+          <Card title="Recent Applications" extra={<Button type="link" onClick={() => nav('applications')}>View all →</Button>} bordered>
+            <List
+              dataSource={recent}
+              renderItem={(a) => (
+                <List.Item
+                  actions={[<StatusPill status={a.status} />, <Button type="link" size="small" onClick={() => nav('officer-review')}>Open</Button>]}
+                  style={{ padding: '12px 0' }}
+                >
+                  <List.Item.Meta
+                    title={<Space><SchemeBadge scheme={a.scheme} /><Text strong>{a.product}</Text></Space>}
+                    description={<Text type="secondary" style={{ fontSize: 12 }}>{a.id} · {a.brand} {a.model} · Updated {dayjs(a.updated).fromNow?.() || '2 days ago'}</Text>}
+                  />
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Quick Actions" bordered style={{ marginBottom: 16 }}>
+            <Space direction="vertical" style={{ width: '100%' }} size={8}>
+              <Button block type="primary" size="large" onClick={() => nav('sdoc-wizard')}>+ New SDoC Application</Button>
+              <Button block size="large" onClick={() => nav('special-approval')}>+ Special Approval</Button>
+              <Button block size="large" onClick={() => nav('imei-register')}>+ Register IMEI / SN</Button>
+              <Button block size="large" onClick={() => nav('cert-renewal')}>+ Certificate Renewal</Button>
+            </Space>
+          </Card>
+          <Card title="Notifications" bordered>
+            <List
+              size="small"
+              dataSource={[
+                { t: 'Application APP-0426-00083 requires iteration', d: '2 days ago', kind: 'warning' },
+                { t: 'Certificate RCN-0326-00430 expires in 45 days', d: '3 days ago', kind: 'info' },
+                { t: 'Payment received for APP-0426-00085', d: '1 week ago', kind: 'success' },
+              ]}
+              renderItem={(n) => (
+                <List.Item style={{ padding: '8px 0' }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 8, background: n.kind === 'warning' ? 'var(--color-warning)' : n.kind === 'success' ? 'var(--color-success)' : 'var(--color-info)' }} />
+                    <div>
+                      <div style={{ fontSize: 13 }}>{n.t}</div>
+                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{n.d}</div>
+                    </div>
+                  </div>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
+};
+
+// ============ APPLICATIONS LIST ============
+SCREENS.applications = function Applications({ nav }) {
+  const [filter, setFilter] = React.useState('all');
+  const all = MOCK.assessments;
+  const filtered = filter === 'all' ? all : all.filter(a => a.status === filter);
+  const cols = [
+    { title: 'App ID', dataIndex: 'id', render: (v) => <Text code style={{ fontSize: 12 }}>{v}</Text> },
+    { title: 'Scheme', dataIndex: 'scheme', render: (s) => <SchemeBadge scheme={s} /> },
+    { title: 'Product', render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.product}</div><div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.brand} · {r.model}</div></div> },
+    { title: 'AI Score', dataIndex: 'aiScore', render: (s) => s ? <Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600, margin: 0 }}>{s}</Tag> : <Text type="secondary">—</Text> },
+    { title: 'Status', dataIndex: 'status', render: (s) => <StatusPill status={s} /> },
+    { title: 'Updated', dataIndex: 'updated', render: (v) => <Text style={{ fontSize: 12 }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</Text> },
+    { title: '', render: (_, r) => <Button size="small" onClick={() => nav('officer-review')}>Open</Button> },
+  ];
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Applications</div>
+          <Title level={3} style={{ margin: '4px 0 0' }}>My Applications</Title>
+        </div>
+        <Space>
+          <Input.Search placeholder="Search by ID, product, model…" style={{ width: 280 }} />
+          <Button type="primary" onClick={() => nav('sdoc-wizard')}>+ New Application</Button>
+        </Space>
+      </div>
+      <Card bordered>
+        <Segmented
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { label: `All (${all.length})`, value: 'all' },
+            { label: `Draft (${all.filter(a => a.status === 'draft').length})`, value: 'draft' },
+            { label: `Under Review (${all.filter(a => a.status === 'under_review').length})`, value: 'under_review' },
+            { label: `Iteration (${all.filter(a => a.status === 'iteration_required').length})`, value: 'iteration_required' },
+            { label: `Approved (${all.filter(a => a.status === 'approved').length})`, value: 'approved' },
+            { label: `Rejected (${all.filter(a => a.status === 'rejected').length})`, value: 'rejected' },
+          ]}
+          style={{ marginBottom: 16 }}
+        />
+        <Table rowKey="id" columns={cols} dataSource={filtered} pagination={false} size="middle" />
+      </Card>
+    </div>
+  );
+};
+
+// ============ ONBOARDING ============
+SCREENS.onboarding = function Onboarding({ nav }) {
+  const [step, setStep] = React.useState(0);
+  const [category, setCategory] = React.useState('A');
+  const [supplierMode, setSupplierMode] = React.useState('new'); // 'new' | 'existing'
+  const [selectedSupplier, setSelectedSupplier] = React.useState(null);
+  const [supplierSearch, setSupplierSearch] = React.useState('');
+  const steps = ['Account', 'Verify Email', 'Category', 'Details', 'AI Validation', 'Confirmation'];
+  const cats = [
+    { k: 'A', t: 'Company (Commercial)', d: 'Registered Sdn Bhd or Bhd with active SSM BRN', icon: '🏢' },
+    { k: 'B', t: 'Individual (Non-Commercial)', d: 'Malaysian citizen or permanent resident with NRIC', icon: '👤' },
+    { k: 'C', t: 'Institution (Non-Commercial)', d: 'University, government agency, or registered NGO', icon: '🏛' },
+    { k: 'D', t: 'Consultant', d: 'Professional credentials + company affiliation', icon: '💼' },
+  ];
+  return (
+    <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Supplier Onboarding</div>
+        <Title level={3} style={{ margin: '4px 0 0' }}>Register as an NCEF Supplier</Title>
+      </div>
+      <div style={{ marginBottom: 32 }}>
+        <Steps current={step} size="small" labelPlacement="vertical" responsive items={steps.map(s => ({ title: s }))} />
+      </div>
+      <Card bordered>
+        {step === 0 && (
+          <Form layout="vertical" style={{ maxWidth: 520 }}>
+            <Title level={4}>Account Creation</Title>
+            <Text type="secondary">Your account is the portal for all MCMC submissions.</Text>
+            <Divider />
+            <Form.Item label="Full Name" required><Input placeholder="Nurul Aisyah binti Ahmad" /></Form.Item>
+            <Form.Item label="Email Address" required><Input placeholder="nurul@axiatadigital.com.my" /></Form.Item>
+            <Form.Item label="Phone Number" required><Input placeholder="+60 12-345 6789" /></Form.Item>
+            <Form.Item label="Password" required extra="Min 12 chars with upper, lower, digit, symbol"><Input.Password placeholder="••••••••••••" /></Form.Item>
+            <Form.Item><Checkbox>I accept the <a>Terms & Conditions</a> and <a>PDPA 2010</a> notice</Checkbox></Form.Item>
+          </Form>
+        )}
+        {step === 1 && (
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ fontSize: 48 }}>📧</div>
+            <Title level={4}>Check your email</Title>
+            <Text type="secondary">We sent a verification link to <b>nurul@axiatadigital.com.my</b>. Valid for 24 hours.</Text>
+            <div style={{ marginTop: 24 }}>
+              <Button type="link">Resend verification email</Button>
+            </div>
+          </div>
+        )}
+        {step === 2 && (
+          <div>
+            <Title level={4}>Select Application Category</Title>
+            <Text type="secondary">This determines required documents and workflow. You cannot change it later.</Text>
+            <Row gutter={[12, 12]} style={{ marginTop: 20 }}>
+              {cats.map(c => (
+                <Col xs={24} md={12} key={c.k}>
+                  <div onClick={() => setCategory(c.k)} style={{ padding: 18, border: `2px solid ${category === c.k ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 12, cursor: 'pointer', background: category === c.k ? 'var(--color-primary-soft)' : '#fff', transition: 'all .15s' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ fontSize: 28 }}>{c.icon}</div>
+                      <Tag color={category === c.k ? 'blue' : 'default'}>Category {c.k}</Tag>
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 600, marginTop: 12 }}>{c.t}</div>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>{c.d}</div>
+                  </div>
+                </Col>
+              ))}
+            </Row>
+          </div>
+        )}
+        {step === 3 && category === 'A' && (
+          <Form layout="vertical">
+            <Title level={4}>Company Information</Title>
+
+            {/* Supplier mode selector */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: 'var(--color-text-secondary)' }}>Is this company already registered in NCEF?</div>
+              <Radio.Group value={supplierMode} onChange={e => { setSupplierMode(e.target.value); setSelectedSupplier(null); setSupplierSearch(''); }} style={{ display: 'flex', gap: 10, width: '100%' }}>
+                <Radio value="new" style={{ flex: 1, padding: 14, border: `2px solid ${supplierMode === 'new' ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 10, margin: 0, background: supplierMode === 'new' ? 'var(--color-primary-soft)' : '#fff' }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>Register new supplier</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>First time registering this company with NCEF</div>
+                </Radio>
+                <Radio value="existing" style={{ flex: 1, padding: 14, border: `2px solid ${supplierMode === 'existing' ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 10, margin: 0, background: supplierMode === 'existing' ? 'var(--color-primary-soft)' : '#fff' }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>Join existing supplier</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>Company is already registered — add me as PIC / team member</div>
+                </Radio>
+              </Radio.Group>
+            </div>
+
+            {supplierMode === 'existing' && (
+              <div style={{ marginBottom: 20 }}>
+                <Form.Item label="Search registered suppliers" required extra="Search by company name or SSM BRN">
+                  <Select
+                    showSearch
+                    placeholder="e.g. Axiata Digital or 201901023456"
+                    filterOption={false}
+                    value={selectedSupplier?.id}
+                    onSearch={setSupplierSearch}
+                    onChange={(val) => setSelectedSupplier(MOCK.supplierDirectory.find(s => s.id === val))}
+                    style={{ width: '100%' }}
+                    options={MOCK.supplierDirectory
+                      .filter(s => !supplierSearch || (s.name + s.brn).toLowerCase().includes(supplierSearch.toLowerCase()))
+                      .map(s => ({
+                        value: s.id,
+                        label: (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
+                              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>BRN {s.brn} · {s.id} · Category {s.category}</div>
+                            </div>
+                            <Tag color="green" style={{ fontSize: 10, margin: 0 }}>{s.approvals} approvals</Tag>
+                          </div>
+                        ),
+                      }))}
+                  />
+                </Form.Item>
+                {selectedSupplier && (
+                  <div style={{ padding: 16, background: 'var(--color-primary-soft)', borderRadius: 10, border: '1px solid var(--color-primary)', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--color-primary)' }}>{selectedSupplier.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>{selectedSupplier.address}</div>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                          <Tag color="blue">Category {selectedSupplier.category}</Tag>
+                          <Tag>BRN {selectedSupplier.brn}</Tag>
+                          <Tag color="green">{selectedSupplier.approvals} prior approvals</Tag>
+                        </div>
+                      </div>
+                      <Tag color="green" style={{ fontWeight: 600 }}>SSM Verified</Tag>
+                    </div>
+                  </div>
+                )}
+                {selectedSupplier && (
+                  <>
+                    <Divider orientation="left" orientationMargin={0} style={{ fontSize: 13, marginTop: 20 }}>Your Details (PIC)</Divider>
+                    <Alert message="Company details are pre-filled from the existing registration. Please provide your personal contact details below." type="info" showIcon style={{ marginBottom: 16 }} />
+                    <Row gutter={16}>
+                      <Col span={12}><Form.Item label="Your Full Name" required><Input placeholder="Ahmad Razif bin Johari" /></Form.Item></Col>
+                      <Col span={12}><Form.Item label="Your NRIC" required><Input placeholder="890315-14-5678" /></Form.Item></Col>
+                      <Col span={12}><Form.Item label="Work Email" required><Input placeholder="razif@company.com.my" /></Form.Item></Col>
+                      <Col span={12}><Form.Item label="Work Phone" required><Input placeholder="+60 12-345 6789" /></Form.Item></Col>
+                      <Col span={24}><Form.Item label="Your Role in this Company" required><Select placeholder="Select…" options={[{value:'admin',label:'Administrator'},{value:'pic',label:'PIC (Technical)'},{value:'submitter',label:'Submitter'},{value:'finance',label:'Finance'}]} /></Form.Item></Col>
+                    </Row>
+                  </>
+                )}
+              </div>
+            )}
+
+            {supplierMode === 'new' && (
+              <>
+                <Alert message="SSM Auto-Fill" description="Enter your BRN and we'll verify and auto-populate via SSM API." type="info" showIcon style={{ marginBottom: 20 }} />
+                <Row gutter={16}>
+                  <Col span={12}><Form.Item label="Company Name" required><Input placeholder="Axiata Digital Sdn Bhd" /></Form.Item></Col>
+                  <Col span={12}><Form.Item label="SSM BRN" required extra="Format: 201901023456"><Input.Search placeholder="201901023456" enterButton="Verify" /></Form.Item></Col>
+                  <Col span={24}><Form.Item label="Business Address" required><Input.TextArea rows={2} placeholder="Level 21, Axiata Tower, No. 9 Jalan Stesen Sentral 5, Kuala Lumpur Sentral, 50470 Kuala Lumpur" /></Form.Item></Col>
+                  <Col span={12}><Form.Item label="Director Name" required><Input placeholder="Tan Sri Dato' Sri Jamaludin Ibrahim" /></Form.Item></Col>
+                  <Col span={12}><Form.Item label="Director NRIC" required><Input placeholder="590815-07-5237" /></Form.Item></Col>
+                  <Col span={12}><Form.Item label="Business Type" required><Select placeholder="Select…" options={[{value:'telecom',label:'Telecommunications'},{value:'electronics',label:'Consumer Electronics'},{value:'iot',label:'IoT / Connected Devices'}]} /></Form.Item></Col>
+                  <Col span={12}><Form.Item label="Contact Email" required><Input placeholder="compliance@axiatadigital.com.my" /></Form.Item></Col>
+                </Row>
+                <Divider>Required Documents</Divider>
+                <Upload.Dragger multiple>
+                  <p style={{ fontSize: 32, margin: 0 }}>📄</p>
+                  <p>Upload SSM certificate and Director NRIC copy (PDF/JPG/PNG, max 10MB each)</p>
+                </Upload.Dragger>
+              </>
+            )}
+          </Form>
+        )}
+        {step === 4 && (
+          <div>
+            <Title level={4}>AI Validation in Progress</Title>
+            <Text type="secondary">We're cross-checking your submission against SSM records, document OCR, and historical patterns.</Text>
+            <div style={{ marginTop: 24, display: 'grid', gap: 12 }}>
+              {['SSM BRN lookup', 'Document OCR extraction', 'Director identity match', 'Address verification', 'Confidence scoring'].map((l, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: 'var(--color-bg-subtle)', borderRadius: 8 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--color-success)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12 }}>✓</div>
+                  <div style={{ flex: 1, fontSize: 13 }}>{l}</div>
+                  <Text type="secondary" style={{ fontSize: 11 }}>Complete</Text>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 24 }}>
+              <AiScoreCard score={94} reasoning={MOCK.aiReasoning} viz="gauge" compact />
+            </div>
+          </div>
+        )}
+        {step === 5 && (
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ display: 'inline-flex', width: 72, height: 72, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 36, color: 'var(--color-success)' }}>✓</div>
+            <Title level={3} style={{ marginTop: 16 }}>Welcome to NCEF</Title>
+            <Text type="secondary">Your Supplier ID has been issued.</Text>
+            <div style={{ marginTop: 20, padding: 16, background: 'var(--color-primary-soft)', borderRadius: 12, display: 'inline-block' }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .5, fontWeight: 600 }}>Supplier ID</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--color-primary)', fontFamily: 'var(--font-mono)' }}>SUP-0426-00142</div>
+            </div>
+            <div style={{ marginTop: 28 }}>
+              <Button type="primary" size="large" onClick={() => nav('dashboard')}>Go to Dashboard →</Button>
+            </div>
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--color-divider)' }}>
+          <Button disabled={step === 0} onClick={() => setStep(step - 1)}>← Back</Button>
+          {step < steps.length - 1 && <Button type="primary" onClick={() => setStep(step + 1)}>Continue →</Button>}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+// ============ IMEI / SERIAL REGISTRATION ============
+SCREENS['imei-register'] = function ImeiRegister({ nav }) {
+  const [step, setStep] = React.useState(0);
+  const [selectedCert, setSelectedCert] = React.useState(null);
+  const [inputMode, setInputMode] = React.useState('manual');
+  const [serialText, setSerialText] = React.useState('');
+  const [validating, setValidating] = React.useState(false);
+  const [validationDone, setValidationDone] = React.useState(false);
+
+  const activeCerts = MOCK.certificates.filter(c => c.status === 'active');
+  const serials = serialText.split('\n').map(s => s.trim()).filter(Boolean);
+
+  const fakeValidation = [
+    { serial: 'IMEI-356789012345678', status: 'valid' },
+    { serial: 'IMEI-356789012345679', status: 'valid' },
+    { serial: 'IMEI-356789012345680', status: 'duplicate' },
+    { serial: 'SN-AXD2026-0001', status: 'valid' },
+    { serial: 'SN-AXD2026-0002', status: 'valid' },
+  ];
+
+  React.useEffect(() => {
+    if (step === 2 && !validationDone) {
+      setValidating(true);
+      const t = setTimeout(() => { setValidating(false); setValidationDone(true); }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [step]);
+
+  const steps = ['Select Certificate', 'Enter Serials', 'Validate', 'Confirm'];
+
+  return (
+    <div style={{ padding: 32, maxWidth: 860, margin: '0 auto' }}>
+      <Breadcrumb items={[{ title: <a onClick={() => nav('dashboard')}>Dashboard</a> }, { title: <a onClick={() => nav('certificates')}>Certificates</a> }, { title: 'Register IMEI / SN' }]} />
+      <div style={{ margin: '8px 0 24px' }}>
+        <Title level={3} style={{ margin: 0 }}>IMEI / Serial Number Registration</Title>
+        <Text type="secondary">Register device serials against an active certificate before distribution.</Text>
+      </div>
+      <div style={{ marginBottom: 28 }}>
+        <Steps current={step} size="small" labelPlacement="vertical" responsive items={steps.map(s => ({ title: s }))} />
+      </div>
+
+      <Card bordered>
+        {step === 0 && (
+          <div>
+            <Title level={4} style={{ marginTop: 0 }}>Select Certificate</Title>
+            <Text type="secondary">Choose which active RCN to register serials against.</Text>
+            <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
+              {activeCerts.map(c => (
+                <div
+                  key={c.rcn}
+                  onClick={() => setSelectedCert(c)}
+                  style={{ padding: 16, border: `2px solid ${selectedCert?.rcn === c.rcn ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 12, cursor: 'pointer', background: selectedCert?.rcn === c.rcn ? 'var(--color-primary-soft)' : '#fff', display: 'flex', gap: 16, alignItems: 'center' }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <SchemeBadge scheme={c.scheme} />
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>{c.product}</span>
+                      <Text type="secondary" style={{ fontSize: 12 }}>{c.brand} · {c.model}</Text>
+                    </div>
+                    <div style={{ marginTop: 6, display: 'flex', gap: 12 }}>
+                      <Text code style={{ fontSize: 11 }}>{c.rcn}</Text>
+                      <Text type="secondary" style={{ fontSize: 11 }}>Expires {new Date(c.expires).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                    </div>
+                  </div>
+                  {selectedCert?.rcn === c.rcn && <CheckCircleOutlined style={{ fontSize: 20, color: 'var(--color-primary)' }} />}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 1 && (
+          <div>
+            <Title level={4} style={{ marginTop: 0 }}>Enter Serial Numbers / IMEIs</Title>
+            {selectedCert && (
+              <Alert message={<span>Registering against <b>{selectedCert.rcn}</b> — {selectedCert.product}</span>} type="info" showIcon style={{ marginBottom: 20 }} />
+            )}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+              <Button type={inputMode === 'manual' ? 'primary' : 'default'} onClick={() => setInputMode('manual')}>Manual entry</Button>
+              <Button type={inputMode === 'csv' ? 'primary' : 'default'} onClick={() => setInputMode('csv')}>CSV upload</Button>
+            </div>
+            {inputMode === 'manual' && (
+              <div>
+                <Form.Item label="Serial Numbers / IMEIs" extra="One per line. IMEI (15 digits) or Serial Number (alphanumeric)." required>
+                  <Input.TextArea
+                    rows={10}
+                    placeholder={'IMEI-356789012345678\nIMEI-356789012345679\nSN-AXD2026-0001\nSN-AXD2026-0002'}
+                    value={serialText}
+                    onChange={e => setSerialText(e.target.value)}
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}
+                  />
+                </Form.Item>
+                <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                  <b>{serials.length}</b> serial(s) entered
+                </div>
+              </div>
+            )}
+            {inputMode === 'csv' && (
+              <Upload.Dragger accept=".csv,.txt" style={{ padding: 20 }}>
+                <p style={{ fontSize: 32, margin: 0 }}><UploadOutlined /></p>
+                <p style={{ fontSize: 14, fontWeight: 600, marginTop: 8 }}>Drop CSV file here or click to upload</p>
+                <p style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>One column of IMEIs or serial numbers, no header row. Max 10,000 rows.</p>
+              </Upload.Dragger>
+            )}
+          </div>
+        )}
+
+        {step === 2 && (
+          <div>
+            <Title level={4} style={{ marginTop: 0 }}>Validation Results</Title>
+            {validating && (
+              <Card bordered style={{ borderColor: 'var(--color-primary)', marginBottom: 20 }}>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 20, background: 'var(--color-primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ReloadOutlined style={{ fontSize: 20, color: 'var(--color-primary)', animation: 'spin 1s linear infinite' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>Checking for duplicates and format errors…</div>
+                    <Progress percent={65} status="active" showInfo={false} strokeColor="var(--color-primary)" style={{ marginTop: 8, width: 400 }} />
+                  </div>
+                </div>
+              </Card>
+            )}
+            {validationDone && (
+              <>
+                <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+                  <div style={{ padding: '10px 20px', background: 'var(--color-success-bg)', borderRadius: 8, textAlign: 'center' }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-success)' }}>4</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Valid</div>
+                  </div>
+                  <div style={{ padding: '10px 20px', background: 'var(--color-warning-bg)', borderRadius: 8, textAlign: 'center' }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-warning)' }}>1</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Duplicate</div>
+                  </div>
+                  <div style={{ padding: '10px 20px', background: 'var(--color-bg-subtle)', borderRadius: 8, textAlign: 'center' }}>
+                    <div style={{ fontSize: 22, fontWeight: 700 }}>0</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Invalid format</div>
+                  </div>
+                </div>
+                <Table
+                  rowKey="serial"
+                  dataSource={fakeValidation}
+                  pagination={false}
+                  size="small"
+                  columns={[
+                    { title: 'Serial / IMEI', dataIndex: 'serial', render: v => <Text code style={{ fontSize: 12 }}>{v}</Text> },
+                    { title: 'Status', dataIndex: 'status', render: s => s === 'valid'
+                      ? <Tag color="green" icon={<CheckCircleOutlined />}>Valid</Tag>
+                      : <Tag color="orange" icon={<WarningOutlined />}>Duplicate — already registered</Tag>
+                    },
+                  ]}
+                />
+                <Alert type="warning" showIcon style={{ marginTop: 16 }} message="1 duplicate will be skipped" description="4 valid serials will be registered. Duplicates are excluded automatically." />
+              </>
+            )}
+          </div>
+        )}
+
+        {step === 3 && (
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ display: 'inline-flex', width: 72, height: 72, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 36, color: 'var(--color-success)' }}>✓</div>
+            <Title level={3} style={{ marginTop: 16 }}>Registration Complete</Title>
+            <Text type="secondary">4 serial numbers registered against <b>{selectedCert?.rcn || 'RCN-0326-00449'}</b></Text>
+            <div style={{ marginTop: 24, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12, display: 'inline-block' }}>
+              <Row gutter={24}>
+                <Col>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Certificate</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)' }}>{selectedCert?.rcn || 'RCN-0326-00449'}</div>
+                </Col>
+                <Col>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Registered</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-success)' }}>4 serials</div>
+                </Col>
+                <Col>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Date</div>
+                  <div style={{ fontSize: 16, fontWeight: 700 }}>19 Apr 2026</div>
+                </Col>
+              </Row>
+            </div>
+            <div style={{ marginTop: 28, display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <Button size="large" icon={<DownloadOutlined />}>Download Receipt</Button>
+              <Button size="large" type="primary" onClick={() => nav('certificates')}>View Certificates</Button>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--color-divider)' }}>
+          <Button disabled={step === 0} onClick={() => setStep(step - 1)}>← Back</Button>
+          {step < steps.length - 1 && (
+            <Button type="primary" onClick={() => setStep(step + 1)} disabled={step === 0 && !selectedCert || step === 2 && validating}>
+              {step === 2 ? 'Register 4 Serials →' : 'Continue →'}
+            </Button>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+// ============ CERTIFICATE RENEWAL WIZARD ============
+SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
+  const [step, setStep] = React.useState(0);
+  const [selectedCert, setSelectedCert] = React.useState(MOCK.certificates.find(c => c.status === 'expiring') || MOCK.certificates[0]);
+  const [aiRunning, setAiRunning] = React.useState(false);
+  const [aiDone, setAiDone] = React.useState(false);
+  const [payMethod, setPayMethod] = React.useState('fpx');
+
+  const steps = ['Select Certificate', 'Review Documents', 'AI Re-validation', 'Payment', 'Confirmation'];
+  const expiringCerts = MOCK.certificates.filter(c => c.status === 'expiring' || c.status === 'active');
+  const feeMap = { A: 1200, B: 2500, C: 600, SA: 1200 };
+  const fee = feeMap[selectedCert?.scheme] || 1200;
+  const daysLeft = selectedCert ? Math.ceil((new Date(selectedCert.expires) - new Date('2026-04-19')) / 864e5) : 0;
+
+  React.useEffect(() => {
+    if (step === 2 && !aiDone) {
+      setAiRunning(true);
+      const t = setTimeout(() => { setAiRunning(false); setAiDone(true); }, 2400);
+      return () => clearTimeout(t);
+    }
+  }, [step]);
+
+  const docList = [
+    { label: 'Company Registration (SSM)', age: '2024-01-15', reuse: true, expired: false },
+    { label: 'Technical Brochure / Datasheet', age: '2026-03-10', reuse: true, expired: false },
+    { label: 'Test Report (accredited lab)', age: '2023-04-02', reuse: false, expired: true, note: 'Older than 3 years — must re-upload' },
+    { label: 'Product Photos (front, back, label)', age: '2026-03-10', reuse: true, expired: false },
+    { label: 'Declaration Letter', age: '2023-04-02', reuse: false, expired: true, note: 'Must be redated for renewal' },
+  ];
+
+  return (
+    <div style={{ padding: 32, maxWidth: 900, margin: '0 auto' }}>
+      <Breadcrumb items={[{ title: <a onClick={() => nav('dashboard')}>Dashboard</a> }, { title: <a onClick={() => nav('certificates')}>Certificates</a> }, { title: 'Renew Certificate' }]} />
+      <div style={{ margin: '8px 0 24px' }}>
+        <Title level={3} style={{ margin: 0 }}>Certificate Renewal</Title>
+        <Text type="secondary">Renew before expiry to avoid supply disruption. AI reuses most documents.</Text>
+      </div>
+      <div style={{ marginBottom: 28 }}>
+        <Steps current={step} size="small" labelPlacement="vertical" responsive items={steps.map(s => ({ title: s }))} />
+      </div>
+
+      <Card bordered>
+        {step === 0 && (
+          <div>
+            <Title level={4} style={{ marginTop: 0 }}>Select Certificate to Renew</Title>
+            <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
+              {expiringCerts.map(c => {
+                const days = Math.ceil((new Date(c.expires) - new Date('2026-04-19')) / 864e5);
+                return (
+                  <div
+                    key={c.rcn}
+                    onClick={() => setSelectedCert(c)}
+                    style={{ padding: 16, border: `2px solid ${selectedCert?.rcn === c.rcn ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 12, cursor: 'pointer', background: selectedCert?.rcn === c.rcn ? 'var(--color-primary-soft)' : '#fff', display: 'flex', gap: 16, alignItems: 'center' }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        <SchemeBadge scheme={c.scheme} />
+                        <span style={{ fontWeight: 600 }}>{c.product}</span>
+                        <Text type="secondary" style={{ fontSize: 12 }}>{c.brand} · {c.model}</Text>
+                      </div>
+                      <div style={{ marginTop: 6, display: 'flex', gap: 12 }}>
+                        <Text code style={{ fontSize: 11 }}>{c.rcn}</Text>
+                        <Text style={{ fontSize: 11, color: days < 90 ? 'var(--color-warning)' : 'var(--color-text-muted)', fontWeight: days < 90 ? 600 : 400 }}>
+                          Expires {new Date(c.expires).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} {days < 90 && `(${days} days left)`}
+                        </Text>
+                      </div>
+                    </div>
+                    {days < 90 && <Tag color="orange" icon={<ClockCircleOutlined />}>Expiring Soon</Tag>}
+                    {selectedCert?.rcn === c.rcn && <CheckCircleOutlined style={{ fontSize: 20, color: 'var(--color-primary)' }} />}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {step === 1 && (
+          <div>
+            <Title level={4} style={{ marginTop: 0 }}>Review Documents</Title>
+            {selectedCert && daysLeft < 90 && (
+              <Alert type="warning" showIcon message={`Certificate expires in ${daysLeft} days`} description="Documents older than 3 years or undated declarations must be re-uploaded. All others can be reused." style={{ marginBottom: 20 }} />
+            )}
+            <div style={{ display: 'grid', gap: 10 }}>
+              {docList.map((d, i) => (
+                <div key={i} className="doc-tile" style={{ padding: 14, background: d.expired ? 'var(--color-warning-bg)' : '#fff', borderColor: d.expired ? 'var(--color-warning)' : 'var(--color-border)' }}>
+                  <div className="icon" style={{ background: d.expired ? 'var(--color-warning-bg)' : 'var(--color-primary-subtle)', color: d.expired ? 'var(--color-warning)' : 'var(--color-primary)' }}>
+                    <FilePdfOutlined />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{d.label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>Last uploaded {d.age} {d.note && <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>· {d.note}</span>}</div>
+                  </div>
+                  {d.reuse && !d.expired && <Tag color="green" icon={<CheckCircleOutlined />}>Reusing</Tag>}
+                  {d.expired && (
+                    <Upload>
+                      <Button size="small" type="primary">Re-upload</Button>
+                    </Upload>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 16, padding: 12, background: 'var(--color-primary-soft)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-secondary)' }}>
+              <b>3 of 5</b> documents reused from original submission · <b>2</b> require re-upload
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div style={{ maxWidth: 780 }}>
+            {aiRunning && (
+              <Card bordered style={{ borderColor: 'var(--color-primary)', marginBottom: 20 }}>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 24, background: 'var(--color-primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <RobotOutlined style={{ fontSize: 24, color: 'var(--color-primary)' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600 }}>Re-validating updated documents…</div>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>Cross-referencing new test report, updated declarations, prior approval history</div>
+                    <Progress percent={55} status="active" showInfo={false} strokeColor="var(--color-primary)" style={{ marginTop: 10 }} />
+                  </div>
+                </div>
+              </Card>
+            )}
+            {aiDone && (
+              <>
+                <AiScoreCard score={92} reasoning={MOCK.aiReasoning} viz="bar" />
+                <Alert type="success" showIcon style={{ marginTop: 16 }} message="Score improved to 92 — auto-accept eligible" description="Updated test report resolved the previous frequency band flag. Renewal can proceed without officer review." />
+              </>
+            )}
+          </div>
+        )}
+
+        {step === 3 && (
+          <div style={{ maxWidth: 520 }}>
+            <Card bordered>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Renewal Fee</div>
+              <div style={{ fontSize: 36, fontWeight: 700 }}>RM {fee.toLocaleString('en-MY')}.00</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 20 }}>Scheme {selectedCert?.scheme} renewal · {selectedCert?.rcn} · Includes 8% SST</div>
+              <Divider />
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Payment Method</div>
+              <Radio.Group value={payMethod} onChange={e => setPayMethod(e.target.value)} style={{ display: 'grid', gap: 8, width: '100%' }}>
+                {[
+                  { v: 'fpx', t: 'FPX Online Banking', d: 'Malaysia Electronic Payment System' },
+                  { v: 'card', t: 'Credit / Debit Card', d: 'Visa, Mastercard, American Express' },
+                  { v: 'duitnow', t: 'DuitNow QR', d: 'Scan with any participating bank app' },
+                  { v: 'invoice', t: 'Corporate Invoice', d: '30-day terms · Pre-approved accounts only' },
+                ].map(m => (
+                  <Radio key={m.v} value={m.v} style={{ padding: 14, border: `1px solid ${payMethod === m.v ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 8, margin: 0, background: payMethod === m.v ? 'var(--color-primary-soft)' : '#fff', width: '100%' }}>
+                    <div style={{ display: 'inline-block' }}>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{m.t}</div>
+                      <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{m.d}</div>
+                    </div>
+                  </Radio>
+                ))}
+              </Radio.Group>
+            </Card>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'var(--color-success)' }}>✓</div>
+            <Title level={3} style={{ marginTop: 16 }}>Certificate Renewed</Title>
+            <Text type="secondary">Payment received. New certificate issued automatically (AI score ≥90).</Text>
+            <div style={{ marginTop: 24, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12, display: 'inline-block' }}>
+              <Row gutter={24}>
+                <Col>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>New RCN</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)' }}>{selectedCert?.rcn?.replace(/\d{4}-\d{5}$/, '0426-00501') || 'RCN-0426-00501'}</div>
+                </Col>
+                <Col>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>New Expiry</div>
+                  <div style={{ fontSize: 18, fontWeight: 700 }}>19 Apr 2029</div>
+                </Col>
+              </Row>
+            </div>
+            <div style={{ marginTop: 28, display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <Button size="large" icon={<DownloadOutlined />}>Download Certificate PDF</Button>
+              <Button size="large" type="primary" onClick={() => nav('certificates')}>View Certificates</Button>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--color-divider)' }}>
+          <Button disabled={step === 0} onClick={() => setStep(step - 1)}>← Back</Button>
+          {step < steps.length - 1 && (
+            <Button type="primary" size="large" onClick={() => setStep(step + 1)} disabled={step === 2 && aiRunning}>
+              {step === 3 ? `Pay RM ${fee.toLocaleString('en-MY')} →` : 'Continue →'}
+            </Button>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+Object.assign(window, { SCREENS });
+
+</script>
+<script type="text/babel">
+// Screens: SDoC Wizard (Scheme A/B/C), Special Approval, Officer Review
+
+// ============ SDoC WIZARD ============
+SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
+  const [scheme, setScheme] = React.useState('A');
+  const [step, setStep] = React.useState(0);
+  const [aiRunning, setAiRunning] = React.useState(false);
+  const [aiDone, setAiDone] = React.useState(false);
+  const [form] = Form.useForm();
+
+  const steps = [
+    { k: 'scheme', t: 'Scheme' },
+    { k: 'product', t: 'Product' },
+    { k: 'docs', t: 'Documents' },
+    { k: 'ai', t: 'AI Validation' },
+    { k: 'review', t: 'Review' },
+    { k: 'pay', t: 'Payment' },
+    { k: 'confirm', t: 'Confirm' },
+  ];
+
+  React.useEffect(() => {
+    if (step === 3 && !aiDone) {
+      setAiRunning(true);
+      const t = setTimeout(() => { setAiRunning(false); setAiDone(true); }, 2400);
+      return () => clearTimeout(t);
+    }
+  }, [step]);
+
+  const schemes = [
+    { k: 'A', t: 'Scheme A', sub: 'Generic Certification', d: 'Most consumer devices — radio/telecom equipment with standard compliance profile.', fee: 'RM 1,200', sla: '3 working days', ai: 'Standard AI review (≥70 priority, ≥90 auto-accept eligible)' },
+    { k: 'B', t: 'Scheme B', sub: 'Specific Certification', d: 'Equipment requiring detailed technical review (non-standard parameters, custom modulation).', fee: 'RM 2,500', sla: '5 working days', ai: 'Enhanced AI review + mandatory officer verification' },
+    { k: 'C', t: 'Scheme C', sub: 'Self-Declaration (SDoC)', d: 'Low-risk equipment under a manufacturer conformity declaration.', fee: 'RM 600', sla: '1 working day', ai: 'AI auto-accept path enabled at ≥90 confidence' },
+  ];
+
+  const Sidebar = () => (
+    <div style={{ width: 280, padding: 24, borderRight: '1px solid var(--color-divider)', background: 'var(--color-bg-elevated)', minHeight: '100%' }}>
+      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 4 }}>SDoC Application</div>
+      <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 24 }}>Scheme {scheme} · Draft</div>
+      {tweaks.wizardPattern === 'vertical' && (
+        <div>
+          {steps.map((s, i) => (
+            <div key={s.k} onClick={() => i < step && setStep(i)} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '8px 0', cursor: i < step ? 'pointer' : 'default', opacity: i > step ? .5 : 1 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid', borderColor: i === step ? 'var(--color-primary)' : i < step ? 'var(--color-success)' : 'var(--color-border)', background: i < step ? 'var(--color-success)' : i === step ? 'var(--color-primary)' : '#fff', color: i <= step ? '#fff' : 'var(--color-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600 }}>{i < step ? '✓' : i + 1}</div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3 }}>Step {i + 1}</div>
+                <div style={{ fontSize: 13, fontWeight: i === step ? 600 : 500 }}>{s.t}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <Divider />
+      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700 }}>Application ID</div>
+      <div style={{ fontSize: 14, fontFamily: 'var(--font-mono)', color: 'var(--color-text-secondary)', marginTop: 2 }}>APP-0426-00088</div>
+      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginTop: 16 }}>Auto-saved</div>
+      <div style={{ fontSize: 12, color: 'var(--color-success)', marginTop: 2 }}>✓ 3 seconds ago</div>
+      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginTop: 16 }}>Support</div>
+      <Button type="link" size="small" style={{ padding: 0 }}>Ask MINA assistant</Button>
+    </div>
+  );
+
+  const TopBar = () => (
+    <div style={{ padding: '20px 32px', background: 'var(--color-bg-elevated)', borderBottom: '1px solid var(--color-divider)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: tweaks.wizardPattern === 'horizontal' ? 20 : 0 }}>
+        <div>
+          <Breadcrumb items={[{ title: <a onClick={() => nav('dashboard')}>Dashboard</a> }, { title: <a onClick={() => nav('applications')}>Applications</a> }, { title: 'New SDoC' }]} />
+          <Title level={3} style={{ margin: '6px 0 0' }}>{steps[step].t}</Title>
+        </div>
+        <Space>
+          <Button>Save draft</Button>
+          <Button danger type="text">Cancel</Button>
+        </Space>
+      </div>
+      {tweaks.wizardPattern === 'horizontal' && (
+        <Steps current={step} size="small" labelPlacement="vertical" responsive items={steps.map(s => ({ title: s.t }))} />
+      )}
+      {tweaks.wizardPattern === 'pill' && (
+        <div className="wizard-pill-bar" style={{ marginTop: 16 }}>
+          {steps.map((s, i) => (
+            <div key={s.k} className={`pill ${i === step ? 'active' : ''} ${i < step ? 'done' : ''}`} onClick={() => i <= step && setStep(i)}>
+              {i < step ? '✓ ' : `${i + 1}. `}{s.t}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const SchemeStep = () => (
+    <div style={{ maxWidth: 900 }}>
+      <Alert type="info" showIcon message="Your product suggests Scheme A based on radio equipment profile" description="Our AI reviewed your uploaded datasheet and matched it to MCMC MTSFB TC G015:2022 category." style={{ marginBottom: 20 }} />
+      <Row gutter={16}>
+        {schemes.map(s => (
+          <Col xs={24} md={8} key={s.k}>
+            <div onClick={() => setScheme(s.k)} style={{ padding: 20, border: `2px solid ${scheme === s.k ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 12, cursor: 'pointer', background: scheme === s.k ? 'var(--color-primary-soft)' : '#fff', height: '100%', position: 'relative' }}>
+              {s.k === 'A' && <div style={{ position: 'absolute', top: -10, right: 14, fontSize: 10, fontWeight: 700, padding: '2px 8px', background: 'var(--color-warning)', color: '#fff', borderRadius: 4, letterSpacing: .5 }}>SUGGESTED</div>}
+              <SchemeBadge scheme={s.k} />
+              <div style={{ fontSize: 18, fontWeight: 600, marginTop: 10 }}>{s.t}</div>
+              <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 500 }}>{s.sub}</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 10, lineHeight: 1.5 }}>{s.d}</div>
+              <Divider style={{ margin: '14px 0' }} />
+              <div style={{ fontSize: 12, display: 'grid', gap: 6 }}>
+                <div><b>Fee:</b> <span style={{ color: 'var(--color-text-secondary)' }}>{s.fee}</span></div>
+                <div><b>SLA:</b> <span style={{ color: 'var(--color-text-secondary)' }}>{s.sla}</span></div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>{s.ai}</div>
+              </div>
+            </div>
+          </Col>
+        ))}
+      </Row>
+    </div>
+  );
+
+  const ProductStep = () => (
+    <Form form={form} layout="vertical" style={{ maxWidth: 780 }}>
+      <Row gutter={16}>
+        <Col span={12}><Form.Item label="Brand" required><Input placeholder="Samsung" /></Form.Item></Col>
+        <Col span={12}><Form.Item label="Model / Part Number" required><Input placeholder="SM-S928B" /></Form.Item></Col>
+        <Col span={24}><Form.Item label="Marketing Name" extra="Optional — helps label registry"><Input placeholder="Galaxy S24 Ultra" /></Form.Item></Col>
+        <Col span={12}><Form.Item label="Product Category" required><Select placeholder="Select…" options={[{value:'mobile',label:'Mobile Phone / Smartphone'},{value:'wifi',label:'Wi-Fi / WLAN Device'},{value:'bt',label:'Bluetooth Device'},{value:'iot',label:'IoT / Connected Device'},{value:'network',label:'Network Equipment'}]} /></Form.Item></Col>
+        <Col span={12}><Form.Item label="Country of Origin" required><Select placeholder="Select…" showSearch options={[{value:'vn',label:'Vietnam'},{value:'cn',label:'China'},{value:'kr',label:'Korea, Republic of'},{value:'th',label:'Thailand'}]} /></Form.Item></Col>
+        <Col span={24}>
+          <Divider orientation="left" orientationMargin={0} style={{ fontSize: 14 }}>Technical Parameters</Divider>
+        </Col>
+        <Col span={8}><Form.Item label="Frequency Band (MHz)" required><Input placeholder="2400–2483.5" /></Form.Item></Col>
+        <Col span={8}><Form.Item label="Max Output Power (dBm)" required><Input placeholder="26" /></Form.Item></Col>
+        <Col span={8}><Form.Item label="Antenna Gain (dBi)" required><Input placeholder="3.5" /></Form.Item></Col>
+        <Col span={8}><Form.Item label="Modulation"><Input placeholder="OFDMA, 256-QAM" /></Form.Item></Col>
+        <Col span={8}><Form.Item label="Channel Bandwidth (MHz)"><Input placeholder="20 / 40 / 80 / 160" /></Form.Item></Col>
+        <Col span={8}><Form.Item label="Supply Voltage (V)"><Input placeholder="5 DC / 3.7 Li-ion" /></Form.Item></Col>
+        <Col span={24}><Form.Item label="Intended Use"><TextArea rows={3} placeholder="Consumer smartphone sold through authorised retail channels in Malaysia." /></Form.Item></Col>
+      </Row>
+    </Form>
+  );
+
+  const DocsStep = () => (
+    <div style={{ maxWidth: 780 }}>
+      <Alert message="AI will extract and cross-check data from your uploads" description="Upload clear, non-redacted copies. OCR will populate fields automatically; you can review before submission." type="info" showIcon style={{ marginBottom: 20 }} />
+      <div style={{ display: 'grid', gap: 12 }}>
+        {[
+          { k: 'reg', label: 'Company Registration (SSM)', req: true, status: 'verified', file: 'Company_Registration_SSM.pdf' },
+          { k: 'bro', label: 'Technical Brochure / Datasheet', req: true, status: 'verified', file: 'Technical_Brochure_S24Ultra.pdf' },
+          { k: 'test', label: 'Test Report (accredited lab)', req: true, status: 'verified', file: 'Test_Report_SIRIM_2026.pdf' },
+          { k: 'photo', label: 'Product Photos (front, back, label)', req: true, status: 'pending', file: '3 files uploaded' },
+          { k: 'decl', label: 'Declaration Letter', req: true, status: 'upload' },
+          { k: 'coc', label: 'CE / FCC Certificate (foreign)', req: false, status: 'upload' },
+        ].map(d => (
+          <div key={d.k} className="doc-tile" style={{ padding: 14 }}>
+            <div className="icon">📄</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{d.label} {d.req && <Tag color="red" style={{ fontSize: 10, margin: '0 0 0 6px' }}>Required</Tag>}</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>{d.file || 'Not uploaded'}</div>
+            </div>
+            {d.status === 'verified' && <Tag color="green" icon="✓">OCR Verified</Tag>}
+            {d.status === 'pending' && <Tag color="orange">Analysing…</Tag>}
+            {d.status === 'upload' && <Upload><Button size="small">+ Upload</Button></Upload>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const AIStep = () => (
+    <div style={{ maxWidth: 780 }}>
+      {aiRunning && (
+        <Card bordered style={{ borderColor: 'var(--color-primary)', marginBottom: 20 }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 24, background: 'var(--color-primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>🤖</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>Qwen2.5-VL analysing your submission…</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>Cross-referencing SSM, OCR data, historical patterns, and compliance standards</div>
+              <Progress percent={70} status="active" showInfo={false} strokeColor="var(--color-primary)" style={{ marginTop: 10 }} />
+            </div>
+          </div>
+        </Card>
+      )}
+      {aiDone && (
+        <>
+          <AiScoreCard score={87} reasoning={MOCK.aiReasoning} viz={tweaks.aiViz} />
+          <Alert type="warning" showIcon style={{ marginTop: 16 }} message="2 criteria flagged for officer review" description="Your score of 87 is above the 70 priority threshold but below the 90 auto-accept threshold. Submission will route to priority officer queue with ~2 day turnaround." />
+        </>
+      )}
+    </div>
+  );
+
+  const ReviewStep = () => (
+    <div style={{ maxWidth: 900 }}>
+      <Row gutter={16}>
+        <Col span={16}>
+          <Card title="Product Summary" size="small" bordered style={{ marginBottom: 12 }}>
+            <Row gutter={[16, 12]}>
+              {[
+                ['Scheme', <SchemeBadge scheme={scheme} />],
+                ['Brand', 'Samsung'],
+                ['Model', 'SM-S928B'],
+                ['Marketing Name', 'Galaxy S24 Ultra'],
+                ['Category', 'Mobile Phone / Smartphone'],
+                ['Country of Origin', 'Vietnam'],
+                ['Frequency Band', '2400–2483.5 MHz'],
+                ['Max Output Power', '26 dBm'],
+              ].map(([k, v], i) => (
+                <Col span={12} key={i}>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>{k}</div>
+                  <div style={{ fontSize: 13, fontWeight: 500, marginTop: 2 }}>{v}</div>
+                </Col>
+              ))}
+            </Row>
+          </Card>
+          <Card title="Documents (6)" size="small" bordered>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {MOCK.documents.map((d, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 13 }}>
+                  <span>📄</span>
+                  <span style={{ flex: 1 }}>{d.name}</span>
+                  <Text type="secondary" style={{ fontSize: 11 }}>{d.size}</Text>
+                  <Tag color={d.ocrStatus === 'verified' ? 'green' : 'orange'} style={{ fontSize: 10, margin: 0 }}>{d.ocrStatus === 'verified' ? '✓ Verified' : 'Pending'}</Tag>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Col>
+        <Col span={8}>
+          <AiScoreCard score={87} reasoning={MOCK.aiReasoning} viz="bar" compact />
+          <Card size="small" bordered style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Fee Summary</div>
+            <div style={{ fontSize: 32, fontWeight: 700, marginTop: 4 }}>RM 1,200</div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Scheme A base fee (incl. 8% SST)</div>
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
+
+  const PayStep = () => (
+    <div style={{ maxWidth: 560 }}>
+      <Card bordered>
+        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Amount Due</div>
+        <div style={{ fontSize: 36, fontWeight: 700 }}>RM 1,200.00</div>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 20 }}>Scheme A · APP-0426-00088 · Includes 8% SST</div>
+        <Divider />
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Payment Method</div>
+        <Radio.Group defaultValue="fpx" style={{ display: 'grid', gap: 8, width: '100%' }}>
+          {[
+            { v: 'fpx', t: 'FPX Online Banking', d: 'Malaysia Electronic Payment System' },
+            { v: 'card', t: 'Credit / Debit Card', d: 'Visa, Mastercard, American Express' },
+            { v: 'duitnow', t: 'DuitNow QR', d: 'Scan with any participating bank app' },
+            { v: 'invoice', t: 'Corporate Invoice', d: '30-day terms · Pre-approved accounts only' },
+          ].map(m => (
+            <Radio key={m.v} value={m.v} style={{ padding: 14, border: '1px solid var(--color-border)', borderRadius: 8, margin: 0, width: '100%' }}>
+              <div style={{ display: 'inline-block' }}>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{m.t}</div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{m.d}</div>
+              </div>
+            </Radio>
+          ))}
+        </Radio.Group>
+      </Card>
+    </div>
+  );
+
+  const ConfirmStep = () => (
+    <div style={{ textAlign: 'center', padding: '40px 20px', maxWidth: 560, margin: '0 auto' }}>
+      <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'var(--color-success)' }}>✓</div>
+      <Title level={3} style={{ marginTop: 16 }}>Application Submitted</Title>
+      <Text type="secondary">Payment received. Your application is in the priority review queue.</Text>
+      <div style={{ marginTop: 24, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12 }}>
+        <Row gutter={16}>
+          <Col span={12}>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Application ID</div>
+            <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)' }}>APP-0426-00088</div>
+          </Col>
+          <Col span={12}>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Expected Decision</div>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>22 Apr 2026</div>
+          </Col>
+        </Row>
+      </div>
+      <Space style={{ marginTop: 28 }}>
+        <Button size="large" onClick={() => nav('applications')}>View My Applications</Button>
+        <Button size="large" type="primary" onClick={() => nav('dashboard')}>Go to Dashboard</Button>
+      </Space>
+    </div>
+  );
+
+  const StepBody = [SchemeStep, ProductStep, DocsStep, AIStep, ReviewStep, PayStep, ConfirmStep][step];
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100%' }}>
+      {tweaks.wizardPattern === 'vertical' && <Sidebar />}
+      <div style={{ flex: 1 }}>
+        <TopBar />
+        <div style={{ padding: 32 }}>
+          <StepBody />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32, paddingTop: 20, borderTop: '1px solid var(--color-divider)', maxWidth: 900 }}>
+            <Button disabled={step === 0} onClick={() => setStep(step - 1)}>← Back</Button>
+            {step < steps.length - 1 && (
+              <Button type="primary" size="large" onClick={() => setStep(step + 1)} disabled={step === 3 && aiRunning}>
+                {step === 4 ? 'Proceed to Payment →' : step === 5 ? 'Pay RM 1,200 →' : 'Continue →'}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============ SPECIAL APPROVAL ============
+SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
+  const [step, setStep] = React.useState(0);
+  const [purpose, setPurpose] = React.useState(null);
+  const [isProhibited, setIsProhibited] = React.useState(false);
+  const [mcmcApproved, setMcmcApproved] = React.useState(null);
+
+  const purposes = [
+    { k: 'rd', t: 'Research & Development', d: 'Internal prototype testing, lab evaluation, non-commercial R&D', prohibited: false },
+    { k: 'demo', t: 'Demonstration / Exhibition', d: 'Trade show, conference demo — limited duration and venue', prohibited: false },
+    { k: 'personal', t: 'Personal Use', d: 'Individual importing one unit for non-commercial use', prohibited: false },
+    { k: 'prohibited', t: 'Prohibited Equipment (R&D only)', d: 'Jammers, scanners, SDR transmitters — requires MCMC head approval', prohibited: true },
+  ];
+
+  const steps = ['Purpose', 'Equipment', 'Details', 'Documents', 'Declaration', 'Confirm'];
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1100, margin: '0 auto' }}>
+      <Breadcrumb items={[{ title: <a onClick={() => nav('dashboard')}>Dashboard</a> }, { title: 'Special Approval' }]} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', margin: '8px 0 24px' }}>
+        <div>
+          <Title level={3} style={{ margin: 0 }}>Special Approval Application</Title>
+          <Text type="secondary">Communications & Multimedia Act 1998 · Section 126</Text>
+        </div>
+        <Tag color="purple" style={{ fontWeight: 600 }}>SCHEME SA</Tag>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <Steps current={step} size="small" labelPlacement="vertical" responsive items={steps.map(s => ({ title: s }))} />
+      </div>
+
+      <Card bordered>
+        {step === 0 && (
+          <div>
+            <Title level={4} style={{ marginTop: 0 }}>What is the purpose of this equipment?</Title>
+            <Text type="secondary">Select one. Prohibited-equipment R&D involves an additional multi-level escalation workflow.</Text>
+            <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
+              {purposes.map(p => (
+                <div key={p.k} onClick={() => { setPurpose(p.k); setIsProhibited(p.prohibited); }} style={{ padding: 16, border: `2px solid ${purpose === p.k ? (p.prohibited ? 'var(--color-danger)' : 'var(--color-primary)') : 'var(--color-border)'}`, borderRadius: 12, cursor: 'pointer', background: purpose === p.k ? (p.prohibited ? 'var(--color-danger-bg)' : 'var(--color-primary-soft)') : '#fff', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                  <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid', borderColor: purpose === p.k ? (p.prohibited ? 'var(--color-danger)' : 'var(--color-primary)') : 'var(--color-border-strong)', background: purpose === p.k ? (p.prohibited ? 'var(--color-danger)' : 'var(--color-primary)') : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, flexShrink: 0, marginTop: 2 }}>{purpose === p.k && '✓'}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{p.t} {p.prohibited && <Tag color="red" style={{ marginLeft: 6, fontSize: 10 }}>RESTRICTED</Tag>}</div>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>{p.d}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {step === 1 && (
+          <div>
+            <Title level={4} style={{ marginTop: 0 }}>Equipment Classification</Title>
+            <Text type="secondary">Help us identify the correct review path.</Text>
+            {isProhibited && (
+              <Alert
+                type="error"
+                showIcon
+                style={{ marginTop: 16 }}
+                message="Prohibited Equipment Disclosure"
+                description={
+                  <>
+                    <p style={{ margin: 0 }}>Prohibited equipment (radio jammers, SDR transmitters operating outside licensed bands, receivers that intercept private communications) is restricted under the Communications & Multimedia Act 1998.</p>
+                    <p style={{ margin: '8px 0 0' }}>Import for R&D purposes requires <b>sequential approval</b> from: (1) the assigned officer, (2) the Head of Certification, (3) the Director General of MCMC.</p>
+                  </>
+                }
+              />
+            )}
+            <Form layout="vertical" style={{ marginTop: 24, maxWidth: 600 }}>
+              <Form.Item label="Equipment Type" required>
+                <Select placeholder="Select…" options={[
+                  { value: 'jammer', label: 'Radio Frequency Jammer' },
+                  { value: 'sdr', label: 'Software Defined Radio (unlicensed bands)' },
+                  { value: 'scanner', label: 'Wideband Receiver / Scanner' },
+                  { value: 'custom', label: 'Custom RF Device (specify)' },
+                ]} />
+              </Form.Item>
+              <Form.Item label="Is the equipment from an MCMC pre-approved vendor?" required>
+                <Radio.Group onChange={e => setMcmcApproved(e.target.value)}>
+                  <Radio value="yes">Yes — from list</Radio>
+                  <Radio value="no">No</Radio>
+                  <Radio value="unknown">Unknown</Radio>
+                </Radio.Group>
+              </Form.Item>
+              {mcmcApproved === 'no' && (
+                <Alert type="warning" showIcon message="Non-listed vendor" description="Additional vendor due-diligence documentation required in the next step." />
+              )}
+            </Form>
+          </div>
+        )}
+        {step === 2 && (
+          <Form layout="vertical">
+            <Title level={4} style={{ marginTop: 0 }}>Equipment & Research Details</Title>
+            <Row gutter={16}>
+              <Col span={12}><Form.Item label="Manufacturer" required><Input placeholder="Keysight Technologies" /></Form.Item></Col>
+              <Col span={12}><Form.Item label="Model" required><Input placeholder="N5182B MXG" /></Form.Item></Col>
+              <Col span={12}><Form.Item label="Quantity" required><Input type="number" placeholder="1" /></Form.Item></Col>
+              <Col span={12}><Form.Item label="Frequency Range" required><Input placeholder="100 kHz – 6 GHz" /></Form.Item></Col>
+              <Col span={12}><Form.Item label="Import Date" required><DatePicker style={{ width: '100%' }} /></Form.Item></Col>
+              <Col span={12}><Form.Item label="Intended Duration in Malaysia" required><Select options={[{value:'3m',label:'3 months'},{value:'6m',label:'6 months'},{value:'1y',label:'1 year'},{value:'2y',label:'2 years'}]} /></Form.Item></Col>
+              <Col span={24}><Form.Item label="Research Purpose (detailed)" required><TextArea rows={4} placeholder="We intend to evaluate 5G mmWave transmission characteristics in a shielded anechoic chamber at our KL Sentral R&D lab…" /></Form.Item></Col>
+              <Col span={24}><Form.Item label="Operating Location" required><Input placeholder="Shielded Lab 3F, Axiata R&D Centre, Cyberjaya" /></Form.Item></Col>
+              <Col span={24}><Form.Item label="Responsible Engineer / PI" required><Input placeholder="Dr. Siti Hajar binti Mohd Nor (PhD, MIET)" /></Form.Item></Col>
+            </Row>
+          </Form>
+        )}
+        {step === 3 && (
+          <div>
+            <Title level={4} style={{ marginTop: 0 }}>Required Documents</Title>
+            <Text type="secondary">All special-approval submissions require these attachments. {isProhibited && <b>Prohibited-equipment R&D requires an additional Ministry sponsorship letter.</b>}</Text>
+            <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
+              {[
+                { t: 'Letter of Justification (Company Letterhead)', req: true },
+                { t: 'Equipment Specification / Datasheet', req: true },
+                { t: 'Import Permit Application', req: true },
+                { t: 'Safety & Shielding Assessment', req: true },
+                { t: 'Proof of Lab Accreditation', req: true },
+                ...(isProhibited ? [{ t: 'Ministry of Science, Technology & Innovation (MOSTI) Sponsorship Letter', req: true, extra: 'Prohibited equipment only' }] : []),
+                { t: 'MCMC Pre-approval Ticket (if applicable)', req: false },
+              ].map((d, i) => (
+                <div key={i} className="doc-tile">
+                  <div className="icon">📄</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{d.t} {d.req && <Tag color="red" style={{ fontSize: 10, margin: '0 0 0 6px' }}>Required</Tag>}</div>
+                    {d.extra && <div style={{ fontSize: 11, color: 'var(--color-danger)', marginTop: 2 }}>{d.extra}</div>}
+                  </div>
+                  <Upload><Button size="small">+ Upload</Button></Upload>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {step === 4 && (
+          <div>
+            <Title level={4} style={{ marginTop: 0 }}>Declaration & Undertaking</Title>
+            {isProhibited && (
+              <Alert type="warning" showIcon message="Multi-level approval notice" style={{ marginBottom: 16 }}
+                description={
+                  <div>
+                    Your application will route sequentially through:
+                    <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      {['Officer (CPPG)', 'Head of Certification', 'Director General MCMC'].map((p, i, arr) => (
+                        <React.Fragment key={i}>
+                          <Tag color="purple" style={{ padding: '4px 10px', fontWeight: 600 }}>{p}</Tag>
+                          {i < arr.length - 1 && <span style={{ color: 'var(--color-text-muted)' }}>→</span>}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: 10, fontSize: 12 }}>Expected decision time: 10–15 working days</div>
+                  </div>
+                }
+              />
+            )}
+            <div style={{ display: 'grid', gap: 14, maxWidth: 760 }}>
+              {[
+                'I declare the information provided is true and accurate to the best of my knowledge.',
+                'I understand misrepresentation is an offence under the CMA 1998 and may result in prosecution.',
+                'I agree not to use the equipment outside the declared purpose, location, or duration.',
+                'I will surrender the equipment to MCMC upon completion of the approved activity.',
+                ...(isProhibited ? ['I accept that prohibited equipment may not be transferred, sold, or exhibited to any third party without explicit written MCMC approval.'] : []),
+              ].map((t, i) => (
+                <Checkbox key={i} style={{ fontSize: 13, lineHeight: 1.6 }}>{t}</Checkbox>
+              ))}
+            </div>
+            <Divider />
+            <Form.Item label="Digital signature (full name)" required style={{ maxWidth: 400 }}>
+              <Input placeholder="Dr. Siti Hajar binti Mohd Nor" />
+            </Form.Item>
+          </div>
+        )}
+        {step === 5 && (
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: isProhibited ? '#EDE7F6' : 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: isProhibited ? '#5E35B1' : 'var(--color-success)' }}>{isProhibited ? '⏳' : '✓'}</div>
+            <Title level={3} style={{ marginTop: 16 }}>Special Approval Submitted</Title>
+            <Text type="secondary">{isProhibited ? 'Routed to multi-level approval queue' : 'Routed to CPPG officer for review'}</Text>
+            <div style={{ marginTop: 24, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12, display: 'inline-block' }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Application ID</div>
+              <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)' }}>APP-SA-0426-00012</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 8 }}>Expected decision: {isProhibited ? '10–15 working days' : '3–5 working days'}</div>
+            </div>
+            <div style={{ marginTop: 28 }}>
+              <Button size="large" type="primary" onClick={() => nav('applications')}>View My Applications</Button>
+            </div>
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--color-divider)' }}>
+          <Button disabled={step === 0} onClick={() => setStep(step - 1)}>← Back</Button>
+          {step < steps.length - 1 && <Button type="primary" onClick={() => setStep(step + 1)}>Continue →</Button>}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+// ============ OFFICER REVIEW SPLIT VIEW ============
+SCREENS['officer-review'] = function OfficerReview({ nav, tweaks }) {
+  const [decision, setDecision] = React.useState(null);
+  const [iterMsg, setIterMsg] = React.useState('');
+  const [showDocViewer, setShowDocViewer] = React.useState(false);
+  const [activeDoc, setActiveDoc] = React.useState(null);
+  const a = MOCK.assessments[0];
+
+  return (
+    <div>
+      <div style={{ padding: '16px 32px', background: 'var(--color-bg-elevated)', borderBottom: '1px solid var(--color-divider)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <Breadcrumb items={[{ title: <a onClick={() => nav('applications')}>Queue</a> }, { title: <span style={{ fontFamily: 'var(--font-mono)' }}>{a.id}</span> }]} />
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6 }}>
+            <SchemeBadge scheme={a.scheme} />
+            <span style={{ fontSize: 18, fontWeight: 600 }}>{a.product}</span>
+            <Text type="secondary">· {a.brand} {a.model}</Text>
+            <StatusPill status={a.status} />
+          </div>
+        </div>
+        <Space>
+          <Tooltip title="Previous in queue"><Button icon="←">Prev</Button></Tooltip>
+          <Tooltip title="Next in queue"><Button icon="→">Next</Button></Tooltip>
+          <Button>Reassign</Button>
+          <Button type="text" danger>Flag</Button>
+        </Space>
+      </div>
+
+      <div className="officer-split">
+        {/* LEFT: Document viewer */}
+        <div style={{ padding: 24, overflow: 'auto', background: 'var(--color-bg-base)' }}>
+          <Tabs
+            defaultActiveKey="docs"
+            items={[
+              {
+                key: 'docs',
+                label: 'Documents (6)',
+                children: (
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    {MOCK.documents.map((d, i) => (
+                      <div key={i} className="doc-tile" onClick={() => { setActiveDoc(d); setShowDocViewer(true); }} style={{ cursor: 'pointer' }}>
+                        <div className="icon">📄</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>{d.name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{d.type} · {d.size}</div>
+                        </div>
+                        {d.ocrStatus === 'verified' && <Tag color="green" style={{ fontSize: 10, margin: 0 }}>✓ OCR Verified</Tag>}
+                        {d.ocrStatus === 'pending' && <Tag color="orange" style={{ fontSize: 10, margin: 0 }}>Pending</Tag>}
+                      </div>
+                    ))}
+                  </div>
+                ),
+              },
+              {
+                key: 'fields',
+                label: 'Extracted Fields',
+                children: (
+                  <Card bordered>
+                    <Row gutter={[16, 16]}>
+                      {[
+                        ['Brand', 'Samsung', 'verified'],
+                        ['Model / PN', 'SM-S928B', 'verified'],
+                        ['Marketing Name', '— (blank)', 'warn'],
+                        ['Frequency Band', '2400–2483.5 MHz', 'verified'],
+                        ['Max Output Power', '26 dBm', 'verified'],
+                        ['Antenna Gain', '3.5 dBi', 'verified'],
+                        ['Modulation', 'OFDMA, 256-QAM', 'verified'],
+                        ['Test Lab', 'SIRIM QAS (#LM-15-004)', 'verified'],
+                        ['Standards', 'MCMC MTSFB TC G015:2022', 'warn'],
+                        ['Country of Origin', 'Vietnam', 'verified'],
+                      ].map(([k, v, s], i) => (
+                        <Col span={12} key={i}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: 10, background: s === 'warn' ? 'var(--color-warning-bg)' : 'var(--color-bg-subtle)', borderRadius: 6 }}>
+                            <div>
+                              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>{k}</div>
+                              <div style={{ fontSize: 13, fontWeight: 500, marginTop: 2 }}>{v}</div>
+                            </div>
+                            {s === 'verified' ? <Tag color="green" style={{ fontSize: 10, margin: 0 }}>✓</Tag> : <Tag color="orange" style={{ fontSize: 10, margin: 0 }}>!</Tag>}
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
+                  </Card>
+                ),
+              },
+              {
+                key: 'audit',
+                label: 'Audit Trail',
+                children: (
+                  <Card bordered>
+                    <List
+                      size="small"
+                      dataSource={[
+                        { t: 'Application submitted', u: 'Nurul Aisyah (SUP-0426-00142)', d: '15 Apr 2026, 14:20', icon: '📤' },
+                        { t: 'AI validation complete (score 87)', u: 'Qwen2.5-VL', d: '15 Apr 2026, 14:21', icon: '🤖' },
+                        { t: 'Auto-assigned to En. Faisal', u: 'NCEF Router', d: '15 Apr 2026, 14:21', icon: '➡️' },
+                        { t: 'Opened for review', u: 'En. Faisal Rahman', d: '18 Apr 2026, 10:30', icon: '👁' },
+                      ]}
+                      renderItem={e => (
+                        <List.Item style={{ padding: '10px 0' }}>
+                          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                            <div style={{ fontSize: 16 }}>{e.icon}</div>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 500 }}>{e.t}</div>
+                              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{e.u} · {e.d}</div>
+                            </div>
+                          </div>
+                        </List.Item>
+                      )}
+                    />
+                  </Card>
+                ),
+              },
+            ]}
+          />
+        </div>
+
+        {/* RIGHT: Decision panel */}
+        <div style={{ padding: 24, background: 'var(--color-bg-elevated)', borderLeft: '1px solid var(--color-divider)', overflow: 'auto' }}>
+          <AiScoreCard score={a.aiScore} reasoning={MOCK.aiReasoning} viz={tweaks.aiViz} />
+
+          <Divider />
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 10 }}>Applicant</div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 }}>
+            <Avatar style={{ background: 'var(--color-primary)' }}>A</Avatar>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>Axiata Digital Sdn Bhd</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>SUP-0426-00142 · 47 approvals · 0 rejections</div>
+            </div>
+          </div>
+
+          <Divider />
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 10 }}>Decision</div>
+          <Radio.Group value={decision} onChange={e => setDecision(e.target.value)} style={{ width: '100%', display: 'grid', gap: 8 }}>
+            {[
+              { v: 'approve', t: 'Approve', d: 'Issue certificate (RCN)', color: 'var(--color-success)' },
+              { v: 'iterate', t: 'Request Iteration', d: 'Return to applicant for amendment', color: 'var(--color-warning)' },
+              { v: 'reject', t: 'Reject', d: 'Close application with documented reason', color: 'var(--color-danger)' },
+            ].map(o => (
+              <Radio key={o.v} value={o.v} style={{ padding: 10, border: `1px solid ${decision === o.v ? o.color : 'var(--color-border)'}`, borderRadius: 8, margin: 0, background: decision === o.v ? `${o.color}10` : '#fff' }}>
+                <span style={{ display: 'inline-block' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: decision === o.v ? o.color : 'inherit' }}>{o.t}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{o.d}</div>
+                </span>
+              </Radio>
+            ))}
+          </Radio.Group>
+
+          {decision === 'iterate' && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 8 }}>Iteration Request</div>
+              <Select
+                placeholder="Select templates (multi)…"
+                mode="multiple"
+                style={{ width: '100%' }}
+                options={[
+                  { value: 'band', label: 'Frequency band — missing secondary range' },
+                  { value: 'clause', label: 'Standards — unjustified N/A clause' },
+                  { value: 'name', label: 'Marketing name blank' },
+                ]}
+              />
+              <TextArea value={iterMsg} onChange={e => setIterMsg(e.target.value)} rows={4} placeholder="Additional notes to applicant…" style={{ marginTop: 8 }} />
+              <DatePicker placeholder="Resubmission deadline" style={{ width: '100%', marginTop: 8 }} />
+            </div>
+          )}
+          {decision === 'reject' && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 8 }}>Rejection Reason</div>
+              <Select placeholder="Primary reason…" style={{ width: '100%' }} options={[{ value: 'specs', label: 'Technical specifications do not meet standards' }, { value: 'docs', label: 'Documents insufficient / not authentic' }, { value: 'fraud', label: 'Suspected misrepresentation' }]} />
+              <TextArea rows={4} placeholder="Detailed rationale (included in notification)…" style={{ marginTop: 8 }} />
+            </div>
+          )}
+          {decision === 'approve' && (
+            <Alert type="success" showIcon style={{ marginTop: 16 }} message="Certificate will be issued on submit" description="RCN will be auto-generated and emailed to the applicant with the AI-signed certificate PDF." />
+          )}
+
+          <div style={{ marginTop: 24, display: 'grid', gap: 8 }}>
+            <Button type="primary" size="large" block disabled={!decision} onClick={() => alert('Decision submitted')}>Submit Decision</Button>
+            <Button block>Save draft</Button>
+          </div>
+
+          <Divider />
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 10 }}>SLA</div>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <Progress type="circle" size={60} percent={62} strokeColor="var(--color-warning)" />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>18 hrs remaining</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Scheme A · 48 hr SLA</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Drawer title={activeDoc?.name} open={showDocViewer} onClose={() => setShowDocViewer(false)} width={720}>
+        <div style={{ background: 'var(--color-bg-subtle)', borderRadius: 8, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
+          [Preview placeholder — PDF/image viewer would render here]
+        </div>
+        <Divider>OCR Extraction</Divider>
+        <List
+          size="small"
+          dataSource={[
+            'Model: SM-S928B ✓',
+            'Frequency: 2400–2483.5 MHz ✓',
+            'Max Power: 26 dBm ✓',
+            'Test Lab: SIRIM QAS (#LM-15-004) ✓',
+          ]}
+          renderItem={i => <List.Item>{i}</List.Item>}
+        />
+      </Drawer>
+    </div>
+  );
+};
+
+Object.assign(window, { SCREENS });
+
+</script>
+<script type="text/babel">
+// Supplier screens: Certificates, Payments, Profile & Settings
+const {
+  DashboardOutlined, UnorderedListOutlined, PlusOutlined, StarOutlined, TeamOutlined,
+  SafetyCertificateOutlined, DollarOutlined, FlagOutlined, EyeOutlined, FileSearchOutlined,
+  BarChartOutlined, AuditOutlined, BellOutlined, MenuOutlined, SearchOutlined, UserOutlined,
+  SettingOutlined, LogoutOutlined, QuestionCircleOutlined, GlobalOutlined, RobotOutlined,
+  FileTextOutlined, FilePdfOutlined, FileImageOutlined, CheckCircleOutlined, ClockCircleOutlined,
+  WarningOutlined, CloseCircleOutlined, InfoCircleOutlined, DownloadOutlined, UploadOutlined,
+  EditOutlined, DeleteOutlined, MailOutlined, PhoneOutlined, LockOutlined, ShopOutlined,
+  CreditCardOutlined, BankOutlined, QrcodeOutlined, ArrowLeftOutlined, ArrowRightOutlined,
+  SendOutlined, PaperClipOutlined, ReloadOutlined, IdcardOutlined, ExclamationCircleOutlined,
+  LeftOutlined, RightOutlined, PlusCircleOutlined, MoreOutlined, HistoryOutlined, KeyOutlined,
+  ApartmentOutlined, ContainerOutlined, WalletOutlined, RiseOutlined, SafetyOutlined,
+  CopyOutlined, PrinterOutlined, ScanOutlined, CheckOutlined, CaretDownOutlined
+} = window.icons;
+
+// ============ CERTIFICATES ============
+SCREENS.certificates = function Certificates({ nav }) {
+  const [filter, setFilter] = React.useState('all');
+  const [q, setQ] = React.useState('');
+  const [selected, setSelected] = React.useState(null);
+  const certs = MOCK.certificates;
+  const filtered = certs
+    .filter(c => filter === 'all' || c.status === filter)
+    .filter(c => !q || (c.product + c.rcn + c.model + c.brand).toLowerCase().includes(q.toLowerCase()));
+
+  const statusTag = (s) => {
+    if (s === 'active') return <antd.Tag color="green" icon={<CheckCircleOutlined />}>Active</antd.Tag>;
+    if (s === 'expiring') return <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Expiring Soon</antd.Tag>;
+    return <antd.Tag color="default" icon={<CloseCircleOutlined />}>Expired</antd.Tag>;
+  };
+
+  const kpis = [
+    { l: 'Active Certificates', v: certs.filter(c => c.status === 'active').length, icon: <SafetyCertificateOutlined />, color: 'var(--color-success)' },
+    { l: 'Expiring in 90 days', v: certs.filter(c => c.status === 'expiring').length, icon: <ClockCircleOutlined />, color: 'var(--color-warning)', warn: true },
+    { l: 'Expired', v: certs.filter(c => c.status === 'expired').length, icon: <CloseCircleOutlined />, color: 'var(--color-text-muted)' },
+    { l: 'Total Issued', v: certs.length, icon: <ContainerOutlined />, color: 'var(--color-primary)' },
+  ];
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Certificates</div>
+          <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>My Certificates</antd.Typography.Title>
+          <antd.Typography.Text type="secondary">Registered Compliance Numbers (RCN) · Label registry · Renewal</antd.Typography.Text>
+        </div>
+        <antd.Space>
+          <antd.Button icon={<ScanOutlined />}>Scan RCN</antd.Button>
+          <antd.Button icon={<DownloadOutlined />}>Export CSV</antd.Button>
+        </antd.Space>
+      </div>
+
+      <antd.Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+        {kpis.map((k, i) => (
+          <antd.Col xs={12} md={6} key={i}>
+            <div className="kpi-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div className="kpi-label">{k.l}</div>
+                  <div className="kpi-value" style={{ color: k.warn ? 'var(--color-warning)' : 'inherit' }}>{k.v}</div>
+                </div>
+                <div style={{ fontSize: 20, color: k.color }}>{k.icon}</div>
+              </div>
+            </div>
+          </antd.Col>
+        ))}
+      </antd.Row>
+
+      <antd.Card bordered>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+          <antd.Segmented
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { label: `All (${certs.length})`, value: 'all' },
+              { label: `Active (${certs.filter(c => c.status === 'active').length})`, value: 'active' },
+              { label: `Expiring (${certs.filter(c => c.status === 'expiring').length})`, value: 'expiring' },
+              { label: `Expired (${certs.filter(c => c.status === 'expired').length})`, value: 'expired' },
+            ]}
+          />
+          <antd.Input placeholder="Search RCN, product, brand, model…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />} style={{ width: 320 }} value={q} onChange={e => setQ(e.target.value)} />
+        </div>
+
+        <antd.Table
+          rowKey="rcn"
+          dataSource={filtered}
+          pagination={false}
+          onRow={(r) => ({ onClick: () => setSelected(r), style: { cursor: 'pointer' } })}
+          columns={[
+            { title: 'RCN', dataIndex: 'rcn', render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
+            { title: 'Scheme', dataIndex: 'scheme', render: s => <SchemeBadge scheme={s} /> },
+            { title: 'Product', render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.product}</div><div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.brand} · {r.model}</div></div> },
+            { title: 'Label', dataIndex: 'labelType', render: v => <antd.Tag>{v === 'e-label' ? 'e-Label' : 'Physical'}</antd.Tag> },
+            { title: 'Issued', dataIndex: 'issued', render: v => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
+            { title: 'Expires', dataIndex: 'expires', render: (v, r) => (
+              <span style={{ color: r.status === 'expiring' ? 'var(--color-warning)' : r.status === 'expired' ? 'var(--color-danger)' : 'inherit', fontWeight: r.status !== 'active' ? 600 : 400 }}>
+                {new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </span>
+            ) },
+            { title: 'Status', dataIndex: 'status', render: statusTag },
+            { title: '', render: (_, r) => (
+              <antd.Space>
+                <antd.Tooltip title="Download PDF"><antd.Button size="small" icon={<DownloadOutlined />} /></antd.Tooltip>
+                {r.status === 'expiring' && <antd.Button size="small" type="primary">Renew</antd.Button>}
+              </antd.Space>
+            ) },
+          ]}
+        />
+      </antd.Card>
+
+      <antd.Drawer open={!!selected} onClose={() => setSelected(null)} width={560} title={selected?.product}>
+        {selected && <CertificateDetail cert={selected} nav={nav} />}
+      </antd.Drawer>
+    </div>
+  );
+};
+
+function CertificateDetail({ cert, nav }) {
+  return (
+    <div>
+      <antd.Card bordered style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)', color: '#fff', border: 'none' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, opacity: .8, textTransform: 'uppercase', letterSpacing: .5, fontWeight: 600 }}>Registered Compliance Number</div>
+            <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', marginTop: 4 }}>{cert.rcn}</div>
+            <div style={{ fontSize: 13, marginTop: 10 }}>{cert.product}</div>
+            <div style={{ fontSize: 11, opacity: .8 }}>{cert.brand} · {cert.model}</div>
+          </div>
+          <div style={{ background: '#fff', padding: 8, borderRadius: 8 }}>
+            {/* QR placeholder */}
+            <div style={{ width: 96, height: 96, background: `conic-gradient(#000 0 25%, transparent 25% 50%, #000 50% 75%, transparent 75%), repeating-linear-gradient(90deg, #000 0 4px, #fff 4px 8px), repeating-linear-gradient(0deg, #000 0 4px, #fff 4px 8px)`, backgroundBlendMode: 'multiply', border: '4px solid #fff' }} />
+          </div>
+        </div>
+        <antd.Divider style={{ borderColor: 'rgba(255,255,255,.3)', margin: '16px 0' }} />
+        <antd.Row gutter={16}>
+          <antd.Col span={12}>
+            <div style={{ fontSize: 10, opacity: .8, textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Issued</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{new Date(cert.issued).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+          </antd.Col>
+          <antd.Col span={12}>
+            <div style={{ fontSize: 10, opacity: .8, textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Expires</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{new Date(cert.expires).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+          </antd.Col>
+        </antd.Row>
+      </antd.Card>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 16 }}>
+        <antd.Button icon={<DownloadOutlined />} block>Download PDF</antd.Button>
+        <antd.Button icon={<PrinterOutlined />} block>Print label</antd.Button>
+      </div>
+
+      <antd.Divider orientation="left" orientationMargin={0} style={{ fontSize: 13 }}>Details</antd.Divider>
+      <antd.Descriptions bordered column={1} size="small" items={[
+        { key: '1', label: 'Application ID', children: <antd.Typography.Text code>{cert.app}</antd.Typography.Text> },
+        { key: '2', label: 'Scheme', children: <SchemeBadge scheme={cert.scheme} /> },
+        { key: '3', label: 'Product Category', children: 'Mobile Phone / Smartphone' },
+        { key: '4', label: 'Frequency Band', children: '2400–2483.5 MHz; 5150–5850 MHz' },
+        { key: '5', label: 'Max Output Power', children: '26 dBm' },
+        { key: '6', label: 'Label Type', children: cert.labelType === 'e-label' ? 'Electronic (e-Label)' : 'Physical sticker' },
+        { key: '7', label: 'Issuing Officer', children: 'En. Faisal Rahman (CPPG)' },
+      ]} />
+
+      <antd.Divider orientation="left" orientationMargin={0} style={{ fontSize: 13 }}>Label Registry</antd.Divider>
+      <antd.Alert type="info" showIcon icon={<InfoCircleOutlined />} message="IMEI / Serial Registration" description="You must register device serials / IMEIs against this certificate before distribution." />
+      <div style={{ marginTop: 12 }}>
+        <antd.Button block icon={<PlusOutlined />} onClick={() => nav && nav('imei-register')}>Register IMEI / Serial Numbers</antd.Button>
+      </div>
+
+      {cert.status === 'expiring' && (
+        <>
+          <antd.Divider orientation="left" orientationMargin={0} style={{ fontSize: 13 }}>Renewal</antd.Divider>
+          <antd.Alert type="warning" showIcon message={`Certificate expires in ${Math.ceil((new Date(cert.expires) - new Date('2026-04-19')) / 864e5)} days`} description="Start renewal early to avoid supply disruption. AI will reuse most documents from the original submission." />
+          <div style={{ marginTop: 12 }}>
+            <antd.Button type="primary" block icon={<ReloadOutlined />} onClick={() => nav && nav('cert-renewal')}>Start Renewal</antd.Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ============ PAYMENTS ============
+SCREENS.payments = function Payments({ nav }) {
+  const pays = MOCK.payments;
+  const totalPaid = pays.filter(p => p.status === 'paid').reduce((a, b) => a + b.amount, 0);
+  const pending = pays.filter(p => p.status === 'pending').reduce((a, b) => a + b.amount, 0);
+
+  const methodIcon = (m) => {
+    if (m.startsWith('FPX')) return <BankOutlined />;
+    if (m.startsWith('Card')) return <CreditCardOutlined />;
+    if (m.startsWith('DuitNow')) return <QrcodeOutlined />;
+    if (m.startsWith('Corporate')) return <FileTextOutlined />;
+    return <WalletOutlined />;
+  };
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Payments</div>
+          <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Payments & Invoices</antd.Typography.Title>
+          <antd.Typography.Text type="secondary">All scheme fees, renewals and special approvals</antd.Typography.Text>
+        </div>
+        <antd.Space>
+          <antd.Button icon={<DownloadOutlined />}>Export CSV</antd.Button>
+          <antd.Button type="primary" icon={<PlusOutlined />}>New payment</antd.Button>
+        </antd.Space>
+      </div>
+
+      <antd.Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+        {[
+          { l: 'Paid this year', v: `RM ${totalPaid.toLocaleString('en-MY')}`, icon: <CheckCircleOutlined />, color: 'var(--color-success)' },
+          { l: 'Outstanding', v: `RM ${pending.toLocaleString('en-MY')}`, icon: <ClockCircleOutlined />, color: 'var(--color-warning)', warn: pending > 0 },
+          { l: 'Avg fee / application', v: `RM ${(totalPaid / pays.filter(p => p.status === 'paid').length).toFixed(0)}`, icon: <RiseOutlined />, color: 'var(--color-primary)' },
+          { l: 'Corporate Invoice Line', v: 'RM 50,000', d: 'Limit remaining RM 38,200', icon: <BankOutlined />, color: 'var(--color-primary)' },
+        ].map((k, i) => (
+          <antd.Col xs={12} md={6} key={i}>
+            <div className="kpi-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div className="kpi-label">{k.l}</div>
+                  <div className="kpi-value" style={{ color: k.warn ? 'var(--color-warning)' : 'inherit' }}>{k.v}</div>
+                  {k.d && <div className="kpi-delta">{k.d}</div>}
+                </div>
+                <div style={{ fontSize: 20, color: k.color }}>{k.icon}</div>
+              </div>
+            </div>
+          </antd.Col>
+        ))}
+      </antd.Row>
+
+      <antd.Row gutter={[16, 16]}>
+        <antd.Col xs={24} lg={16}>
+          <antd.Card title="Transaction History" bordered extra={<antd.DatePicker.RangePicker size="small" />}>
+            <antd.Table
+              rowKey="id"
+              dataSource={pays}
+              pagination={false}
+              columns={[
+                { title: 'Date', dataIndex: 'date', render: v => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
+                { title: 'Payment ID', dataIndex: 'id', render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
+                { title: 'Application', dataIndex: 'app', render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
+                { title: 'Method', dataIndex: 'method', render: v => <antd.Space size={6}>{methodIcon(v)}<span>{v}</span></antd.Space> },
+                { title: 'Amount', dataIndex: 'amount', align: 'right', render: v => <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>RM {v.toLocaleString('en-MY')}.00</span> },
+                { title: 'Status', dataIndex: 'status', render: s => s === 'paid' ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>Paid</antd.Tag> : <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Pending</antd.Tag> },
+                { title: '', render: () => <antd.Space><antd.Tooltip title="Download invoice"><antd.Button size="small" icon={<DownloadOutlined />} /></antd.Tooltip><antd.Tooltip title="Download receipt"><antd.Button size="small" icon={<FilePdfOutlined />} /></antd.Tooltip></antd.Space> },
+              ]}
+            />
+          </antd.Card>
+        </antd.Col>
+        <antd.Col xs={24} lg={8}>
+          <antd.Card title="Payment Methods" bordered extra={<antd.Button type="link" size="small" icon={<PlusOutlined />}>Add</antd.Button>}>
+            <antd.Space direction="vertical" style={{ width: '100%' }} size={10}>
+              {[
+                { icon: <CreditCardOutlined />, t: 'Visa •• 4521', d: 'Default · Expires 08/27', def: true },
+                { icon: <BankOutlined />, t: 'Maybank FPX', d: 'Linked Jan 2024' },
+                { icon: <FileTextOutlined />, t: 'Corporate Invoice', d: 'RM 50,000 credit line · 30 day terms' },
+              ].map((m, i) => (
+                <div key={i} style={{ padding: 12, border: '1px solid var(--color-border)', borderRadius: 8, display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 6, background: 'var(--color-primary-subtle)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{m.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{m.t} {m.def && <antd.Tag color="blue" style={{ marginLeft: 6 }}>Default</antd.Tag>}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{m.d}</div>
+                  </div>
+                  <antd.Button type="text" size="small" icon={<MoreOutlined />} />
+                </div>
+              ))}
+            </antd.Space>
+          </antd.Card>
+          <antd.Card title="Billing Information" bordered style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+              <div style={{ fontWeight: 600 }}>Axiata Digital Sdn Bhd</div>
+              <div style={{ color: 'var(--color-text-secondary)' }}>Level 21, Axiata Tower<br />No. 9 Jalan Stesen Sentral 5<br />KL Sentral, 50470 Kuala Lumpur</div>
+              <antd.Divider style={{ margin: '12px 0' }} />
+              <div><antd.Typography.Text type="secondary">SST Number</antd.Typography.Text> W10-1808-32000123</div>
+              <div><antd.Typography.Text type="secondary">Billing Email</antd.Typography.Text> finance@axiatadigital.com.my</div>
+            </div>
+            <antd.Button type="link" icon={<EditOutlined />} style={{ padding: 0, marginTop: 8 }}>Edit</antd.Button>
+          </antd.Card>
+        </antd.Col>
+      </antd.Row>
+    </div>
+  );
+};
+
+// ============ PROFILE & SETTINGS ============
+SCREENS.profile = function Profile({ nav }) {
+  const [tab, setTab] = React.useState('profile');
+  const [inviteOpen, setInviteOpen] = React.useState(false);
+  const tabs = [
+    { k: 'profile', t: 'My Profile', icon: <UserOutlined /> },
+    { k: 'organization', t: 'Organisation', icon: <ShopOutlined /> },
+    { k: 'team', t: 'Team Members', icon: <TeamOutlined /> },
+    { k: 'security', t: 'Security & Access', icon: <SafetyOutlined /> },
+    { k: 'notifications', t: 'Notifications', icon: <BellOutlined /> },
+    { k: 'api', t: 'API & Integrations', icon: <ApartmentOutlined /> },
+  ];
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Settings</div>
+        <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Profile & Settings</antd.Typography.Title>
+      </div>
+
+      <antd.Row gutter={24}>
+        <antd.Col xs={24} md={6}>
+          <antd.Card bordered bodyStyle={{ padding: 8 }}>
+            <antd.Menu
+              mode="inline"
+              selectedKeys={[tab]}
+              onClick={e => setTab(e.key)}
+              style={{ border: 'none' }}
+              items={tabs.map(t => ({ key: t.k, icon: t.icon, label: t.t }))}
+            />
+          </antd.Card>
+        </antd.Col>
+        <antd.Col xs={24} md={18}>
+          {tab === 'profile' && <ProfileTab />}
+          {tab === 'organization' && <OrgTab />}
+          {tab === 'team' && <TeamTab onInvite={() => setInviteOpen(true)} />}
+          {tab === 'security' && <SecurityTab />}
+          {tab === 'notifications' && <NotifTab />}
+          {tab === 'api' && <ApiTab />}
+        </antd.Col>
+      </antd.Row>
+
+      <InviteDrawer open={inviteOpen} onClose={() => setInviteOpen(false)} />
+    </div>
+  );
+};
+
+function ProfileTab() {
+  return (
+    <antd.Card title="My Profile" bordered extra={<antd.Button icon={<EditOutlined />}>Edit</antd.Button>}>
+      <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 24 }}>
+        <antd.Avatar size={72} style={{ background: 'var(--color-primary)', fontSize: 28 }}>NA</antd.Avatar>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 600 }}>Nurul Aisyah binti Ahmad</div>
+          <antd.Space size={8} style={{ marginTop: 4 }}>
+            <antd.Tag color="blue" icon={<SafetyOutlined />}>Administrator</antd.Tag>
+            <antd.Tag icon={<CheckCircleOutlined />} color="green">Verified</antd.Tag>
+          </antd.Space>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 6 }}>Member since 15 Jan 2024 · Last login 2 hours ago from Kuala Lumpur</div>
+        </div>
+        <div style={{ marginLeft: 'auto' }}>
+          <antd.Button icon={<UploadOutlined />}>Change avatar</antd.Button>
+        </div>
+      </div>
+      <antd.Descriptions bordered column={2} size="middle" items={[
+        { key: '1', label: 'Full Name', children: 'Nurul Aisyah binti Ahmad' },
+        { key: '2', label: 'Email', children: <span><MailOutlined style={{ marginRight: 6 }} />nurul.aisyah@axiatadigital.com.my</span> },
+        { key: '3', label: 'Phone', children: <span><PhoneOutlined style={{ marginRight: 6 }} />+60 12-345 6789</span> },
+        { key: '4', label: 'NRIC', children: '880512-14-5678' },
+        { key: '5', label: 'Position', children: 'Head of Regulatory Compliance' },
+        { key: '6', label: 'Department', children: 'Product Certification' },
+        { key: '7', label: 'Language', children: 'English (primary) · Bahasa Malaysia' },
+        { key: '8', label: 'Time Zone', children: 'Asia/Kuala_Lumpur (GMT+8)' },
+      ]} />
+    </antd.Card>
+  );
+}
+
+function OrgTab() {
+  return (
+    <antd.Card title="Organisation" bordered extra={<antd.Button icon={<EditOutlined />}>Edit</antd.Button>}>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '12px 0 20px', borderBottom: '1px solid var(--color-divider)', marginBottom: 20 }}>
+        <div style={{ width: 64, height: 64, borderRadius: 12, background: 'var(--color-primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', fontWeight: 700, fontSize: 22 }}>AD</div>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 600 }}>Axiata Digital Sdn Bhd</div>
+          <antd.Space>
+            <antd.Tag color="red">Category A · Company</antd.Tag>
+            <antd.Tag icon={<CheckCircleOutlined />} color="green">SSM Verified</antd.Tag>
+            <antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>Supplier ID <b>SUP-0426-00142</b></antd.Typography.Text>
+          </antd.Space>
+        </div>
+      </div>
+      <antd.Descriptions bordered column={2} size="middle" items={[
+        { key: '1', label: 'Legal Name', children: 'Axiata Digital Sdn Bhd' },
+        { key: '2', label: 'SSM BRN', children: '201901023456' },
+        { key: '3', label: 'Registered Since', children: '14 Mar 2019' },
+        { key: '4', label: 'Business Type', children: 'Telecommunications / Consumer Electronics' },
+        { key: '5', label: 'Director', children: 'Tan Sri Dato\' Sri Jamaludin Ibrahim' },
+        { key: '6', label: 'Paid-up Capital', children: 'RM 50,000,000' },
+        { key: '7', label: 'Registered Address', span: 2, children: 'Level 21, Axiata Tower, No. 9 Jalan Stesen Sentral 5, KL Sentral, 50470 Kuala Lumpur' },
+        { key: '8', label: 'Correspondence Email', children: 'compliance@axiatadigital.com.my' },
+        { key: '9', label: 'Correspondence Phone', children: '+60 3-2263 8888' },
+      ]} />
+      <antd.Divider orientation="left" orientationMargin={0}>Compliance Documents</antd.Divider>
+      <antd.List
+        size="small"
+        dataSource={[
+          { f: 'SSM_Certificate_2026.pdf', t: 'Company Registration (SSM)', s: '2.1 MB', v: true },
+          { f: 'Director_NRIC.pdf', t: 'Director ID', s: '0.4 MB', v: true },
+          { f: 'SST_Registration.pdf', t: 'SST Registration', s: '0.8 MB', v: true },
+        ]}
+        renderItem={d => (
+          <antd.List.Item actions={[<antd.Button size="small" icon={<DownloadOutlined />} />, <antd.Button size="small" icon={<EditOutlined />}>Replace</antd.Button>]}>
+            <antd.List.Item.Meta
+              avatar={<FilePdfOutlined style={{ fontSize: 20, color: 'var(--color-danger)' }} />}
+              title={<antd.Space>{d.t}{d.v && <antd.Tag color="green" style={{ fontSize: 10 }}>Verified</antd.Tag>}</antd.Space>}
+              description={<antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>{d.f} · {d.s}</antd.Typography.Text>}
+            />
+          </antd.List.Item>
+        )}
+      />
+    </antd.Card>
+  );
+}
+
+function TeamTab({ onInvite }) {
+  const [q, setQ] = React.useState('');
+  const team = MOCK.teamMembers.filter(m => !q || (m.name + m.email + m.role).toLowerCase().includes(q.toLowerCase()));
+  const roleColor = { Administrator: 'purple', 'PIC (Technical)': 'blue', Submitter: 'cyan', Finance: 'gold' };
+
+  return (
+    <antd.Card
+      title={<antd.Space><TeamOutlined /> Team Members <antd.Badge count={MOCK.teamMembers.length} style={{ background: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }} showZero /></antd.Space>}
+      bordered
+      extra={<antd.Button type="primary" icon={<PlusOutlined />} onClick={onInvite}>Invite member</antd.Button>}
+    >
+      <antd.Alert
+        type="info"
+        showIcon
+        icon={<InfoCircleOutlined />}
+        message="Role permissions"
+        description={
+          <div style={{ fontSize: 12, lineHeight: 1.6 }}>
+            <b>Administrator</b> manages the account and billing · <b>PIC (Technical)</b> signs technical declarations · <b>Submitter</b> drafts & submits applications · <b>Finance</b> manages payments & invoices
+          </div>
+        }
+        style={{ marginBottom: 16 }}
+      />
+      <antd.Input placeholder="Search team…" prefix={<SearchOutlined />} style={{ maxWidth: 320, marginBottom: 12 }} value={q} onChange={e => setQ(e.target.value)} />
+      <antd.Table
+        rowKey="id"
+        dataSource={team}
+        pagination={false}
+        columns={[
+          { title: 'Name', render: (_, m) => (
+            <antd.Space>
+              <antd.Avatar style={{ background: 'var(--color-primary)' }}>{m.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</antd.Avatar>
+              <div>
+                <div style={{ fontWeight: 600 }}>{m.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{m.email}</div>
+              </div>
+            </antd.Space>
+          ) },
+          { title: 'Role', dataIndex: 'role', render: r => <antd.Tag color={roleColor[r] || 'default'}>{r}</antd.Tag> },
+          { title: 'Status', dataIndex: 'status', render: s => s === 'active' ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>Active</antd.Tag> : <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Invite Sent</antd.Tag> },
+          { title: 'Joined', dataIndex: 'joined', render: v => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
+          { title: 'Last Active', dataIndex: 'lastActive', render: v => v ? new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : <antd.Typography.Text type="secondary">—</antd.Typography.Text> },
+          { title: '', render: (_, m) => (
+            <antd.Dropdown menu={{ items: [
+              { key: 'edit', icon: <EditOutlined />, label: 'Edit role' },
+              { key: 'reset', icon: <KeyOutlined />, label: 'Reset password' },
+              { key: 'resend', icon: <SendOutlined />, label: 'Resend invite', disabled: m.status === 'active' },
+              { type: 'divider' },
+              { key: 'remove', icon: <DeleteOutlined />, label: 'Remove', danger: true },
+            ] }}>
+              <antd.Button type="text" icon={<MoreOutlined />} />
+            </antd.Dropdown>
+          ) },
+        ]}
+      />
+    </antd.Card>
+  );
+}
+
+function SecurityTab() {
+  return (
+    <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
+      <antd.Card title={<antd.Space><LockOutlined /> Password</antd.Space>} bordered>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 13 }}>Last changed 14 February 2026</div>
+            <antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>Required every 90 days per MCMC policy · Next required: 15 May 2026</antd.Typography.Text>
+          </div>
+          <antd.Button>Change password</antd.Button>
+        </div>
+      </antd.Card>
+
+      <antd.Card title={<antd.Space><SafetyOutlined /> Two-Factor Authentication</antd.Space>} bordered extra={<antd.Tag color="green" icon={<CheckCircleOutlined />}>Enabled</antd.Tag>}>
+        <antd.List
+          dataSource={[
+            { icon: <MailOutlined />, t: 'Authenticator App', d: 'Google Authenticator · Added 15 Jan 2024', def: true },
+            { icon: <PhoneOutlined />, t: 'SMS to +60 12-345 6789', d: 'Backup · Not preferred for MCMC' },
+            { icon: <KeyOutlined />, t: 'MyDigital ID', d: 'National e-ID · Recommended' },
+          ]}
+          renderItem={(m, i) => (
+            <antd.List.Item actions={[
+              m.def ? <antd.Tag color="blue">Default</antd.Tag> : <antd.Button size="small">Set default</antd.Button>,
+              <antd.Button size="small" danger type="text">Remove</antd.Button>,
+            ]}>
+              <antd.List.Item.Meta avatar={m.icon} title={m.t} description={m.d} />
+            </antd.List.Item>
+          )}
+        />
+        <antd.Button icon={<PlusOutlined />} style={{ marginTop: 8 }}>Add method</antd.Button>
+      </antd.Card>
+
+      <antd.Card title={<antd.Space><HistoryOutlined /> Active Sessions</antd.Space>} bordered>
+        <antd.List
+          dataSource={[
+            { d: 'MacBook Pro · Chrome · Kuala Lumpur', t: 'Active now', cur: true },
+            { d: 'iPhone 15 · Safari · Kuala Lumpur', t: '2 hours ago' },
+            { d: 'Windows · Edge · Cyberjaya', t: '3 days ago' },
+          ]}
+          renderItem={s => (
+            <antd.List.Item actions={[s.cur ? <antd.Tag color="green">This device</antd.Tag> : <antd.Button size="small" danger>Sign out</antd.Button>]}>
+              <antd.List.Item.Meta title={s.d} description={s.t} />
+            </antd.List.Item>
+          )}
+        />
+        <antd.Button danger style={{ marginTop: 8 }}>Sign out all other devices</antd.Button>
+      </antd.Card>
+    </antd.Space>
+  );
+}
+
+function NotifTab() {
+  const Row = ({ t, d, defaults }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--color-divider)' }}>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600 }}>{t}</div>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{d}</div>
+      </div>
+      <antd.Space>
+        <antd.Checkbox defaultChecked={defaults.includes('email')}>Email</antd.Checkbox>
+        <antd.Checkbox defaultChecked={defaults.includes('sms')}>SMS</antd.Checkbox>
+        <antd.Checkbox defaultChecked={defaults.includes('inapp')}>In-app</antd.Checkbox>
+      </antd.Space>
+    </div>
+  );
+  return (
+    <antd.Card title="Notification Preferences" bordered>
+      <Row t="Application status change" d="Submitted, under review, approved, iteration required, rejected" defaults={['email', 'inapp']} />
+      <Row t="Officer messages" d="Questions or iteration requests from CPPG officers" defaults={['email', 'sms', 'inapp']} />
+      <Row t="Certificate expiring" d="90, 60, 30 days before expiry" defaults={['email', 'inapp']} />
+      <Row t="Payment receipts" d="Invoice issued, paid, corporate invoice reminder" defaults={['email']} />
+      <Row t="Regulatory updates" d="New MCMC circulars, standard updates, scheme changes" defaults={['email']} />
+      <Row t="Team activity" d="Member invited, role changed, member removed" defaults={['inapp']} />
+    </antd.Card>
+  );
+}
+
+function ApiTab() {
+  return (
+    <antd.Card title={<antd.Space><ApartmentOutlined /> API & Integrations</antd.Space>} bordered extra={<antd.Button type="primary" icon={<PlusOutlined />}>Generate key</antd.Button>}>
+      <antd.Alert type="info" showIcon message="Public API access (beta)" description="Integrate directly with your ERP or PLM system. Submit applications, check status, retrieve certificates via REST or webhook." style={{ marginBottom: 16 }} />
+      <antd.List
+        dataSource={[
+          { t: 'Production key', v: 'ncef_live_••••••••••••••8F2K', d: 'Created 14 Feb 2026 · Last used 2 hours ago' },
+          { t: 'Test key', v: 'ncef_test_••••••••••••••9R7P', d: 'Created 22 Jan 2024 · Last used 3 days ago' },
+        ]}
+        renderItem={k => (
+          <antd.List.Item actions={[<antd.Button size="small" icon={<CopyOutlined />}>Copy</antd.Button>, <antd.Button size="small" danger>Revoke</antd.Button>]}>
+            <antd.List.Item.Meta title={k.t} description={<><code>{k.v}</code><div>{k.d}</div></>} />
+          </antd.List.Item>
+        )}
+      />
+      <antd.Divider>Webhooks</antd.Divider>
+      <antd.Typography.Text type="secondary">No webhooks configured. Add one to receive application.updated and certificate.issued events.</antd.Typography.Text>
+      <div style={{ marginTop: 8 }}>
+        <antd.Button icon={<PlusOutlined />}>Add webhook</antd.Button>
+      </div>
+    </antd.Card>
+  );
+}
+
+function InviteDrawer({ open, onClose }) {
+  return (
+    <antd.Drawer open={open} onClose={onClose} width={480} title="Invite team member">
+      <antd.Form layout="vertical">
+        <antd.Form.Item label="Full Name" required><antd.Input placeholder="Tan Mei Ling" /></antd.Form.Item>
+        <antd.Form.Item label="Work Email" required><antd.Input placeholder="name@axiatadigital.com.my" prefix={<MailOutlined />} /></antd.Form.Item>
+        <antd.Form.Item label="Role" required>
+          <antd.Radio.Group style={{ display: 'grid', gap: 10, width: '100%' }}>
+            {[
+              { v: 'admin', t: 'Administrator', d: 'Full access including billing, team and API' },
+              { v: 'pic', t: 'PIC (Technical)', d: 'Sign technical declarations on behalf of the company' },
+              { v: 'submit', t: 'Submitter', d: 'Draft and submit applications; cannot manage billing' },
+              { v: 'finance', t: 'Finance', d: 'View and manage payments, invoices and credit line' },
+            ].map(r => (
+              <antd.Radio key={r.v} value={r.v} style={{ padding: 12, border: '1px solid var(--color-border)', borderRadius: 8, margin: 0, width: '100%' }}>
+                <span style={{ display: 'inline-block' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{r.t}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.d}</div>
+                </span>
+              </antd.Radio>
+            ))}
+          </antd.Radio.Group>
+        </antd.Form.Item>
+        <antd.Form.Item label="Welcome message (optional)"><antd.Input.TextArea rows={3} placeholder="Welcome to the team! You'll be handling our Scheme A submissions…" /></antd.Form.Item>
+      </antd.Form>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <antd.Button onClick={onClose}>Cancel</antd.Button>
+        <antd.Button type="primary" icon={<SendOutlined />} onClick={onClose}>Send invite</antd.Button>
+      </div>
+    </antd.Drawer>
+  );
+}
+
+Object.assign(window, { SCREENS });
+
+</script>
+
+<script type="text/babel">
+const { Layout, Menu, Button, Avatar, Dropdown, Badge, Space, Input, ConfigProvider, Drawer } = antd;
+const { Header, Sider, Content } = Layout;
+const ICONS = window.icons || {};
+// Destructure the icons we'll use throughout the shell + screens and publish to window.
+const {
+  DashboardOutlined, UnorderedListOutlined, PlusOutlined, StarOutlined, TeamOutlined,
+  SafetyCertificateOutlined, DollarOutlined, FlagOutlined, EyeOutlined, FileSearchOutlined,
+  BarChartOutlined, AuditOutlined, BellOutlined, MenuOutlined, SearchOutlined, UserOutlined,
+  SettingOutlined, LogoutOutlined, QuestionCircleOutlined, GlobalOutlined, RobotOutlined,
+  FileTextOutlined, FilePdfOutlined, FileImageOutlined, CheckCircleOutlined, ClockCircleOutlined,
+  WarningOutlined, CloseCircleOutlined, InfoCircleOutlined, DownloadOutlined, UploadOutlined,
+  EditOutlined, DeleteOutlined, MailOutlined, PhoneOutlined, LockOutlined, ShopOutlined,
+  CreditCardOutlined, BankOutlined, QrcodeOutlined, ArrowLeftOutlined, ArrowRightOutlined,
+  SendOutlined, PaperClipOutlined, ReloadOutlined, IdcardOutlined, ExclamationCircleOutlined,
+  LeftOutlined, RightOutlined, PlusCircleOutlined, MoreOutlined, HistoryOutlined, KeyOutlined,
+  ApartmentOutlined, ContainerOutlined, WalletOutlined, RiseOutlined
+} = icons;
+Object.assign(window, { icons, AntIcons: icons });
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "aiViz": "bar",
+  "wizardPattern": "horizontal",
+  "role": "officer",
+  "denseTables": true
+}/*EDITMODE-END*/;
+
+const NAV_SUPPLIER = [
+  { key: 'dashboard', label: 'Dashboard', icon: <DashboardOutlined /> },
+  { key: 'applications', label: 'My Applications', icon: <UnorderedListOutlined /> },
+  { key: 'sdoc-wizard', label: 'New SDoC', icon: <PlusCircleOutlined /> },
+  { key: 'special-approval', label: 'Special Approval', icon: <StarOutlined /> },
+  { key: 'certificates', label: 'Certificates', icon: <SafetyCertificateOutlined /> },
+  { key: 'imei-register', label: 'Register IMEI / SN', icon: <QrcodeOutlined /> },
+  { key: 'payments', label: 'Payments', icon: <WalletOutlined /> },
+  { key: 'onboarding', label: 'Supplier Onboarding', icon: <IdcardOutlined /> },
+  { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
+];
+const NAV_OFFICER = [
+  { key: 'officer-queue', label: 'Review Queue', icon: <FlagOutlined /> },
+  { key: 'officer-review', label: 'Active Review', icon: <EyeOutlined /> },
+  { key: 'applications', label: 'All Applications', icon: <FileSearchOutlined /> },
+  { key: 'reports', label: 'Reports & Analytics', icon: <BarChartOutlined /> },
+  { key: 'audit', label: 'Audit Log', icon: <AuditOutlined /> },
+  { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
+];
+
+function OfficerQueue({ nav }) {
+  const [filter, setFilter] = React.useState('mine');
+  const q = MOCK.officerQueue;
+  const list = filter === 'mine' ? q.filter(x => x.assignedTo === 'me') : q;
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>CPPG Officer · En. Faisal Rahman</div>
+      <antd.Typography.Title level={3} style={{ margin: '4px 0 20px' }}>Review Queue</antd.Typography.Title>
+
+      <antd.Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+        {[
+          { l: 'Pending My Review', v: 5, d: '1 urgent (SLA < 12h)', warn: true },
+          { l: 'Approved Today', v: 8, d: 'Avg turnaround 4.2 hrs', color: 'var(--color-success)' },
+          { l: 'Rejected Today', v: 1, d: 'Scheme SA prohibited' },
+          { l: 'Team SLA Compliance', v: '96%', d: 'Monthly target 95%', color: 'var(--color-success)' },
+        ].map((k, i) => (
+          <antd.Col xs={12} md={6} key={i}>
+            <div className="kpi-card">
+              <div className="kpi-label">{k.l}</div>
+              <div className="kpi-value" style={{ color: k.warn ? 'var(--color-warning)' : k.color || 'inherit' }}>{k.v}</div>
+              <div className="kpi-delta">{k.d}</div>
+            </div>
+          </antd.Col>
+        ))}
+      </antd.Row>
+
+      <antd.Card bordered>
+        <antd.Segmented
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { label: `Assigned to me (${q.filter(x => x.assignedTo === 'me').length})`, value: 'mine' },
+            { label: `All queues (${q.length})`, value: 'all' },
+          ]}
+          style={{ marginBottom: 16 }}
+        />
+        <antd.Table
+          rowKey="id"
+          dataSource={list}
+          pagination={false}
+          onRow={() => ({ onClick: () => nav('officer-review'), style: { cursor: 'pointer' } })}
+          columns={[
+            { title: 'App ID', dataIndex: 'id', render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
+            { title: 'Scheme', dataIndex: 'scheme', render: s => <SchemeBadge scheme={s} /> },
+            { title: 'Applicant', dataIndex: 'applicant' },
+            { title: 'Product', dataIndex: 'product' },
+            { title: 'AI Score', dataIndex: 'aiScore', render: s => <antd.Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{s}</antd.Tag> },
+            { title: 'Priority', dataIndex: 'priority', render: p => <antd.Tag color={p === 'high' ? 'red' : p === 'low' ? 'default' : 'blue'}>{p}</antd.Tag> },
+            { title: 'SLA', dataIndex: 'slaHours', render: h => <antd.Tag color={h < 12 ? 'red' : h < 24 ? 'orange' : 'default'}>{h}h left</antd.Tag> },
+            { title: 'Submitted', dataIndex: 'submitted', render: v => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) },
+          ]}
+        />
+      </antd.Card>
+    </div>
+  );
+}
+SCREENS['officer-queue'] = OfficerQueue;
+
+// ============ REPORTS & ANALYTICS ============
+SCREENS.reports = function Reports() {
+  const [period, setPeriod] = React.useState('month');
+  const trend = MOCK.monthlyTrend;
+  const totalSubmitted = trend.reduce((a, b) => a + b.submitted, 0);
+  const totalApproved  = trend.reduce((a, b) => a + b.approved, 0);
+  const totalAutoAccept = trend.reduce((a, b) => a + b.aiAutoAccepted, 0);
+  const approvalRate = Math.round(totalApproved / totalSubmitted * 100);
+  const maxSubmitted = Math.max(...trend.map(d => d.submitted));
+
+  // Inline SVG bar chart — no external dependency needed
+  const BAR_W = 48, BAR_GAP = 24, PAD = 40, HEIGHT = 160;
+  const chartW = trend.length * (BAR_W + BAR_GAP) + PAD;
+  const barColor = { submitted: 'var(--color-primary)', approved: 'var(--color-success)', aiAutoAccepted: 'var(--color-info)' };
+
+  function Bars({ key, color, yOffset = 0 }) {
+    return trend.map((d, i) => {
+      const h = Math.round((d[key] / maxSubmitted) * HEIGHT);
+      const x = PAD + i * (BAR_W + BAR_GAP);
+      const y = HEIGHT - h + yOffset;
+      return <rect key={i} x={x} y={y} width={BAR_W} height={h} rx={4} fill={color} opacity={0.85} />;
+    });
+  }
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Officer · CPPG</div>
+          <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Reports & Analytics</antd.Typography.Title>
+          <antd.Typography.Text type="secondary">MCMC NCEF · Certification performance · YTD 2026</antd.Typography.Text>
+        </div>
+        <antd.Space>
+          <antd.Segmented value={period} onChange={setPeriod} options={[{ label: 'This Month', value: 'month' }, { label: 'Last 3M', value: '3m' }, { label: 'YTD', value: 'ytd' }]} />
+          <antd.Button icon={<DownloadOutlined />}>Export PDF</antd.Button>
+        </antd.Space>
+      </div>
+
+      {/* KPI row */}
+      <antd.Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        {[
+          { l: 'Applications YTD', v: totalSubmitted, d: '+18% vs same period last year', color: 'var(--color-primary)' },
+          { l: 'Approval Rate', v: `${approvalRate}%`, d: `${totalApproved} approved of ${totalSubmitted}`, color: 'var(--color-success)' },
+          { l: 'AI Auto-Accepted', v: totalAutoAccept, d: `${Math.round(totalAutoAccept/totalApproved*100)}% of approvals (≥90 threshold)`, color: 'var(--color-info)' },
+          { l: 'SLA Compliance', v: '95.3%', d: 'Team target: 95% · On track', color: 'var(--color-success)' },
+        ].map((k, i) => (
+          <antd.Col xs={12} md={6} key={i}>
+            <div className="kpi-card">
+              <div className="kpi-label">{k.l}</div>
+              <div className="kpi-value" style={{ color: k.color }}>{k.v}</div>
+              <div className="kpi-delta">{k.d}</div>
+            </div>
+          </antd.Col>
+        ))}
+      </antd.Row>
+
+      <antd.Row gutter={[16, 16]}>
+        {/* Bar chart */}
+        <antd.Col xs={24} lg={16}>
+          <antd.Card title="Application Volume Trend" bordered extra={
+            <antd.Space size={16}>
+              {[['Submitted','var(--color-primary)'],['Approved','var(--color-success)'],['AI Auto-Accept','var(--color-info)']].map(([l,c]) => (
+                <antd.Space key={l} size={6}><span style={{ width: 10, height: 10, borderRadius: 2, background: c, display: 'inline-block' }} /><span style={{ fontSize: 12 }}>{l}</span></antd.Space>
+              ))}
+            </antd.Space>
+          }>
+            <svg width="100%" viewBox={`0 0 ${chartW} ${HEIGHT + 50}`} style={{ overflow: 'visible' }}>
+              {/* Y axis lines */}
+              {[0, 25, 50, 75, 100].map(pct => {
+                const y = HEIGHT - (pct / 100) * HEIGHT;
+                const val = Math.round((pct / 100) * maxSubmitted);
+                return <g key={pct}>
+                  <line x1={PAD} y1={y} x2={chartW} y2={y} stroke="var(--color-divider)" strokeWidth={1} />
+                  <text x={PAD - 6} y={y + 4} textAnchor="end" fontSize={10} fill="var(--color-text-muted)">{val}</text>
+                </g>;
+              })}
+              {/* Submitted bars (back) */}
+              {Bars({ key: 'submitted', color: 'var(--color-primary)' })}
+              {/* Approved bars (middle) */}
+              {trend.map((d, i) => {
+                const h = Math.round((d.approved / maxSubmitted) * HEIGHT);
+                const x = PAD + i * (BAR_W + BAR_GAP) + 4;
+                const y = HEIGHT - h;
+                return <rect key={i} x={x} y={y} width={BAR_W - 8} height={h} rx={3} fill="var(--color-success)" opacity={0.85} />;
+              })}
+              {/* AI auto-accept dots */}
+              {trend.map((d, i) => {
+                const h = Math.round((d.aiAutoAccepted / maxSubmitted) * HEIGHT);
+                const cx = PAD + i * (BAR_W + BAR_GAP) + BAR_W / 2;
+                const cy = HEIGHT - h - 8;
+                return <circle key={i} cx={cx} cy={cy} r={5} fill="var(--color-info)" />;
+              })}
+              {/* Month labels */}
+              {trend.map((d, i) => (
+                <text key={i} x={PAD + i * (BAR_W + BAR_GAP) + BAR_W / 2} y={HEIGHT + 20} textAnchor="middle" fontSize={12} fontWeight={600} fill="var(--color-text-secondary)">{d.month}</text>
+              ))}
+            </svg>
+          </antd.Card>
+
+          {/* Top applicants */}
+          <antd.Card title="Top Applicants by Volume" bordered style={{ marginTop: 16 }}>
+            <antd.Table
+              rowKey="id"
+              dataSource={MOCK.topApplicants}
+              pagination={false}
+              size="small"
+              columns={[
+                { title: 'Company', dataIndex: 'name', render: (v, r) => <div><div style={{ fontWeight: 600 }}>{v}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.id}</div></div> },
+                { title: 'Submitted', dataIndex: 'submissions', align: 'center', render: v => <antd.Tag>{v}</antd.Tag> },
+                { title: 'Approved', dataIndex: 'approved', align: 'center', render: v => <antd.Tag color="green">{v}</antd.Tag> },
+                { title: 'Approval Rate', align: 'center', render: (_, r) => {
+                  const pct = Math.round(r.approved / r.submissions * 100);
+                  return <antd.Progress percent={pct} size="small" strokeColor={pct >= 90 ? 'var(--color-success)' : pct >= 70 ? 'var(--color-warning)' : 'var(--color-danger)'} style={{ width: 100 }} />;
+                }},
+                { title: 'Avg AI Score', dataIndex: 'aiAvg', align: 'center', render: v => <antd.Tag color={v >= 90 ? 'green' : v >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{v}</antd.Tag> },
+              ]}
+            />
+          </antd.Card>
+        </antd.Col>
+
+        {/* Right column */}
+        <antd.Col xs={24} lg={8}>
+          {/* AI score distribution */}
+          <antd.Card title="AI Score Distribution" bordered style={{ marginBottom: 16 }}>
+            {[
+              { label: 'Auto-Accept (≥90)', count: totalAutoAccept, pct: Math.round(totalAutoAccept/totalApproved*100), color: 'var(--color-success)' },
+              { label: 'Priority Review (70–89)', count: totalApproved - totalAutoAccept - Math.round(totalApproved*0.08), pct: Math.round((totalApproved - totalAutoAccept - Math.round(totalApproved*0.08))/totalApproved*100), color: 'var(--color-warning)' },
+              { label: 'Standard Review (<70)', count: Math.round(totalApproved*0.08), pct: 8, color: 'var(--color-danger)' },
+            ].map((band, i) => (
+              <div key={i} style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: band.color }}>{band.label}</span>
+                  <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{band.count} apps ({band.pct}%)</span>
+                </div>
+                <div style={{ height: 8, background: 'var(--color-bg-subtle)', borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${band.pct}%`, background: band.color, borderRadius: 999, transition: 'width .8s' }} />
+                </div>
+              </div>
+            ))}
+            <antd.Divider style={{ margin: '12px 0' }} />
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
+              AI confidence scoring powered by <b>Qwen2.5-VL</b>. Threshold: 70 priority, 90 auto-accept (Scheme C).
+            </div>
+          </antd.Card>
+
+          {/* Officer performance */}
+          <antd.Card title="Officer Performance" bordered>
+            {MOCK.officerPerformance.map((o, i) => (
+              <div key={i} style={{ padding: '12px 0', borderBottom: i < MOCK.officerPerformance.length - 1 ? '1px solid var(--color-divider)' : 'none' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{o.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{o.id} · {o.approved + o.rejected} decisions</div>
+                  </div>
+                  <antd.Tag color={o.slaCompliance >= 95 ? 'green' : o.slaCompliance >= 90 ? 'orange' : 'red'}>{o.slaCompliance}% SLA</antd.Tag>
+                </div>
+                <antd.Row gutter={8}>
+                  {[
+                    { l: 'Approved', v: o.approved, c: 'var(--color-success)' },
+                    { l: 'Rejected', v: o.rejected, c: 'var(--color-danger)' },
+                    { l: 'Avg hrs', v: o.avgTurnaround, c: 'var(--color-primary)' },
+                    { l: 'AI overrides', v: o.aiOverrides, c: 'var(--color-warning)' },
+                  ].map((s, j) => (
+                    <antd.Col span={6} key={j}>
+                      <div style={{ textAlign: 'center', padding: '6px 4px', background: 'var(--color-bg-subtle)', borderRadius: 6 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: s.c }}>{s.v}</div>
+                        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>{s.l}</div>
+                      </div>
+                    </antd.Col>
+                  ))}
+                </antd.Row>
+              </div>
+            ))}
+          </antd.Card>
+        </antd.Col>
+      </antd.Row>
+    </div>
+  );
+};
+
+// ============ AUDIT LOG ============
+SCREENS.audit = function AuditLog() {
+  const [actorFilter, setActorFilter] = React.useState('all');
+  const [eventFilter, setEventFilter] = React.useState([]);
+  const [q, setQ] = React.useState('');
+  const [expanded, setExpanded] = React.useState(null);
+
+  const eventTypes = [...new Set(MOCK.auditLog.map(e => e.event))];
+  const actorRoles = ['Officer', 'Supplier', 'System'];
+
+  const filtered = MOCK.auditLog.filter(e => {
+    if (actorFilter !== 'all' && e.actorRole !== actorFilter) return false;
+    if (eventFilter.length && !eventFilter.includes(e.event)) return false;
+    if (q && !(e.actor + e.event + (e.appId || '') + e.detail).toLowerCase().includes(q.toLowerCase())) return false;
+    return true;
+  });
+
+  const roleColor = { Officer: 'blue', Supplier: 'cyan', System: 'purple' };
+  const eventIcon = (ev) => {
+    if (ev.includes('Login')) return <UserOutlined />;
+    if (ev.includes('Submitted')) return <UploadOutlined />;
+    if (ev.includes('Approved') || ev.includes('Issued')) return <CheckCircleOutlined />;
+    if (ev.includes('Rejected')) return <CloseCircleOutlined />;
+    if (ev.includes('Iteration')) return <WarningOutlined />;
+    if (ev.includes('Payment')) return <CreditCardOutlined />;
+    if (ev.includes('AI')) return <RobotOutlined />;
+    if (ev.includes('Export')) return <DownloadOutlined />;
+    return <InfoCircleOutlined />;
+  };
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>System</div>
+          <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Audit Log</antd.Typography.Title>
+          <antd.Typography.Text type="secondary">All system events · PDPA-compliant · Retained 7 years</antd.Typography.Text>
+        </div>
+        <antd.Space>
+          <antd.Button icon={<DownloadOutlined />}>Export CSV</antd.Button>
+        </antd.Space>
+      </div>
+
+      {/* Filters */}
+      <antd.Card bordered style={{ marginBottom: 16 }}>
+        <antd.Row gutter={[12, 12]} align="middle">
+          <antd.Col flex="auto">
+            <antd.Input placeholder="Search actor, event, application ID, detail…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />} value={q} onChange={e => setQ(e.target.value)} />
+          </antd.Col>
+          <antd.Col>
+            <antd.Segmented
+              value={actorFilter}
+              onChange={setActorFilter}
+              options={[{ label: 'All Actors', value: 'all' }, ...actorRoles.map(r => ({ label: r, value: r }))]}
+            />
+          </antd.Col>
+          <antd.Col>
+            <antd.Select
+              mode="multiple"
+              placeholder="Filter by event type"
+              style={{ minWidth: 220 }}
+              value={eventFilter}
+              onChange={setEventFilter}
+              options={eventTypes.map(t => ({ value: t, label: t }))}
+              maxTagCount={2}
+            />
+          </antd.Col>
+        </antd.Row>
+      </antd.Card>
+
+      {/* Log entries */}
+      <antd.Card bordered bodyStyle={{ padding: 0 }}>
+        <div style={{ padding: '10px 16px', background: 'var(--color-bg-subtle)', borderBottom: '1px solid var(--color-divider)', display: 'flex', gap: 16, fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4 }}>
+          <span style={{ width: 160 }}>Timestamp</span>
+          <span style={{ width: 36 }} />
+          <span style={{ flex: 1 }}>Event / Actor</span>
+          <span style={{ width: 140 }}>Application</span>
+          <span style={{ width: 110 }}>IP Address</span>
+        </div>
+        {filtered.map((e, i) => (
+          <div key={e.id} style={{ borderBottom: '1px solid var(--color-divider)' }}>
+            <div
+              onClick={() => setExpanded(expanded === e.id ? null : e.id)}
+              style={{ padding: '12px 16px', display: 'flex', gap: 16, alignItems: 'center', cursor: 'pointer', background: expanded === e.id ? 'var(--color-primary-soft)' : 'transparent', transition: 'background .15s' }}
+            >
+              <span style={{ width: 160, fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', flexShrink: 0 }}>
+                {new Date(e.ts).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+              <span style={{ width: 36, flexShrink: 0, color: 'var(--color-text-muted)', fontSize: 15 }}>{eventIcon(e.event)}</span>
+              <span style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{e.event}</div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>
+                  {e.actor} · <antd.Tag color={roleColor[e.actorRole]} style={{ fontSize: 10, padding: '0 5px', lineHeight: '16px' }}>{e.actorRole}</antd.Tag>
+                </div>
+              </span>
+              <span style={{ width: 140, flexShrink: 0 }}>
+                {e.appId
+                  ? <antd.Typography.Text code style={{ fontSize: 11 }}>{e.appId}</antd.Typography.Text>
+                  : <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>—</antd.Typography.Text>}
+              </span>
+              <span style={{ width: 110, fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', flexShrink: 0 }}>{e.ip}</span>
+            </div>
+            {expanded === e.id && (
+              <div style={{ padding: '10px 16px 14px', background: 'var(--color-primary-soft)', borderTop: '1px solid var(--color-primary)', display: 'flex', gap: 16 }}>
+                <span style={{ width: 196, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 4 }}>Detail</div>
+                  <div style={{ fontSize: 13, lineHeight: 1.6 }}>{e.detail}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 8 }}>Audit ID <antd.Typography.Text code style={{ fontSize: 10 }}>{e.id}</antd.Typography.Text></div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div style={{ padding: 40, textAlign: 'center' }}>
+            <antd.Empty description="No audit events match the current filters." />
+          </div>
+        )}
+        <div style={{ padding: '10px 16px', background: 'var(--color-bg-subtle)', borderTop: '1px solid var(--color-divider)', fontSize: 12, color: 'var(--color-text-muted)' }}>
+          Showing {filtered.length} of {MOCK.auditLog.length} events · Click a row to expand detail
+        </div>
+      </antd.Card>
+    </div>
+  );
+};
+
+function App() {
+  const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
+  const [editMode, setEditMode] = React.useState(false);
+  const [screen, setScreen] = React.useState(() => {
+    const saved = localStorage.getItem('ncef.screen');
+    return saved || 'dashboard';
+  });
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  const [minaOpen, setMinaOpen] = React.useState(false);
+
+  React.useEffect(() => { localStorage.setItem('ncef.screen', screen); }, [screen]);
+
+  // Tweaks listener
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setEditMode(true);
+      if (e.data?.type === '__deactivate_edit_mode') setEditMode(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const updateTweak = (k, v) => {
+    const next = { ...tweaks, [k]: v };
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*');
+  };
+
+  const isOfficer = tweaks.role === 'officer';
+  const nav = isOfficer ? NAV_OFFICER : NAV_SUPPLIER;
+
+  React.useEffect(() => {
+    // reset to a role-appropriate landing when role switches
+    if (isOfficer && !nav.find(n => n.key === screen)) setScreen('officer-queue');
+    if (!isOfficer && !NAV_SUPPLIER.find(n => n.key === screen)) setScreen('dashboard');
+  }, [tweaks.role]);
+
+  const Screen = SCREENS[screen] || (() => <div style={{ padding: 40 }}>Screen "{screen}" not found</div>);
+
+  return (
+    <ConfigProvider theme={{
+      token: {
+        colorPrimary: '#0B4F91',
+        colorSuccess: '#1B7F48',
+        colorWarning: '#B87200',
+        colorError: '#C62828',
+        colorInfo: '#0F6ABF',
+        fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif',
+        borderRadius: 8,
+        colorBgLayout: '#F5F8FB',
+      },
+      components: { Menu: { itemHeight: 40 } },
+    }}>
+      <Layout style={{ minHeight: '100vh' }} className={tweaks.denseTables ? 'ncef-compact' : ''}>
+        <Sider
+          width={240}
+          collapsedWidth={72}
+          collapsed={sidebarCollapsed}
+          style={{ background: '#fff', borderRight: '1px solid var(--color-divider)' }}
+          theme="light"
+        >
+          <div style={{ padding: '18px 16px', borderBottom: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', gap: 12, minHeight: 72 }}>
+            <img src="assets/mcmc-logo.png" alt="MCMC" style={{ width: 40, height: 40, objectFit: 'contain', flexShrink: 0 }} />
+            {!sidebarCollapsed && (
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.1, color: 'var(--color-primary)', letterSpacing: .2 }}>NCEF</div>
+                <div style={{ fontSize: 10, color: 'var(--color-text-muted)', letterSpacing: .3, marginTop: 2 }}>MCMC · Certification</div>
+              </div>
+            )}
+          </div>
+          <Menu
+            selectedKeys={[screen]}
+            mode="inline"
+            onClick={e => setScreen(e.key)}
+            items={nav}
+            style={{ border: 'none', marginTop: 8 }}
+          />
+          <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
+            {!sidebarCollapsed && (
+              <div style={{ padding: 12, background: 'var(--color-primary-soft)', borderRadius: 10, fontSize: 11 }}>
+                <div style={{ fontWeight: 700, color: 'var(--color-primary)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><RobotOutlined /> MINA assistant</div>
+                <div style={{ color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>Ask about schemes, documents, or application status.</div>
+                <Button type="link" size="small" style={{ padding: 0, marginTop: 4 }} onClick={() => setMinaOpen(true)}>Open chat →</Button>
+              </div>
+            )}
+          </div>
+        </Sider>
+
+        <Layout>
+          <Header style={{ background: '#fff', borderBottom: '1px solid var(--color-divider)', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, lineHeight: 'normal' }}>
+            <Space size="middle">
+              <Button type="text" icon={<MenuOutlined />} onClick={() => setSidebarCollapsed(!sidebarCollapsed)} />
+              <Input placeholder="Search applications, certificates, IMEIs…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />} style={{ width: 360 }} />
+            </Space>
+            <Space size="middle">
+              <Badge count={3} size="small"><Button type="text" icon={<BellOutlined style={{ fontSize: 18 }} />} /></Badge>
+              <Dropdown menu={{ items: [{ key: 'en', label: 'English' }, { key: 'bm', label: 'Bahasa Melayu' }] }}>
+                <Button type="text" icon={<GlobalOutlined />}>EN</Button>
+              </Dropdown>
+              <Dropdown menu={{ items: [
+                { key: 'profile', icon: <UserOutlined />, label: 'Profile & Settings', onClick: () => setScreen('profile') },
+                { key: 'help', icon: <QuestionCircleOutlined />, label: 'Help Centre' },
+                { type: 'divider' },
+                { key: 'logout', icon: <LogoutOutlined />, label: 'Sign out', danger: true },
+              ] }}>
+                <Space style={{ cursor: 'pointer' }}>
+                  <Avatar style={{ background: isOfficer ? 'var(--color-accent)' : 'var(--color-primary)' }}>{isOfficer ? 'F' : 'N'}</Avatar>
+                  <div style={{ textAlign: 'left', display: window.innerWidth > 640 ? 'block' : 'none' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{isOfficer ? 'En. Faisal Rahman' : 'Nurul Aisyah'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{isOfficer ? 'CPPG Officer' : 'Supplier · SUP-0426-00142'}</div>
+                  </div>
+                </Space>
+              </Dropdown>
+            </Space>
+          </Header>
+
+          <Content style={{ overflow: 'auto' }}>
+            <Screen nav={setScreen} tweaks={tweaks} />
+          </Content>
+        </Layout>
+
+        {!isOfficer && (
+          <div className="mina-fab" onClick={() => setMinaOpen(true)}>
+            <span className="pulse" />
+            <RobotOutlined style={{ fontSize: 22 }} />
+          </div>
+        )}
+
+        {/* MINA assistant drawer */}
+        <Drawer title={<Space><RobotOutlined style={{ color: 'var(--color-primary)' }} /><span>MINA · NCEF Assistant</span></Space>} placement="right" onClose={() => setMinaOpen(false)} open={minaOpen} width={400}>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                { role: 'bot', t: 'Hi Nurul! I can help with schemes, document requirements, and your open applications.' },
+                { role: 'user', t: 'Why was my Apple Watch application flagged for iteration?' },
+                { role: 'bot', t: 'APP-0426-00083 scored 62. The officer noted: missing frequency band for Wi-Fi 6E secondary range, and two clauses in MCMC MTSFB TC G015:2022 marked N/A without justification. You have until 4 Jun to resubmit.' },
+                { role: 'user', t: 'Can AI auto-accept my Xiaomi submission?' },
+                { role: 'bot', t: 'Your Mi Band 9 Pro scored 94, which exceeds the 90 threshold for Scheme C auto-accept. It was approved without officer review.' },
+              ].map((m, i) => (
+                <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', padding: '10px 14px', borderRadius: 12, background: m.role === 'user' ? 'var(--color-primary)' : 'var(--color-bg-subtle)', color: m.role === 'user' ? '#fff' : 'inherit', fontSize: 13, lineHeight: 1.5 }}>{m.t}</div>
+              ))}
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <Input.Search enterButton="Send" placeholder="Ask MINA…" />
+              <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                {['What documents do I need for Scheme B?', 'Check application status', 'How long is a certificate valid?'].map((q, i) => (
+                  <antd.Tag key={i} style={{ cursor: 'pointer' }}>{q}</antd.Tag>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Drawer>
+
+        {/* Tweaks panel */}
+        {editMode && (
+          <div style={{ position: 'fixed', bottom: 24, left: 24, width: 320, background: '#fff', border: '1px solid var(--color-border)', borderRadius: 12, boxShadow: 'var(--elevation-3)', padding: 16, zIndex: 200 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>Tweaks</div>
+              <Button size="small" type="text" onClick={() => setEditMode(false)}>✕</Button>
+            </div>
+            <div style={{ display: 'grid', gap: 14 }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 6 }}>Role</div>
+                <antd.Radio.Group value={tweaks.role} onChange={e => updateTweak('role', e.target.value)} buttonStyle="solid" size="small">
+                  <antd.Radio.Button value="supplier">Supplier</antd.Radio.Button>
+                  <antd.Radio.Button value="officer">Officer</antd.Radio.Button>
+                </antd.Radio.Group>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 6 }}>AI Score visualisation</div>
+                <antd.Radio.Group value={tweaks.aiViz} onChange={e => updateTweak('aiViz', e.target.value)} size="small">
+                  <antd.Radio.Button value="gauge">Gauge</antd.Radio.Button>
+                  <antd.Radio.Button value="bar">Bar</antd.Radio.Button>
+                  <antd.Radio.Button value="verdict">Verdict</antd.Radio.Button>
+                </antd.Radio.Group>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 6 }}>Wizard pattern</div>
+                <antd.Radio.Group value={tweaks.wizardPattern} onChange={e => updateTweak('wizardPattern', e.target.value)} size="small">
+                  <antd.Radio.Button value="horizontal">Horizontal</antd.Radio.Button>
+                  <antd.Radio.Button value="vertical">Vertical</antd.Radio.Button>
+                  <antd.Radio.Button value="pill">Pill</antd.Radio.Button>
+                </antd.Radio.Group>
+              </div>
+              <div>
+                <antd.Checkbox checked={tweaks.denseTables} onChange={e => updateTweak('denseTables', e.target.checked)}>Compact density</antd.Checkbox>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', paddingTop: 8, borderTop: '1px solid var(--color-divider)' }}>
+                Use the sidebar to visit Dashboard, Applications, SDoC Wizard, Special Approval, Onboarding, and (as Officer) the Review Queue + Active Review.
+              </div>
+            </div>
+          </div>
+        )}
+      </Layout>
+    </ConfigProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

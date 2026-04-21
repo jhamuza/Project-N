@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>NCEF Portal · MCMC</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Ant Design 5 -->
+<link rel="stylesheet" href="https://unpkg.com/antd@5.12.8/dist/reset.css">
+
+<!-- Tokens -->
+<link rel="stylesheet" href="styles/tokens.css">
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/dayjs@1.11.10/dayjs.min.js"></script>
+<script src="https://unpkg.com/antd@5.12.8/dist/antd.min.js"></script>
+<script src="https://unpkg.com/@ant-design/icons@5.3.7/dist/index.umd.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="data/mock.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="components/shared.jsx"></script>
+<script type="text/babel" src="components/screens-a.jsx"></script>
+<script type="text/babel" src="components/screens-b.jsx"></script>
+<script type="text/babel" src="components/screens-c.jsx"></script>
+
+<script type="text/babel">
+const { Layout, Menu, Button, Avatar, Dropdown, Badge, Space, Input, ConfigProvider, Drawer } = antd;
+const { Header, Sider, Content } = Layout;
+const ICONS = window.icons || {};
+// Destructure the icons we'll use throughout the shell + screens and publish to window.
+const {
+  DashboardOutlined, UnorderedListOutlined, PlusOutlined, StarOutlined, TeamOutlined,
+  SafetyCertificateOutlined, DollarOutlined, FlagOutlined, EyeOutlined, FileSearchOutlined,
+  BarChartOutlined, AuditOutlined, BellOutlined, MenuOutlined, SearchOutlined, UserOutlined,
+  SettingOutlined, LogoutOutlined, QuestionCircleOutlined, GlobalOutlined, RobotOutlined,
+  FileTextOutlined, FilePdfOutlined, FileImageOutlined, CheckCircleOutlined, ClockCircleOutlined,
+  WarningOutlined, CloseCircleOutlined, InfoCircleOutlined, DownloadOutlined, UploadOutlined,
+  EditOutlined, DeleteOutlined, MailOutlined, PhoneOutlined, LockOutlined, ShopOutlined,
+  CreditCardOutlined, BankOutlined, QrcodeOutlined, ArrowLeftOutlined, ArrowRightOutlined,
+  SendOutlined, PaperClipOutlined, ReloadOutlined, IdcardOutlined, ExclamationCircleOutlined,
+  LeftOutlined, RightOutlined, PlusCircleOutlined, MoreOutlined, HistoryOutlined, KeyOutlined,
+  ApartmentOutlined, ContainerOutlined, WalletOutlined, RiseOutlined
+} = icons;
+Object.assign(window, { icons, AntIcons: icons });
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "aiViz": "bar",
+  "wizardPattern": "horizontal",
+  "role": "officer",
+  "denseTables": true
+}/*EDITMODE-END*/;
+
+const NAV_SUPPLIER = [
+  { key: 'dashboard', label: 'Dashboard', icon: <DashboardOutlined /> },
+  { key: 'applications', label: 'My Applications', icon: <UnorderedListOutlined /> },
+  { key: 'sdoc-wizard', label: 'New SDoC', icon: <PlusCircleOutlined /> },
+  { key: 'special-approval', label: 'Special Approval', icon: <StarOutlined /> },
+  { key: 'certificates', label: 'Certificates', icon: <SafetyCertificateOutlined /> },
+  { key: 'imei-register', label: 'Register IMEI / SN', icon: <QrcodeOutlined /> },
+  { key: 'payments', label: 'Payments', icon: <WalletOutlined /> },
+  { key: 'onboarding', label: 'Supplier Onboarding', icon: <IdcardOutlined /> },
+  { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
+];
+const NAV_OFFICER = [
+  { key: 'officer-queue', label: 'Review Queue', icon: <FlagOutlined /> },
+  { key: 'officer-review', label: 'Active Review', icon: <EyeOutlined /> },
+  { key: 'applications', label: 'All Applications', icon: <FileSearchOutlined /> },
+  { key: 'reports', label: 'Reports & Analytics', icon: <BarChartOutlined /> },
+  { key: 'audit', label: 'Audit Log', icon: <AuditOutlined /> },
+  { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
+];
+
+function OfficerQueue({ nav }) {
+  const [filter, setFilter] = React.useState('mine');
+  const q = MOCK.officerQueue;
+  const list = filter === 'mine' ? q.filter(x => x.assignedTo === 'me') : q;
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>CPPG Officer · En. Faisal Rahman</div>
+      <antd.Typography.Title level={3} style={{ margin: '4px 0 20px' }}>Review Queue</antd.Typography.Title>
+
+      <antd.Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+        {[
+          { l: 'Pending My Review', v: 5, d: '1 urgent (SLA < 12h)', warn: true },
+          { l: 'Approved Today', v: 8, d: 'Avg turnaround 4.2 hrs', color: 'var(--color-success)' },
+          { l: 'Rejected Today', v: 1, d: 'Scheme SA prohibited' },
+          { l: 'Team SLA Compliance', v: '96%', d: 'Monthly target 95%', color: 'var(--color-success)' },
+        ].map((k, i) => (
+          <antd.Col xs={12} md={6} key={i}>
+            <div className="kpi-card">
+              <div className="kpi-label">{k.l}</div>
+              <div className="kpi-value" style={{ color: k.warn ? 'var(--color-warning)' : k.color || 'inherit' }}>{k.v}</div>
+              <div className="kpi-delta">{k.d}</div>
+            </div>
+          </antd.Col>
+        ))}
+      </antd.Row>
+
+      <antd.Card bordered>
+        <antd.Segmented
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { label: `Assigned to me (${q.filter(x => x.assignedTo === 'me').length})`, value: 'mine' },
+            { label: `All queues (${q.length})`, value: 'all' },
+          ]}
+          style={{ marginBottom: 16 }}
+        />
+        <antd.Table
+          rowKey="id"
+          dataSource={list}
+          pagination={false}
+          onRow={() => ({ onClick: () => nav('officer-review'), style: { cursor: 'pointer' } })}
+          columns={[
+            { title: 'App ID', dataIndex: 'id', render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
+            { title: 'Scheme', dataIndex: 'scheme', render: s => <SchemeBadge scheme={s} /> },
+            { title: 'Applicant', dataIndex: 'applicant' },
+            { title: 'Product', dataIndex: 'product' },
+            { title: 'AI Score', dataIndex: 'aiScore', render: s => <antd.Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{s}</antd.Tag> },
+            { title: 'Priority', dataIndex: 'priority', render: p => <antd.Tag color={p === 'high' ? 'red' : p === 'low' ? 'default' : 'blue'}>{p}</antd.Tag> },
+            { title: 'SLA', dataIndex: 'slaHours', render: h => <antd.Tag color={h < 12 ? 'red' : h < 24 ? 'orange' : 'default'}>{h}h left</antd.Tag> },
+            { title: 'Submitted', dataIndex: 'submitted', render: v => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) },
+          ]}
+        />
+      </antd.Card>
+    </div>
+  );
+}
+SCREENS['officer-queue'] = OfficerQueue;
+
+// ============ REPORTS & ANALYTICS ============
+SCREENS.reports = function Reports() {
+  const [period, setPeriod] = React.useState('month');
+  const trend = MOCK.monthlyTrend;
+  const totalSubmitted = trend.reduce((a, b) => a + b.submitted, 0);
+  const totalApproved  = trend.reduce((a, b) => a + b.approved, 0);
+  const totalAutoAccept = trend.reduce((a, b) => a + b.aiAutoAccepted, 0);
+  const approvalRate = Math.round(totalApproved / totalSubmitted * 100);
+  const maxSubmitted = Math.max(...trend.map(d => d.submitted));
+
+  // Inline SVG bar chart — no external dependency needed
+  const BAR_W = 48, BAR_GAP = 24, PAD = 40, HEIGHT = 160;
+  const chartW = trend.length * (BAR_W + BAR_GAP) + PAD;
+  const barColor = { submitted: 'var(--color-primary)', approved: 'var(--color-success)', aiAutoAccepted: 'var(--color-info)' };
+
+  function Bars({ key, color, yOffset = 0 }) {
+    return trend.map((d, i) => {
+      const h = Math.round((d[key] / maxSubmitted) * HEIGHT);
+      const x = PAD + i * (BAR_W + BAR_GAP);
+      const y = HEIGHT - h + yOffset;
+      return <rect key={i} x={x} y={y} width={BAR_W} height={h} rx={4} fill={color} opacity={0.85} />;
+    });
+  }
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Officer · CPPG</div>
+          <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Reports & Analytics</antd.Typography.Title>
+          <antd.Typography.Text type="secondary">MCMC NCEF · Certification performance · YTD 2026</antd.Typography.Text>
+        </div>
+        <antd.Space>
+          <antd.Segmented value={period} onChange={setPeriod} options={[{ label: 'This Month', value: 'month' }, { label: 'Last 3M', value: '3m' }, { label: 'YTD', value: 'ytd' }]} />
+          <antd.Button icon={<DownloadOutlined />}>Export PDF</antd.Button>
+        </antd.Space>
+      </div>
+
+      {/* KPI row */}
+      <antd.Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        {[
+          { l: 'Applications YTD', v: totalSubmitted, d: '+18% vs same period last year', color: 'var(--color-primary)' },
+          { l: 'Approval Rate', v: `${approvalRate}%`, d: `${totalApproved} approved of ${totalSubmitted}`, color: 'var(--color-success)' },
+          { l: 'AI Auto-Accepted', v: totalAutoAccept, d: `${Math.round(totalAutoAccept/totalApproved*100)}% of approvals (≥90 threshold)`, color: 'var(--color-info)' },
+          { l: 'SLA Compliance', v: '95.3%', d: 'Team target: 95% · On track', color: 'var(--color-success)' },
+        ].map((k, i) => (
+          <antd.Col xs={12} md={6} key={i}>
+            <div className="kpi-card">
+              <div className="kpi-label">{k.l}</div>
+              <div className="kpi-value" style={{ color: k.color }}>{k.v}</div>
+              <div className="kpi-delta">{k.d}</div>
+            </div>
+          </antd.Col>
+        ))}
+      </antd.Row>
+
+      <antd.Row gutter={[16, 16]}>
+        {/* Bar chart */}
+        <antd.Col xs={24} lg={16}>
+          <antd.Card title="Application Volume Trend" bordered extra={
+            <antd.Space size={16}>
+              {[['Submitted','var(--color-primary)'],['Approved','var(--color-success)'],['AI Auto-Accept','var(--color-info)']].map(([l,c]) => (
+                <antd.Space key={l} size={6}><span style={{ width: 10, height: 10, borderRadius: 2, background: c, display: 'inline-block' }} /><span style={{ fontSize: 12 }}>{l}</span></antd.Space>
+              ))}
+            </antd.Space>
+          }>
+            <svg width="100%" viewBox={`0 0 ${chartW} ${HEIGHT + 50}`} style={{ overflow: 'visible' }}>
+              {/* Y axis lines */}
+              {[0, 25, 50, 75, 100].map(pct => {
+                const y = HEIGHT - (pct / 100) * HEIGHT;
+                const val = Math.round((pct / 100) * maxSubmitted);
+                return <g key={pct}>
+                  <line x1={PAD} y1={y} x2={chartW} y2={y} stroke="var(--color-divider)" strokeWidth={1} />
+                  <text x={PAD - 6} y={y + 4} textAnchor="end" fontSize={10} fill="var(--color-text-muted)">{val}</text>
+                </g>;
+              })}
+              {/* Submitted bars (back) */}
+              {Bars({ key: 'submitted', color: 'var(--color-primary)' })}
+              {/* Approved bars (middle) */}
+              {trend.map((d, i) => {
+                const h = Math.round((d.approved / maxSubmitted) * HEIGHT);
+                const x = PAD + i * (BAR_W + BAR_GAP) + 4;
+                const y = HEIGHT - h;
+                return <rect key={i} x={x} y={y} width={BAR_W - 8} height={h} rx={3} fill="var(--color-success)" opacity={0.85} />;
+              })}
+              {/* AI auto-accept dots */}
+              {trend.map((d, i) => {
+                const h = Math.round((d.aiAutoAccepted / maxSubmitted) * HEIGHT);
+                const cx = PAD + i * (BAR_W + BAR_GAP) + BAR_W / 2;
+                const cy = HEIGHT - h - 8;
+                return <circle key={i} cx={cx} cy={cy} r={5} fill="var(--color-info)" />;
+              })}
+              {/* Month labels */}
+              {trend.map((d, i) => (
+                <text key={i} x={PAD + i * (BAR_W + BAR_GAP) + BAR_W / 2} y={HEIGHT + 20} textAnchor="middle" fontSize={12} fontWeight={600} fill="var(--color-text-secondary)">{d.month}</text>
+              ))}
+            </svg>
+          </antd.Card>
+
+          {/* Top applicants */}
+          <antd.Card title="Top Applicants by Volume" bordered style={{ marginTop: 16 }}>
+            <antd.Table
+              rowKey="id"
+              dataSource={MOCK.topApplicants}
+              pagination={false}
+              size="small"
+              columns={[
+                { title: 'Company', dataIndex: 'name', render: (v, r) => <div><div style={{ fontWeight: 600 }}>{v}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.id}</div></div> },
+                { title: 'Submitted', dataIndex: 'submissions', align: 'center', render: v => <antd.Tag>{v}</antd.Tag> },
+                { title: 'Approved', dataIndex: 'approved', align: 'center', render: v => <antd.Tag color="green">{v}</antd.Tag> },
+                { title: 'Approval Rate', align: 'center', render: (_, r) => {
+                  const pct = Math.round(r.approved / r.submissions * 100);
+                  return <antd.Progress percent={pct} size="small" strokeColor={pct >= 90 ? 'var(--color-success)' : pct >= 70 ? 'var(--color-warning)' : 'var(--color-danger)'} style={{ width: 100 }} />;
+                }},
+                { title: 'Avg AI Score', dataIndex: 'aiAvg', align: 'center', render: v => <antd.Tag color={v >= 90 ? 'green' : v >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{v}</antd.Tag> },
+              ]}
+            />
+          </antd.Card>
+        </antd.Col>
+
+        {/* Right column */}
+        <antd.Col xs={24} lg={8}>
+          {/* AI score distribution */}
+          <antd.Card title="AI Score Distribution" bordered style={{ marginBottom: 16 }}>
+            {[
+              { label: 'Auto-Accept (≥90)', count: totalAutoAccept, pct: Math.round(totalAutoAccept/totalApproved*100), color: 'var(--color-success)' },
+              { label: 'Priority Review (70–89)', count: totalApproved - totalAutoAccept - Math.round(totalApproved*0.08), pct: Math.round((totalApproved - totalAutoAccept - Math.round(totalApproved*0.08))/totalApproved*100), color: 'var(--color-warning)' },
+              { label: 'Standard Review (<70)', count: Math.round(totalApproved*0.08), pct: 8, color: 'var(--color-danger)' },
+            ].map((band, i) => (
+              <div key={i} style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: band.color }}>{band.label}</span>
+                  <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{band.count} apps ({band.pct}%)</span>
+                </div>
+                <div style={{ height: 8, background: 'var(--color-bg-subtle)', borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${band.pct}%`, background: band.color, borderRadius: 999, transition: 'width .8s' }} />
+                </div>
+              </div>
+            ))}
+            <antd.Divider style={{ margin: '12px 0' }} />
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
+              AI confidence scoring powered by <b>Qwen2.5-VL</b>. Threshold: 70 priority, 90 auto-accept (Scheme C).
+            </div>
+          </antd.Card>
+
+          {/* Officer performance */}
+          <antd.Card title="Officer Performance" bordered>
+            {MOCK.officerPerformance.map((o, i) => (
+              <div key={i} style={{ padding: '12px 0', borderBottom: i < MOCK.officerPerformance.length - 1 ? '1px solid var(--color-divider)' : 'none' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{o.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{o.id} · {o.approved + o.rejected} decisions</div>
+                  </div>
+                  <antd.Tag color={o.slaCompliance >= 95 ? 'green' : o.slaCompliance >= 90 ? 'orange' : 'red'}>{o.slaCompliance}% SLA</antd.Tag>
+                </div>
+                <antd.Row gutter={8}>
+                  {[
+                    { l: 'Approved', v: o.approved, c: 'var(--color-success)' },
+                    { l: 'Rejected', v: o.rejected, c: 'var(--color-danger)' },
+                    { l: 'Avg hrs', v: o.avgTurnaround, c: 'var(--color-primary)' },
+                    { l: 'AI overrides', v: o.aiOverrides, c: 'var(--color-warning)' },
+                  ].map((s, j) => (
+                    <antd.Col span={6} key={j}>
+                      <div style={{ textAlign: 'center', padding: '6px 4px', background: 'var(--color-bg-subtle)', borderRadius: 6 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: s.c }}>{s.v}</div>
+                        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>{s.l}</div>
+                      </div>
+                    </antd.Col>
+                  ))}
+                </antd.Row>
+              </div>
+            ))}
+          </antd.Card>
+        </antd.Col>
+      </antd.Row>
+    </div>
+  );
+};
+
+// ============ AUDIT LOG ============
+SCREENS.audit = function AuditLog() {
+  const [actorFilter, setActorFilter] = React.useState('all');
+  const [eventFilter, setEventFilter] = React.useState([]);
+  const [q, setQ] = React.useState('');
+  const [expanded, setExpanded] = React.useState(null);
+
+  const eventTypes = [...new Set(MOCK.auditLog.map(e => e.event))];
+  const actorRoles = ['Officer', 'Supplier', 'System'];
+
+  const filtered = MOCK.auditLog.filter(e => {
+    if (actorFilter !== 'all' && e.actorRole !== actorFilter) return false;
+    if (eventFilter.length && !eventFilter.includes(e.event)) return false;
+    if (q && !(e.actor + e.event + (e.appId || '') + e.detail).toLowerCase().includes(q.toLowerCase())) return false;
+    return true;
+  });
+
+  const roleColor = { Officer: 'blue', Supplier: 'cyan', System: 'purple' };
+  const eventIcon = (ev) => {
+    if (ev.includes('Login')) return <UserOutlined />;
+    if (ev.includes('Submitted')) return <UploadOutlined />;
+    if (ev.includes('Approved') || ev.includes('Issued')) return <CheckCircleOutlined />;
+    if (ev.includes('Rejected')) return <CloseCircleOutlined />;
+    if (ev.includes('Iteration')) return <WarningOutlined />;
+    if (ev.includes('Payment')) return <CreditCardOutlined />;
+    if (ev.includes('AI')) return <RobotOutlined />;
+    if (ev.includes('Export')) return <DownloadOutlined />;
+    return <InfoCircleOutlined />;
+  };
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>System</div>
+          <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Audit Log</antd.Typography.Title>
+          <antd.Typography.Text type="secondary">All system events · PDPA-compliant · Retained 7 years</antd.Typography.Text>
+        </div>
+        <antd.Space>
+          <antd.Button icon={<DownloadOutlined />}>Export CSV</antd.Button>
+        </antd.Space>
+      </div>
+
+      {/* Filters */}
+      <antd.Card bordered style={{ marginBottom: 16 }}>
+        <antd.Row gutter={[12, 12]} align="middle">
+          <antd.Col flex="auto">
+            <antd.Input placeholder="Search actor, event, application ID, detail…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />} value={q} onChange={e => setQ(e.target.value)} />
+          </antd.Col>
+          <antd.Col>
+            <antd.Segmented
+              value={actorFilter}
+              onChange={setActorFilter}
+              options={[{ label: 'All Actors', value: 'all' }, ...actorRoles.map(r => ({ label: r, value: r }))]}
+            />
+          </antd.Col>
+          <antd.Col>
+            <antd.Select
+              mode="multiple"
+              placeholder="Filter by event type"
+              style={{ minWidth: 220 }}
+              value={eventFilter}
+              onChange={setEventFilter}
+              options={eventTypes.map(t => ({ value: t, label: t }))}
+              maxTagCount={2}
+            />
+          </antd.Col>
+        </antd.Row>
+      </antd.Card>
+
+      {/* Log entries */}
+      <antd.Card bordered bodyStyle={{ padding: 0 }}>
+        <div style={{ padding: '10px 16px', background: 'var(--color-bg-subtle)', borderBottom: '1px solid var(--color-divider)', display: 'flex', gap: 16, fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4 }}>
+          <span style={{ width: 160 }}>Timestamp</span>
+          <span style={{ width: 36 }} />
+          <span style={{ flex: 1 }}>Event / Actor</span>
+          <span style={{ width: 140 }}>Application</span>
+          <span style={{ width: 110 }}>IP Address</span>
+        </div>
+        {filtered.map((e, i) => (
+          <div key={e.id} style={{ borderBottom: '1px solid var(--color-divider)' }}>
+            <div
+              onClick={() => setExpanded(expanded === e.id ? null : e.id)}
+              style={{ padding: '12px 16px', display: 'flex', gap: 16, alignItems: 'center', cursor: 'pointer', background: expanded === e.id ? 'var(--color-primary-soft)' : 'transparent', transition: 'background .15s' }}
+            >
+              <span style={{ width: 160, fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', flexShrink: 0 }}>
+                {new Date(e.ts).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+              <span style={{ width: 36, flexShrink: 0, color: 'var(--color-text-muted)', fontSize: 15 }}>{eventIcon(e.event)}</span>
+              <span style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{e.event}</div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>
+                  {e.actor} · <antd.Tag color={roleColor[e.actorRole]} style={{ fontSize: 10, padding: '0 5px', lineHeight: '16px' }}>{e.actorRole}</antd.Tag>
+                </div>
+              </span>
+              <span style={{ width: 140, flexShrink: 0 }}>
+                {e.appId
+                  ? <antd.Typography.Text code style={{ fontSize: 11 }}>{e.appId}</antd.Typography.Text>
+                  : <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>—</antd.Typography.Text>}
+              </span>
+              <span style={{ width: 110, fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', flexShrink: 0 }}>{e.ip}</span>
+            </div>
+            {expanded === e.id && (
+              <div style={{ padding: '10px 16px 14px', background: 'var(--color-primary-soft)', borderTop: '1px solid var(--color-primary)', display: 'flex', gap: 16 }}>
+                <span style={{ width: 196, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 4 }}>Detail</div>
+                  <div style={{ fontSize: 13, lineHeight: 1.6 }}>{e.detail}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 8 }}>Audit ID <antd.Typography.Text code style={{ fontSize: 10 }}>{e.id}</antd.Typography.Text></div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div style={{ padding: 40, textAlign: 'center' }}>
+            <antd.Empty description="No audit events match the current filters." />
+          </div>
+        )}
+        <div style={{ padding: '10px 16px', background: 'var(--color-bg-subtle)', borderTop: '1px solid var(--color-divider)', fontSize: 12, color: 'var(--color-text-muted)' }}>
+          Showing {filtered.length} of {MOCK.auditLog.length} events · Click a row to expand detail
+        </div>
+      </antd.Card>
+    </div>
+  );
+};
+
+function App() {
+  const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
+  const [editMode, setEditMode] = React.useState(false);
+  const [screen, setScreen] = React.useState(() => {
+    const saved = localStorage.getItem('ncef.screen');
+    return saved || 'dashboard';
+  });
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  const [minaOpen, setMinaOpen] = React.useState(false);
+
+  React.useEffect(() => { localStorage.setItem('ncef.screen', screen); }, [screen]);
+
+  // Tweaks listener
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setEditMode(true);
+      if (e.data?.type === '__deactivate_edit_mode') setEditMode(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const updateTweak = (k, v) => {
+    const next = { ...tweaks, [k]: v };
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*');
+  };
+
+  const isOfficer = tweaks.role === 'officer';
+  const nav = isOfficer ? NAV_OFFICER : NAV_SUPPLIER;
+
+  React.useEffect(() => {
+    // reset to a role-appropriate landing when role switches
+    if (isOfficer && !nav.find(n => n.key === screen)) setScreen('officer-queue');
+    if (!isOfficer && !NAV_SUPPLIER.find(n => n.key === screen)) setScreen('dashboard');
+  }, [tweaks.role]);
+
+  const Screen = SCREENS[screen] || (() => <div style={{ padding: 40 }}>Screen "{screen}" not found</div>);
+
+  return (
+    <ConfigProvider theme={{
+      token: {
+        colorPrimary: '#0B4F91',
+        colorSuccess: '#1B7F48',
+        colorWarning: '#B87200',
+        colorError: '#C62828',
+        colorInfo: '#0F6ABF',
+        fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif',
+        borderRadius: 8,
+        colorBgLayout: '#F5F8FB',
+      },
+      components: { Menu: { itemHeight: 40 } },
+    }}>
+      <Layout style={{ minHeight: '100vh' }} className={tweaks.denseTables ? 'ncef-compact' : ''}>
+        <Sider
+          width={240}
+          collapsedWidth={72}
+          collapsed={sidebarCollapsed}
+          style={{ background: '#fff', borderRight: '1px solid var(--color-divider)' }}
+          theme="light"
+        >
+          <div style={{ padding: '18px 16px', borderBottom: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', gap: 12, minHeight: 72 }}>
+            <img src="assets/mcmc-logo.png" alt="MCMC" style={{ width: 40, height: 40, objectFit: 'contain', flexShrink: 0 }} />
+            {!sidebarCollapsed && (
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.1, color: 'var(--color-primary)', letterSpacing: .2 }}>NCEF</div>
+                <div style={{ fontSize: 10, color: 'var(--color-text-muted)', letterSpacing: .3, marginTop: 2 }}>MCMC · Certification</div>
+              </div>
+            )}
+          </div>
+          <Menu
+            selectedKeys={[screen]}
+            mode="inline"
+            onClick={e => setScreen(e.key)}
+            items={nav}
+            style={{ border: 'none', marginTop: 8 }}
+          />
+          <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
+            {!sidebarCollapsed && (
+              <div style={{ padding: 12, background: 'var(--color-primary-soft)', borderRadius: 10, fontSize: 11 }}>
+                <div style={{ fontWeight: 700, color: 'var(--color-primary)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><RobotOutlined /> MINA assistant</div>
+                <div style={{ color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>Ask about schemes, documents, or application status.</div>
+                <Button type="link" size="small" style={{ padding: 0, marginTop: 4 }} onClick={() => setMinaOpen(true)}>Open chat →</Button>
+              </div>
+            )}
+          </div>
+        </Sider>
+
+        <Layout>
+          <Header style={{ background: '#fff', borderBottom: '1px solid var(--color-divider)', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, lineHeight: 'normal' }}>
+            <Space size="middle">
+              <Button type="text" icon={<MenuOutlined />} onClick={() => setSidebarCollapsed(!sidebarCollapsed)} />
+              <Input placeholder="Search applications, certificates, IMEIs…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />} style={{ width: 360 }} />
+            </Space>
+            <Space size="middle">
+              <Badge count={3} size="small"><Button type="text" icon={<BellOutlined style={{ fontSize: 18 }} />} /></Badge>
+              <Dropdown menu={{ items: [{ key: 'en', label: 'English' }, { key: 'bm', label: 'Bahasa Melayu' }] }}>
+                <Button type="text" icon={<GlobalOutlined />}>EN</Button>
+              </Dropdown>
+              <Dropdown menu={{ items: [
+                { key: 'profile', icon: <UserOutlined />, label: 'Profile & Settings', onClick: () => setScreen('profile') },
+                { key: 'help', icon: <QuestionCircleOutlined />, label: 'Help Centre' },
+                { type: 'divider' },
+                { key: 'logout', icon: <LogoutOutlined />, label: 'Sign out', danger: true },
+              ] }}>
+                <Space style={{ cursor: 'pointer' }}>
+                  <Avatar style={{ background: isOfficer ? 'var(--color-accent)' : 'var(--color-primary)' }}>{isOfficer ? 'F' : 'N'}</Avatar>
+                  <div style={{ textAlign: 'left', display: window.innerWidth > 640 ? 'block' : 'none' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{isOfficer ? 'En. Faisal Rahman' : 'Nurul Aisyah'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{isOfficer ? 'CPPG Officer' : 'Supplier · SUP-0426-00142'}</div>
+                  </div>
+                </Space>
+              </Dropdown>
+            </Space>
+          </Header>
+
+          <Content style={{ overflow: 'auto' }}>
+            <Screen nav={setScreen} tweaks={tweaks} />
+          </Content>
+        </Layout>
+
+        {!isOfficer && (
+          <div className="mina-fab" onClick={() => setMinaOpen(true)}>
+            <span className="pulse" />
+            <RobotOutlined style={{ fontSize: 22 }} />
+          </div>
+        )}
+
+        {/* MINA assistant drawer */}
+        <Drawer title={<Space><RobotOutlined style={{ color: 'var(--color-primary)' }} /><span>MINA · NCEF Assistant</span></Space>} placement="right" onClose={() => setMinaOpen(false)} open={minaOpen} width={400}>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                { role: 'bot', t: 'Hi Nurul! I can help with schemes, document requirements, and your open applications.' },
+                { role: 'user', t: 'Why was my Apple Watch application flagged for iteration?' },
+                { role: 'bot', t: 'APP-0426-00083 scored 62. The officer noted: missing frequency band for Wi-Fi 6E secondary range, and two clauses in MCMC MTSFB TC G015:2022 marked N/A without justification. You have until 4 Jun to resubmit.' },
+                { role: 'user', t: 'Can AI auto-accept my Xiaomi submission?' },
+                { role: 'bot', t: 'Your Mi Band 9 Pro scored 94, which exceeds the 90 threshold for Scheme C auto-accept. It was approved without officer review.' },
+              ].map((m, i) => (
+                <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', padding: '10px 14px', borderRadius: 12, background: m.role === 'user' ? 'var(--color-primary)' : 'var(--color-bg-subtle)', color: m.role === 'user' ? '#fff' : 'inherit', fontSize: 13, lineHeight: 1.5 }}>{m.t}</div>
+              ))}
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <Input.Search enterButton="Send" placeholder="Ask MINA…" />
+              <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                {['What documents do I need for Scheme B?', 'Check application status', 'How long is a certificate valid?'].map((q, i) => (
+                  <antd.Tag key={i} style={{ cursor: 'pointer' }}>{q}</antd.Tag>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Drawer>
+
+        {/* Tweaks panel */}
+        {editMode && (
+          <div style={{ position: 'fixed', bottom: 24, left: 24, width: 320, background: '#fff', border: '1px solid var(--color-border)', borderRadius: 12, boxShadow: 'var(--elevation-3)', padding: 16, zIndex: 200 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>Tweaks</div>
+              <Button size="small" type="text" onClick={() => setEditMode(false)}>✕</Button>
+            </div>
+            <div style={{ display: 'grid', gap: 14 }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 6 }}>Role</div>
+                <antd.Radio.Group value={tweaks.role} onChange={e => updateTweak('role', e.target.value)} buttonStyle="solid" size="small">
+                  <antd.Radio.Button value="supplier">Supplier</antd.Radio.Button>
+                  <antd.Radio.Button value="officer">Officer</antd.Radio.Button>
+                </antd.Radio.Group>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 6 }}>AI Score visualisation</div>
+                <antd.Radio.Group value={tweaks.aiViz} onChange={e => updateTweak('aiViz', e.target.value)} size="small">
+                  <antd.Radio.Button value="gauge">Gauge</antd.Radio.Button>
+                  <antd.Radio.Button value="bar">Bar</antd.Radio.Button>
+                  <antd.Radio.Button value="verdict">Verdict</antd.Radio.Button>
+                </antd.Radio.Group>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 6 }}>Wizard pattern</div>
+                <antd.Radio.Group value={tweaks.wizardPattern} onChange={e => updateTweak('wizardPattern', e.target.value)} size="small">
+                  <antd.Radio.Button value="horizontal">Horizontal</antd.Radio.Button>
+                  <antd.Radio.Button value="vertical">Vertical</antd.Radio.Button>
+                  <antd.Radio.Button value="pill">Pill</antd.Radio.Button>
+                </antd.Radio.Group>
+              </div>
+              <div>
+                <antd.Checkbox checked={tweaks.denseTables} onChange={e => updateTweak('denseTables', e.target.checked)}>Compact density</antd.Checkbox>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', paddingTop: 8, borderTop: '1px solid var(--color-divider)' }}>
+                Use the sidebar to visit Dashboard, Applications, SDoC Wizard, Special Approval, Onboarding, and (as Officer) the Review Queue + Active Review.
+              </div>
+            </div>
+          </div>
+        )}
+      </Layout>
+    </ConfigProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
