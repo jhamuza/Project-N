@@ -12,7 +12,8 @@
 <link rel="stylesheet" href="https://unpkg.com/antd@5.12.8/dist/reset.css">
 
 <!-- Tokens -->
-<style>/* NCEF Design Tokens — evolved from existing frontend/src/styles/design-tokens.css */
+<style>
+/* NCEF Design Tokens — evolved from existing frontend/src/styles/design-tokens.css */
 :root {
   --color-primary: #0B4F91;
   --color-primary-hover: #0A4783;
@@ -193,6 +194,7 @@ body {
 /* Officer split layout */
 .officer-split { display: grid; grid-template-columns: 1fr 380px; gap: 0; height: calc(100vh - 140px); }
 @media (max-width: 1280px) { .officer-split { grid-template-columns: 1fr; height: auto; } }
+
 </style>
 
 <!-- React + Babel -->
@@ -203,7 +205,7 @@ body {
 <script src="https://unpkg.com/@ant-design/icons@5.3.7/dist/index.umd.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-<script type="text/babel">
+<script>
 // Realistic Malaysian mock data for NCEF prototype
 window.MOCK = {
   currentUser: {
@@ -212,6 +214,39 @@ window.MOCK = {
     company: 'Axiata Digital Sdn Bhd',
     supplierId: 'SUP-0426-00142',
     email: 'nurul.aisyah@axiatadigital.com.my',
+  },
+  // Demo profile map — used by Login, Switch Profile, and header identity.
+  // All officers belong to MCMC's CPPG (Communications & Products Permit Group).
+  profiles: {
+    supplier: {
+      id: 'SUP-0426-00142',
+      role: 'supplier',
+      name: 'Nurul Aisyah binti Ahmad',
+      title: 'Supplier Administrator',
+      initials: 'NA',
+      email: 'nurul.aisyah@axiatadigital.com.my',
+      company: 'Axiata Digital Sdn Bhd',
+      supplierId: 'SUP-0426-00142',
+    },
+    'team-lead': {
+      id: 'OFF-001',
+      role: 'team-lead',
+      name: 'En. Faisal Rahman',
+      title: 'CPPG Team Lead',
+      initials: 'FR',
+      email: 'faisal.rahman@mcmc.gov.my',
+      team: 'CPPG-TL-01',
+    },
+    officer: {
+      id: 'OFF-002',
+      role: 'officer',
+      name: 'Pn. Rosnah Idris',
+      title: 'CPPG Officer',
+      initials: 'RI',
+      email: 'rosnah.idris@mcmc.gov.my',
+      team: 'CPPG-TL-01',
+      reportsTo: 'OFF-001',
+    },
   },
   assessments: [
     { id: 'APP-0426-00087', rcn: 'RCN-0326-00451', scheme: 'A', status: 'under_review', product: 'Samsung Galaxy S24 Ultra', brand: 'Samsung', model: 'SM-S928B', updated: '2026-04-18T10:30:00', submitted: '2026-04-15T14:20:00', aiScore: 87, officer: 'En. Faisal Rahman', priority: 'normal' },
@@ -222,11 +257,11 @@ window.MOCK = {
     { id: 'APP-0426-00079', rcn: 'RCN-0326-00442', scheme: 'A', status: 'approved', product: 'OPPO Find X7 Ultra', brand: 'OPPO', model: 'CPH2583', updated: '2026-04-05T12:00:00', submitted: '2026-04-01T09:30:00', aiScore: 91, priority: 'normal' },
   ],
   officerQueue: [
-    { id: 'APP-0426-00087', scheme: 'A', applicant: 'Axiata Digital Sdn Bhd', product: 'Samsung Galaxy S24 Ultra', submitted: '2026-04-15T14:20:00', aiScore: 87, priority: 'normal', slaHours: 18, assignedTo: 'me' },
-    { id: 'APP-0426-00091', scheme: 'B', applicant: 'Celcom Axiata Berhad', product: 'HP LaserJet Pro MFP', submitted: '2026-04-16T11:05:00', aiScore: 78, priority: 'normal', slaHours: 36, assignedTo: 'me' },
-    { id: 'APP-0426-00092', scheme: 'C', applicant: 'TM Technology Services', product: 'Unifi Router AX3000', submitted: '2026-04-17T08:30:00', aiScore: 96, priority: 'low', slaHours: 60, assignedTo: 'me' },
-    { id: 'APP-0426-00094', scheme: 'SA', applicant: 'Maxis Broadband Sdn Bhd', product: '5G mmWave Test Unit', submitted: '2026-04-18T10:15:00', aiScore: 65, priority: 'high', slaHours: 8, assignedTo: 'unassigned' },
-    { id: 'APP-0426-00095', scheme: 'A', applicant: 'Digi Telecommunications', product: 'Ericsson AIR 6419', submitted: '2026-04-18T15:42:00', aiScore: 83, priority: 'normal', slaHours: 48, assignedTo: 'unassigned' },
+    { id: 'APP-0426-00087', scheme: 'A', applicant: 'Axiata Digital Sdn Bhd', product: 'Samsung Galaxy S24 Ultra', submitted: '2026-04-15T14:20:00', aiScore: 87, priority: 'normal', slaHours: 18, assignedTo: 'OFF-001' },
+    { id: 'APP-0426-00091', scheme: 'B', applicant: 'Celcom Axiata Berhad', product: 'HP LaserJet Pro MFP', submitted: '2026-04-16T11:05:00', aiScore: 78, priority: 'normal', slaHours: 36, assignedTo: 'OFF-002' },
+    { id: 'APP-0426-00092', scheme: 'C', applicant: 'TM Technology Services', product: 'Unifi Router AX3000', submitted: '2026-04-17T08:30:00', aiScore: 96, priority: 'low', slaHours: 60, assignedTo: 'OFF-002' },
+    { id: 'APP-0426-00094', scheme: 'SA', applicant: 'Maxis Broadband Sdn Bhd', product: '5G mmWave Test Unit', submitted: '2026-04-18T10:15:00', aiScore: 65, priority: 'high', slaHours: 8, assignedTo: null },
+    { id: 'APP-0426-00095', scheme: 'A', applicant: 'Digi Telecommunications', product: 'Ericsson AIR 6419', submitted: '2026-04-18T15:42:00', aiScore: 83, priority: 'normal', slaHours: 48, assignedTo: 'OFF-003' },
   ],
   aiReasoning: [
     { category: 'SSM/ROC/ROB Validation', score: 18, max: 20, note: 'BRN 201901023456 verified; entity active since 2019.', pass: true },
@@ -294,9 +329,9 @@ window.MOCK = {
   ],
   // Officer performance
   officerPerformance: [
-    { name: 'En. Faisal Rahman', id: 'OFF-001', approved: 48, rejected: 6, avgTurnaround: 4.2, slaCompliance: 96, aiOverrides: 3 },
-    { name: 'Pn. Rosnah Idris', id: 'OFF-002', approved: 41, rejected: 4, avgTurnaround: 5.8, slaCompliance: 92, aiOverrides: 7 },
-    { name: 'En. Syahrul Azlan', id: 'OFF-003', approved: 35, rejected: 8, avgTurnaround: 3.9, slaCompliance: 98, aiOverrides: 1 },
+    { name: 'En. Faisal Rahman', id: 'OFF-001', role: 'team-lead', team: 'CPPG-TL-01', approved: 48, rejected: 6, avgTurnaround: 4.2, slaCompliance: 96, aiOverrides: 3 },
+    { name: 'Pn. Rosnah Idris', id: 'OFF-002', role: 'officer', team: 'CPPG-TL-01', approved: 41, rejected: 4, avgTurnaround: 5.8, slaCompliance: 92, aiOverrides: 7 },
+    { name: 'En. Syahrul Azlan', id: 'OFF-003', role: 'officer', team: 'CPPG-TL-01', approved: 35, rejected: 8, avgTurnaround: 3.9, slaCompliance: 98, aiOverrides: 1 },
   ],
   // Top applicants by volume (for Reports screen)
   topApplicants: [
@@ -466,6 +501,120 @@ Object.assign(window, { StatusPill, SchemeBadge, AiScoreCard });
 <script type="text/babel">
 // Screens: Dashboard, Applications list, Onboarding, SDoC Wizard, Special Approval, Officer Review
 const SCREENS = {};
+
+// ============ LOGIN ============
+// Pre-auth screen. Rendered by App when loggedIn === false.
+// Accepts onLogin(role) — parent flips loggedIn=true and navigates to role's default landing.
+SCREENS.login = function LoginScreen({ onLogin }) {
+  const profiles = MOCK.profiles;
+  const [selected, setSelected] = React.useState('supplier');
+  const p = profiles[selected];
+  const [email, setEmail] = React.useState(p.email);
+  const [password, setPassword] = React.useState('••••••••');
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    setEmail(profiles[selected].email);
+    setPassword('••••••••');
+  }, [selected]);
+
+  const submit = () => {
+    setLoading(true);
+    setTimeout(() => { setLoading(false); onLogin(selected); }, 700);
+  };
+
+  const roleAccent = {
+    supplier: 'var(--color-primary)',
+    'team-lead': '#7B3FA0',
+    officer: 'var(--color-accent, #0F6ABF)',
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(180deg, #F5F8FB 0%, #E7EEF6 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+    }}>
+      <div style={{ width: '100%', maxWidth: 960, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 24 }}>
+        {/* Left: Branding panel */}
+        <div style={{ padding: 40, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'var(--color-primary)', color: '#fff', borderRadius: 16, minHeight: 540 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+              <img src="assets/mcmc-logo.png" alt="MCMC" style={{ width: 48, height: 48, background: '#fff', borderRadius: 8, padding: 4 }} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 20, lineHeight: 1.1 }}>NCEF</div>
+                <div style={{ fontSize: 11, opacity: 0.85, letterSpacing: 0.4 }}>MCMC · CERTIFICATION PORTAL</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 600, lineHeight: 1.3, marginBottom: 16 }}>
+              Selamat datang ke Portal NCEF
+            </div>
+            <div style={{ fontSize: 14, opacity: 0.9, lineHeight: 1.6 }}>
+              Malaysia's unified certification platform for communications and multimedia equipment.
+              Submit declarations, track approvals, and manage certificates — all in one place.
+            </div>
+          </div>
+          <div style={{ fontSize: 11, opacity: 0.7, borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 16 }}>
+            © 2026 Malaysian Communications and Multimedia Commission · Suruhanjaya Komunikasi dan Multimedia Malaysia
+          </div>
+        </div>
+
+        {/* Right: Form */}
+        <antd.Card bordered={false} style={{ boxShadow: 'var(--elevation-2, 0 8px 24px rgba(11,79,145,0.08))', borderRadius: 16, minHeight: 540 }} bodyStyle={{ padding: 40 }}>
+          <div style={{ marginBottom: 24 }}>
+            <antd.Typography.Title level={3} style={{ margin: 0 }}>Sign in</antd.Typography.Title>
+            <antd.Typography.Text type="secondary">Use your MCMC credentials or supplier account</antd.Typography.Text>
+          </div>
+
+          <antd.Form layout="vertical" onFinish={submit}>
+            <antd.Form.Item label="Email" required>
+              <antd.Input size="large" prefix={<MailOutlined />} value={email} onChange={e => setEmail(e.target.value)} />
+            </antd.Form.Item>
+            <antd.Form.Item label="Password" required>
+              <antd.Input.Password size="large" prefix={<LockOutlined />} value={password} onChange={e => setPassword(e.target.value)} />
+            </antd.Form.Item>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <antd.Checkbox defaultChecked>Remember me</antd.Checkbox>
+              <antd.Typography.Link>Forgot password?</antd.Typography.Link>
+            </div>
+            <antd.Button type="primary" size="large" htmlType="submit" block loading={loading}>Sign in</antd.Button>
+          </antd.Form>
+
+          <antd.Divider style={{ margin: '24px 0 16px', fontSize: 11, color: 'var(--color-text-muted)' }}>DEMO ACCOUNTS</antd.Divider>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            {['supplier', 'team-lead', 'officer'].map(key => {
+              const prof = profiles[key];
+              const isActive = selected === key;
+              return (
+                <div
+                  key={key}
+                  onClick={() => setSelected(key)}
+                  style={{
+                    padding: 10,
+                    border: `1.5px solid ${isActive ? roleAccent[key] : 'var(--color-border, #E5E7EB)'}`,
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    background: isActive ? 'rgba(11,79,145,0.04)' : '#fff',
+                    textAlign: 'center',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <antd.Avatar size={32} style={{ background: roleAccent[key], marginBottom: 6, fontSize: 12, fontWeight: 600 }}>{prof.initials}</antd.Avatar>
+                  <div style={{ fontSize: 11, fontWeight: 600, lineHeight: 1.2 }}>{prof.name.split(' ').slice(-1)[0] || prof.name}</div>
+                  <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 2 }}>{prof.title}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 12, textAlign: 'center' }}>
+            Click a card to prefill demo credentials
+          </div>
+        </antd.Card>
+      </div>
+    </div>
+  );
+};
+
 
 // ============ DASHBOARD ============
 SCREENS.dashboard = function Dashboard({ nav, tweaks }) {
@@ -1709,32 +1858,74 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
 };
 
 // ============ OFFICER REVIEW SPLIT VIEW ============
-SCREENS['officer-review'] = function OfficerReview({ nav, tweaks }) {
+SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser }) {
   const [decision, setDecision] = React.useState(null);
   const [iterMsg, setIterMsg] = React.useState('');
   const [showDocViewer, setShowDocViewer] = React.useState(false);
   const [activeDoc, setActiveDoc] = React.useState(null);
+  const [reassignOpen, setReassignOpen] = React.useState(false);
+  const [assignedOverride, setAssignedOverride] = React.useState(null);
   const a = MOCK.assessments[0];
+  const isLead = currentUser?.role === 'team-lead';
+  const isOfficer = currentUser?.role === 'officer';
+
+  // Access guard: normal officer can only review apps assigned to them.
+  // Use the first queue entry as the "current app" for this mocked screen.
+  const queueEntry = MOCK.officerQueue.find(q => q.id === a.id) || MOCK.officerQueue[0];
+  const assignedId = assignedOverride ?? queueEntry?.assignedTo;
+  const assignedOfficer = MOCK.officerPerformance.find(o => o.id === assignedId);
+  const canReview = !isOfficer || assignedId === currentUser.id;
+
+  if (!canReview) {
+    return (
+      <antd.Result
+        status="warning"
+        title="Not assigned to you"
+        subTitle={<>Application <Typography.Text code>{a.id}</Typography.Text> is currently assigned to <b>{assignedOfficer?.name || 'another officer'}</b>. Ask your Team Lead to reassign if needed.</>}
+        extra={<Button type="primary" onClick={() => nav('officer-queue')}>Back to My Queue</Button>}
+        style={{ padding: '80px 24px' }}
+      />
+    );
+  }
 
   return (
     <div>
       <div style={{ padding: '16px 32px', background: 'var(--color-bg-elevated)', borderBottom: '1px solid var(--color-divider)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <Breadcrumb items={[{ title: <a onClick={() => nav('applications')}>Queue</a> }, { title: <span style={{ fontFamily: 'var(--font-mono)' }}>{a.id}</span> }]} />
+          <Breadcrumb items={[{ title: <a onClick={() => nav('officer-queue')}>Queue</a> }, { title: <span style={{ fontFamily: 'var(--font-mono)' }}>{a.id}</span> }]} />
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6 }}>
             <SchemeBadge scheme={a.scheme} />
             <span style={{ fontSize: 18, fontWeight: 600 }}>{a.product}</span>
             <Text type="secondary">· {a.brand} {a.model}</Text>
             <StatusPill status={a.status} />
+            {assignedOfficer && (
+              <Tag color={assignedOfficer.role === 'team-lead' ? 'purple' : 'blue'}>
+                Assigned to {assignedOfficer.name}
+              </Tag>
+            )}
           </div>
         </div>
         <Space>
           <Tooltip title="Previous in queue"><Button icon="←">Prev</Button></Tooltip>
           <Tooltip title="Next in queue"><Button icon="→">Next</Button></Tooltip>
-          <Button>Reassign</Button>
+          {isLead && <Button onClick={() => setReassignOpen(true)}>Reassign</Button>}
           <Button type="text" danger>Flag</Button>
         </Space>
       </div>
+
+      {isLead && window.AssignOfficerModal && (
+        <window.AssignOfficerModal
+          open={reassignOpen}
+          onClose={() => setReassignOpen(false)}
+          applicationId={a.id}
+          currentAssigneeId={assignedId}
+          onAssign={(officerId) => {
+            setAssignedOverride(officerId);
+            const name = MOCK.officerPerformance.find(o => o.id === officerId)?.name;
+            antd.message.success(`${a.id} reassigned to ${name}`);
+          }}
+        />
+      )}
 
       <div className="officer-split">
         {/* LEFT: Document viewer */}
@@ -2549,7 +2740,8 @@ const {
   CreditCardOutlined, BankOutlined, QrcodeOutlined, ArrowLeftOutlined, ArrowRightOutlined,
   SendOutlined, PaperClipOutlined, ReloadOutlined, IdcardOutlined, ExclamationCircleOutlined,
   LeftOutlined, RightOutlined, PlusCircleOutlined, MoreOutlined, HistoryOutlined, KeyOutlined,
-  ApartmentOutlined, ContainerOutlined, WalletOutlined, RiseOutlined
+  ApartmentOutlined, ContainerOutlined, WalletOutlined, RiseOutlined,
+  SwapOutlined, TeamOutlined, CrownOutlined
 } = icons;
 Object.assign(window, { icons, AntIcons: icons });
 
@@ -2571,7 +2763,7 @@ const NAV_SUPPLIER = [
   { key: 'onboarding', label: 'Supplier Onboarding', icon: <IdcardOutlined /> },
   { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
 ];
-const NAV_OFFICER = [
+const NAV_TEAM_LEAD = [
   { key: 'officer-queue', label: 'Review Queue', icon: <FlagOutlined /> },
   { key: 'officer-review', label: 'Active Review', icon: <EyeOutlined /> },
   { key: 'applications', label: 'All Applications', icon: <FileSearchOutlined /> },
@@ -2579,23 +2771,134 @@ const NAV_OFFICER = [
   { key: 'audit', label: 'Audit Log', icon: <AuditOutlined /> },
   { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
 ];
+const NAV_OFFICER = [
+  { key: 'officer-queue', label: 'My Queue', icon: <FlagOutlined /> },
+  { key: 'officer-review', label: 'Active Review', icon: <EyeOutlined /> },
+  { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
+];
+const NAV_BY_ROLE = { supplier: NAV_SUPPLIER, 'team-lead': NAV_TEAM_LEAD, officer: NAV_OFFICER };
+const DEFAULT_SCREEN_BY_ROLE = { supplier: 'dashboard', 'team-lead': 'officer-queue', officer: 'officer-queue' };
 
-function OfficerQueue({ nav }) {
-  const [filter, setFilter] = React.useState('mine');
-  const q = MOCK.officerQueue;
-  const list = filter === 'mine' ? q.filter(x => x.assignedTo === 'me') : q;
+// Shared officer-roster picker used by both Assign (TL) on unassigned rows
+// and Reassign (TL) on Active Review.
+function AssignOfficerModal({ open, onClose, onAssign, applicationId, currentAssigneeId }) {
+  const officers = MOCK.officerPerformance;
+  const [pick, setPick] = React.useState(currentAssigneeId || null);
+  React.useEffect(() => { if (open) setPick(currentAssigneeId || null); }, [open, currentAssigneeId]);
+
+  return (
+    <antd.Modal
+      open={open}
+      onCancel={onClose}
+      title={currentAssigneeId ? 'Reassign application' : 'Assign application'}
+      width={520}
+      okText={currentAssigneeId ? 'Reassign' : 'Assign'}
+      okButtonProps={{ disabled: !pick || pick === currentAssigneeId }}
+      onOk={() => { onAssign(pick); onClose(); }}
+    >
+      <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+        Application <antd.Typography.Text code>{applicationId}</antd.Typography.Text>{' '}
+        — select a CPPG officer from team <antd.Tag>CPPG-TL-01</antd.Tag>
+      </div>
+      <div style={{ display: 'grid', gap: 8 }}>
+        {officers.map(o => {
+          const isPicked = pick === o.id;
+          const roleBadge = o.role === 'team-lead'
+            ? <antd.Tag color="purple" icon={<CrownOutlined />}>Team Lead</antd.Tag>
+            : <antd.Tag>Officer</antd.Tag>;
+          return (
+            <div
+              key={o.id}
+              onClick={() => setPick(o.id)}
+              style={{
+                padding: 12,
+                border: `1.5px solid ${isPicked ? 'var(--color-primary)' : 'var(--color-border, #E5E7EB)'}`,
+                borderRadius: 10,
+                cursor: 'pointer',
+                background: isPicked ? 'rgba(11,79,145,0.04)' : '#fff',
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}
+            >
+              <antd.Avatar style={{ background: o.role === 'team-lead' ? '#7B3FA0' : 'var(--color-primary)' }}>
+                {o.name.split(' ').slice(-1)[0].slice(0, 2).toUpperCase()}
+              </antd.Avatar>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {o.name} {roleBadge}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                  {o.id} · SLA {o.slaCompliance}% · {o.approved} approved · avg {o.avgTurnaround}h turnaround
+                </div>
+              </div>
+              {isPicked && <CheckCircleOutlined style={{ color: 'var(--color-primary)', fontSize: 18 }} />}
+            </div>
+          );
+        })}
+      </div>
+    </antd.Modal>
+  );
+}
+// Expose for use by Active Review in screens-b.jsx
+window.AssignOfficerModal = AssignOfficerModal;
+
+function OfficerQueue({ nav, currentUser }) {
+  const isLead = currentUser?.role === 'team-lead';
+  const myId = currentUser?.id;
+  const officerById = React.useMemo(() => {
+    const m = {};
+    MOCK.officerPerformance.forEach(o => { m[o.id] = o; });
+    return m;
+  }, []);
+  // Local assignment overrides so Team Lead can see immediate effect of Assign/Reassign
+  const [overrides, setOverrides] = React.useState({});
+  const resolved = React.useMemo(
+    () => MOCK.officerQueue.map(r => ({ ...r, assignedTo: overrides[r.id] ?? r.assignedTo })),
+    [overrides]
+  );
+  const myCount = resolved.filter(x => x.assignedTo === myId).length;
+  const teamCount = resolved.length;
+  const unassignedCount = resolved.filter(x => x.assignedTo == null).length;
+
+  const [filter, setFilter] = React.useState(isLead ? 'mine' : 'mine');
+  const [assignOpen, setAssignOpen] = React.useState(false);
+  const [assignTarget, setAssignTarget] = React.useState(null);
+
+  let list;
+  if (isLead) {
+    if (filter === 'mine') list = resolved.filter(x => x.assignedTo === myId);
+    else if (filter === 'team') list = resolved.filter(x => x.assignedTo != null);
+    else if (filter === 'unassigned') list = resolved.filter(x => x.assignedTo == null);
+    else list = resolved;
+  } else {
+    list = resolved.filter(x => x.assignedTo === myId);
+  }
+
+  const myPerf = officerById[myId];
+  const kpis = isLead
+    ? [
+        { l: 'In My Queue', v: myCount, d: `${myCount ? '1 urgent' : 'All clear'} (SLA < 12h)`, warn: myCount > 0 },
+        { l: 'Team Pending', v: teamCount, d: `${unassignedCount} unassigned`, color: unassignedCount > 0 ? 'var(--color-warning)' : 'inherit' },
+        { l: 'Approved Today (Team)', v: 8, d: 'Avg turnaround 4.2 hrs', color: 'var(--color-success)' },
+        { l: 'Team SLA Compliance', v: '96%', d: 'Monthly target 95%', color: 'var(--color-success)' },
+      ]
+    : [
+        { l: 'Assigned to Me', v: myCount, d: `${myCount ? '1 urgent (SLA < 24h)' : 'All clear'}`, warn: myCount > 0 },
+        { l: 'Approved This Week', v: Math.round((myPerf?.approved || 0) / 8), d: `${myPerf?.approved || 0} lifetime approvals`, color: 'var(--color-success)' },
+        { l: 'My Avg Turnaround', v: `${myPerf?.avgTurnaround || 0}h`, d: 'Team avg 4.6h' },
+        { l: 'My SLA Compliance', v: `${myPerf?.slaCompliance || 0}%`, d: 'Monthly target 95%', color: (myPerf?.slaCompliance || 0) >= 95 ? 'var(--color-success)' : 'var(--color-warning)' },
+      ];
+
   return (
     <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
-      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>CPPG Officer · En. Faisal Rahman</div>
-      <antd.Typography.Title level={3} style={{ margin: '4px 0 20px' }}>Review Queue</antd.Typography.Title>
+      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>
+        {currentUser?.title || 'CPPG Officer'} · {currentUser?.name || ''}
+      </div>
+      <antd.Typography.Title level={3} style={{ margin: '4px 0 20px' }}>
+        {isLead ? 'Review Queue · Team View' : 'My Review Queue'}
+      </antd.Typography.Title>
 
       <antd.Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-        {[
-          { l: 'Pending My Review', v: 5, d: '1 urgent (SLA < 12h)', warn: true },
-          { l: 'Approved Today', v: 8, d: 'Avg turnaround 4.2 hrs', color: 'var(--color-success)' },
-          { l: 'Rejected Today', v: 1, d: 'Scheme SA prohibited' },
-          { l: 'Team SLA Compliance', v: '96%', d: 'Monthly target 95%', color: 'var(--color-success)' },
-        ].map((k, i) => (
+        {kpis.map((k, i) => (
           <antd.Col xs={12} md={6} key={i}>
             <div className="kpi-card">
               <div className="kpi-label">{k.l}</div>
@@ -2607,20 +2910,35 @@ function OfficerQueue({ nav }) {
       </antd.Row>
 
       <antd.Card bordered>
-        <antd.Segmented
-          value={filter}
-          onChange={setFilter}
-          options={[
-            { label: `Assigned to me (${q.filter(x => x.assignedTo === 'me').length})`, value: 'mine' },
-            { label: `All queues (${q.length})`, value: 'all' },
-          ]}
-          style={{ marginBottom: 16 }}
-        />
+        {isLead && (
+          <antd.Segmented
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { label: `My queue (${myCount})`, value: 'mine' },
+              { label: `Team queue (${teamCount - unassignedCount})`, value: 'team' },
+              { label: `Unassigned (${unassignedCount})`, value: 'unassigned' },
+            ]}
+            style={{ marginBottom: 16 }}
+          />
+        )}
+        {!isLead && (
+          <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+            Showing <b>{myCount}</b> applications assigned to you. Need help? Ask your Team Lead to reassign.
+          </div>
+        )}
         <antd.Table
           rowKey="id"
           dataSource={list}
           pagination={false}
-          onRow={() => ({ onClick: () => nav('officer-review'), style: { cursor: 'pointer' } })}
+          onRow={row => ({
+            onClick: (e) => {
+              // Don't navigate when clicking the Assign button
+              if (e.target.closest('.assign-btn')) return;
+              nav('officer-review');
+            },
+            style: { cursor: 'pointer' },
+          })}
           columns={[
             { title: 'App ID', dataIndex: 'id', render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
             { title: 'Scheme', dataIndex: 'scheme', render: s => <SchemeBadge scheme={s} /> },
@@ -2629,17 +2947,57 @@ function OfficerQueue({ nav }) {
             { title: 'AI Score', dataIndex: 'aiScore', render: s => <antd.Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{s}</antd.Tag> },
             { title: 'Priority', dataIndex: 'priority', render: p => <antd.Tag color={p === 'high' ? 'red' : p === 'low' ? 'default' : 'blue'}>{p}</antd.Tag> },
             { title: 'SLA', dataIndex: 'slaHours', render: h => <antd.Tag color={h < 12 ? 'red' : h < 24 ? 'orange' : 'default'}>{h}h left</antd.Tag> },
+            ...(isLead ? [{
+              title: 'Assigned',
+              dataIndex: 'assignedTo',
+              render: (id, row) => id
+                ? <antd.Tooltip title={officerById[id]?.name}><antd.Tag>{officerById[id]?.name?.split(' ').slice(-1)[0] || id}</antd.Tag></antd.Tooltip>
+                : (
+                  <antd.Button
+                    className="assign-btn"
+                    size="small"
+                    type="primary"
+                    icon={<TeamOutlined />}
+                    onClick={(e) => { e.stopPropagation(); setAssignTarget(row.id); setAssignOpen(true); }}
+                  >Assign…</antd.Button>
+                ),
+            }] : []),
             { title: 'Submitted', dataIndex: 'submitted', render: v => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) },
           ]}
         />
       </antd.Card>
+
+      {isLead && (
+        <AssignOfficerModal
+          open={assignOpen}
+          onClose={() => setAssignOpen(false)}
+          applicationId={assignTarget}
+          currentAssigneeId={assignTarget ? resolved.find(r => r.id === assignTarget)?.assignedTo : null}
+          onAssign={(officerId) => {
+            setOverrides(prev => ({ ...prev, [assignTarget]: officerId }));
+            antd.message.success(`Assigned ${assignTarget} to ${officerById[officerId]?.name}`);
+          }}
+        />
+      )}
     </div>
   );
 }
 SCREENS['officer-queue'] = OfficerQueue;
 
 // ============ REPORTS & ANALYTICS ============
-SCREENS.reports = function Reports() {
+SCREENS.reports = function Reports({ nav, currentUser }) {
+  if (currentUser?.role === 'officer') {
+    return (
+      <antd.Result
+        status="403"
+        icon={<LockOutlined style={{ color: 'var(--color-warning)' }} />}
+        title="Restricted — Team Leads only"
+        subTitle="Reports & Analytics is available to CPPG Team Leads. Contact your Team Lead for a shared summary."
+        extra={<antd.Button type="primary" onClick={() => nav('officer-queue')}>Back to My Queue</antd.Button>}
+        style={{ padding: '80px 24px' }}
+      />
+    );
+  }
   const [period, setPeriod] = React.useState('month');
   const trend = MOCK.monthlyTrend;
   const totalSubmitted = trend.reduce((a, b) => a + b.submitted, 0);
@@ -2819,7 +3177,19 @@ SCREENS.reports = function Reports() {
 };
 
 // ============ AUDIT LOG ============
-SCREENS.audit = function AuditLog() {
+SCREENS.audit = function AuditLog({ nav, currentUser }) {
+  if (currentUser?.role === 'officer') {
+    return (
+      <antd.Result
+        status="403"
+        icon={<LockOutlined style={{ color: 'var(--color-warning)' }} />}
+        title="Restricted — Team Leads only"
+        subTitle="The Audit Log is restricted to CPPG Team Leads for compliance reasons."
+        extra={<antd.Button type="primary" onClick={() => nav('officer-queue')}>Back to My Queue</antd.Button>}
+        style={{ padding: '80px 24px' }}
+      />
+    );
+  }
   const [actorFilter, setActorFilter] = React.useState('all');
   const [eventFilter, setEventFilter] = React.useState([]);
   const [q, setQ] = React.useState('');
@@ -2945,17 +3315,81 @@ SCREENS.audit = function AuditLog() {
   );
 };
 
+// ============ SWITCH PROFILE MODAL ============
+function SwitchProfileModal({ open, currentRole, onClose, onSwitch }) {
+  const profiles = MOCK.profiles;
+  const order = ['supplier', 'team-lead', 'officer'];
+  const [pick, setPick] = React.useState(currentRole);
+  React.useEffect(() => { if (open) setPick(currentRole); }, [open, currentRole]);
+  const roleAccent = { supplier: 'var(--color-primary)', 'team-lead': '#7B3FA0', officer: '#0F6ABF' };
+  const roleLabel = { supplier: 'Supplier', 'team-lead': 'Team Lead', officer: 'Normal Officer' };
+
+  return (
+    <antd.Modal
+      open={open}
+      onCancel={onClose}
+      title={<Space><SwapOutlined /> Switch Profile</Space>}
+      width={480}
+      okText="Switch"
+      okButtonProps={{ disabled: pick === currentRole }}
+      onOk={() => { onSwitch(pick); onClose(); }}
+    >
+      <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+        Demo mode — switch between profiles to review the flow for each role.
+      </div>
+      <div style={{ display: 'grid', gap: 10 }}>
+        {order.map(key => {
+          const p = profiles[key];
+          const isCurrent = key === currentRole;
+          const isPicked = pick === key;
+          return (
+            <div
+              key={key}
+              onClick={() => !isCurrent && setPick(key)}
+              style={{
+                padding: 14,
+                border: `1.5px solid ${isPicked ? roleAccent[key] : 'var(--color-border, #E5E7EB)'}`,
+                borderRadius: 10,
+                cursor: isCurrent ? 'not-allowed' : 'pointer',
+                background: isCurrent ? 'rgba(0,0,0,0.02)' : (isPicked ? 'rgba(11,79,145,0.04)' : '#fff'),
+                opacity: isCurrent ? 0.7 : 1,
+                display: 'flex', alignItems: 'center', gap: 14,
+              }}
+            >
+              <antd.Avatar size={44} style={{ background: roleAccent[key], fontWeight: 600 }}>{p.initials}</antd.Avatar>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {p.name}
+                  {isCurrent && <antd.Tag color="default">Current</antd.Tag>}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
+                  <antd.Tag color={key === 'team-lead' ? 'purple' : key === 'officer' ? 'blue' : 'geekblue'}>{roleLabel[key]}</antd.Tag>
+                  {p.title}{p.company ? ` · ${p.company}` : ''}
+                </div>
+              </div>
+              {isPicked && !isCurrent && <CheckCircleOutlined style={{ color: roleAccent[key], fontSize: 20 }} />}
+            </div>
+          );
+        })}
+      </div>
+    </antd.Modal>
+  );
+}
+
 function App() {
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode] = React.useState(false);
   const [screen, setScreen] = React.useState(() => {
     const saved = localStorage.getItem('ncef.screen');
-    return saved || 'dashboard';
+    return saved || DEFAULT_SCREEN_BY_ROLE[TWEAK_DEFAULTS.role] || 'dashboard';
   });
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [minaOpen, setMinaOpen] = React.useState(false);
+  const [loggedIn, setLoggedIn] = React.useState(() => sessionStorage.getItem('ncef.loggedIn') === '1');
+  const [switchOpen, setSwitchOpen] = React.useState(false);
 
   React.useEffect(() => { localStorage.setItem('ncef.screen', screen); }, [screen]);
+  React.useEffect(() => { sessionStorage.setItem('ncef.loggedIn', loggedIn ? '1' : '0'); }, [loggedIn]);
 
   // Tweaks listener
   React.useEffect(() => {
@@ -2974,14 +3408,45 @@ function App() {
     window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*');
   };
 
-  const isOfficer = tweaks.role === 'officer';
-  const nav = isOfficer ? NAV_OFFICER : NAV_SUPPLIER;
+  const currentUser = MOCK.profiles[tweaks.role] || MOCK.profiles.supplier;
+  const isSupplier = tweaks.role === 'supplier';
+  const nav = NAV_BY_ROLE[tweaks.role] || NAV_SUPPLIER;
 
   React.useEffect(() => {
-    // reset to a role-appropriate landing when role switches
-    if (isOfficer && !nav.find(n => n.key === screen)) setScreen('officer-queue');
-    if (!isOfficer && !NAV_SUPPLIER.find(n => n.key === screen)) setScreen('dashboard');
+    // reset to a role-appropriate landing when role switches to one where the current screen isn't in nav
+    if (!nav.find(n => n.key === screen)) setScreen(DEFAULT_SCREEN_BY_ROLE[tweaks.role] || 'dashboard');
   }, [tweaks.role]);
+
+  const handleSwitchProfile = (newRole) => {
+    updateTweak('role', newRole);
+    setScreen(DEFAULT_SCREEN_BY_ROLE[newRole] || 'dashboard');
+  };
+
+  const handleLogout = () => {
+    setLoggedIn(false);
+    setScreen('login');
+  };
+
+  const handleLogin = (role) => {
+    updateTweak('role', role);
+    setScreen(DEFAULT_SCREEN_BY_ROLE[role] || 'dashboard');
+    setLoggedIn(true);
+  };
+
+  // Pre-auth: render login screen only, no Layout chrome
+  if (!loggedIn) {
+    const Login = SCREENS.login;
+    return (
+      <ConfigProvider theme={{
+        token: {
+          colorPrimary: '#0B4F91', colorSuccess: '#1B7F48', colorWarning: '#B87200', colorError: '#C62828', colorInfo: '#0F6ABF',
+          fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif', borderRadius: 8, colorBgLayout: '#F5F8FB',
+        },
+      }}>
+        <Login onLogin={handleLogin} />
+      </ConfigProvider>
+    );
+  }
 
   const Screen = SCREENS[screen] || (() => <div style={{ padding: 40 }}>Screen "{screen}" not found</div>);
 
@@ -3047,15 +3512,22 @@ function App() {
               </Dropdown>
               <Dropdown menu={{ items: [
                 { key: 'profile', icon: <UserOutlined />, label: 'Profile & Settings', onClick: () => setScreen('profile') },
+                { key: 'switch', icon: <SwapOutlined />, label: 'Switch Profile', onClick: () => setSwitchOpen(true) },
                 { key: 'help', icon: <QuestionCircleOutlined />, label: 'Help Centre' },
                 { type: 'divider' },
-                { key: 'logout', icon: <LogoutOutlined />, label: 'Sign out', danger: true },
+                { key: 'logout', icon: <LogoutOutlined />, label: 'Sign out', danger: true, onClick: handleLogout },
               ] }}>
                 <Space style={{ cursor: 'pointer' }}>
-                  <Avatar style={{ background: isOfficer ? 'var(--color-accent)' : 'var(--color-primary)' }}>{isOfficer ? 'F' : 'N'}</Avatar>
+                  <Avatar style={{ background: tweaks.role === 'team-lead' ? '#7B3FA0' : tweaks.role === 'officer' ? '#0F6ABF' : 'var(--color-primary)' }}>
+                    {currentUser.initials}
+                  </Avatar>
                   <div style={{ textAlign: 'left', display: window.innerWidth > 640 ? 'block' : 'none' }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{isOfficer ? 'En. Faisal Rahman' : 'Nurul Aisyah'}</div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{isOfficer ? 'CPPG Officer' : 'Supplier · SUP-0426-00142'}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{currentUser.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                      {currentUser.title}
+                      {currentUser.supplierId ? ` · ${currentUser.supplierId}` : ''}
+                      {currentUser.id && !currentUser.supplierId ? ` · ${currentUser.id}` : ''}
+                    </div>
                   </div>
                 </Space>
               </Dropdown>
@@ -3063,16 +3535,23 @@ function App() {
           </Header>
 
           <Content style={{ overflow: 'auto' }}>
-            <Screen nav={setScreen} tweaks={tweaks} />
+            <Screen nav={setScreen} tweaks={tweaks} currentUser={currentUser} />
           </Content>
         </Layout>
 
-        {!isOfficer && (
+        {isSupplier && (
           <div className="mina-fab" onClick={() => setMinaOpen(true)}>
             <span className="pulse" />
             <RobotOutlined style={{ fontSize: 22 }} />
           </div>
         )}
+
+        <SwitchProfileModal
+          open={switchOpen}
+          currentRole={tweaks.role}
+          onClose={() => setSwitchOpen(false)}
+          onSwitch={handleSwitchProfile}
+        />
 
         {/* MINA assistant drawer */}
         <Drawer title={<Space><RobotOutlined style={{ color: 'var(--color-primary)' }} /><span>MINA · NCEF Assistant</span></Space>} placement="right" onClose={() => setMinaOpen(false)} open={minaOpen} width={400}>
@@ -3111,6 +3590,7 @@ function App() {
                 <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 6 }}>Role</div>
                 <antd.Radio.Group value={tweaks.role} onChange={e => updateTweak('role', e.target.value)} buttonStyle="solid" size="small">
                   <antd.Radio.Button value="supplier">Supplier</antd.Radio.Button>
+                  <antd.Radio.Button value="team-lead">Team Lead</antd.Radio.Button>
                   <antd.Radio.Button value="officer">Officer</antd.Radio.Button>
                 </antd.Radio.Group>
               </div>

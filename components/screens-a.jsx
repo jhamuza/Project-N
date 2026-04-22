@@ -1,6 +1,120 @@
 // Screens: Dashboard, Applications list, Onboarding, SDoC Wizard, Special Approval, Officer Review
 const SCREENS = {};
 
+// ============ LOGIN ============
+// Pre-auth screen. Rendered by App when loggedIn === false.
+// Accepts onLogin(role) — parent flips loggedIn=true and navigates to role's default landing.
+SCREENS.login = function LoginScreen({ onLogin }) {
+  const profiles = MOCK.profiles;
+  const [selected, setSelected] = React.useState('supplier');
+  const p = profiles[selected];
+  const [email, setEmail] = React.useState(p.email);
+  const [password, setPassword] = React.useState('••••••••');
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    setEmail(profiles[selected].email);
+    setPassword('••••••••');
+  }, [selected]);
+
+  const submit = () => {
+    setLoading(true);
+    setTimeout(() => { setLoading(false); onLogin(selected); }, 700);
+  };
+
+  const roleAccent = {
+    supplier: 'var(--color-primary)',
+    'team-lead': '#7B3FA0',
+    officer: 'var(--color-accent, #0F6ABF)',
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(180deg, #F5F8FB 0%, #E7EEF6 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+    }}>
+      <div style={{ width: '100%', maxWidth: 960, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 24 }}>
+        {/* Left: Branding panel */}
+        <div style={{ padding: 40, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'var(--color-primary)', color: '#fff', borderRadius: 16, minHeight: 540 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+              <img src="assets/mcmc-logo.png" alt="MCMC" style={{ width: 48, height: 48, background: '#fff', borderRadius: 8, padding: 4 }} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 20, lineHeight: 1.1 }}>NCEF</div>
+                <div style={{ fontSize: 11, opacity: 0.85, letterSpacing: 0.4 }}>MCMC · CERTIFICATION PORTAL</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 600, lineHeight: 1.3, marginBottom: 16 }}>
+              Selamat datang ke Portal NCEF
+            </div>
+            <div style={{ fontSize: 14, opacity: 0.9, lineHeight: 1.6 }}>
+              Malaysia's unified certification platform for communications and multimedia equipment.
+              Submit declarations, track approvals, and manage certificates — all in one place.
+            </div>
+          </div>
+          <div style={{ fontSize: 11, opacity: 0.7, borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 16 }}>
+            © 2026 Malaysian Communications and Multimedia Commission · Suruhanjaya Komunikasi dan Multimedia Malaysia
+          </div>
+        </div>
+
+        {/* Right: Form */}
+        <antd.Card bordered={false} style={{ boxShadow: 'var(--elevation-2, 0 8px 24px rgba(11,79,145,0.08))', borderRadius: 16, minHeight: 540 }} bodyStyle={{ padding: 40 }}>
+          <div style={{ marginBottom: 24 }}>
+            <antd.Typography.Title level={3} style={{ margin: 0 }}>Sign in</antd.Typography.Title>
+            <antd.Typography.Text type="secondary">Use your MCMC credentials or supplier account</antd.Typography.Text>
+          </div>
+
+          <antd.Form layout="vertical" onFinish={submit}>
+            <antd.Form.Item label="Email" required>
+              <antd.Input size="large" prefix={<MailOutlined />} value={email} onChange={e => setEmail(e.target.value)} />
+            </antd.Form.Item>
+            <antd.Form.Item label="Password" required>
+              <antd.Input.Password size="large" prefix={<LockOutlined />} value={password} onChange={e => setPassword(e.target.value)} />
+            </antd.Form.Item>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <antd.Checkbox defaultChecked>Remember me</antd.Checkbox>
+              <antd.Typography.Link>Forgot password?</antd.Typography.Link>
+            </div>
+            <antd.Button type="primary" size="large" htmlType="submit" block loading={loading}>Sign in</antd.Button>
+          </antd.Form>
+
+          <antd.Divider style={{ margin: '24px 0 16px', fontSize: 11, color: 'var(--color-text-muted)' }}>DEMO ACCOUNTS</antd.Divider>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            {['supplier', 'team-lead', 'officer'].map(key => {
+              const prof = profiles[key];
+              const isActive = selected === key;
+              return (
+                <div
+                  key={key}
+                  onClick={() => setSelected(key)}
+                  style={{
+                    padding: 10,
+                    border: `1.5px solid ${isActive ? roleAccent[key] : 'var(--color-border, #E5E7EB)'}`,
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    background: isActive ? 'rgba(11,79,145,0.04)' : '#fff',
+                    textAlign: 'center',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <antd.Avatar size={32} style={{ background: roleAccent[key], marginBottom: 6, fontSize: 12, fontWeight: 600 }}>{prof.initials}</antd.Avatar>
+                  <div style={{ fontSize: 11, fontWeight: 600, lineHeight: 1.2 }}>{prof.name.split(' ').slice(-1)[0] || prof.name}</div>
+                  <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 2 }}>{prof.title}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 12, textAlign: 'center' }}>
+            Click a card to prefill demo credentials
+          </div>
+        </antd.Card>
+      </div>
+    </div>
+  );
+};
+
+
 // ============ DASHBOARD ============
 SCREENS.dashboard = function Dashboard({ nav, tweaks }) {
   const k = MOCK.kpi.supplier;

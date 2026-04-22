@@ -499,32 +499,74 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
 };
 
 // ============ OFFICER REVIEW SPLIT VIEW ============
-SCREENS['officer-review'] = function OfficerReview({ nav, tweaks }) {
+SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser }) {
   const [decision, setDecision] = React.useState(null);
   const [iterMsg, setIterMsg] = React.useState('');
   const [showDocViewer, setShowDocViewer] = React.useState(false);
   const [activeDoc, setActiveDoc] = React.useState(null);
+  const [reassignOpen, setReassignOpen] = React.useState(false);
+  const [assignedOverride, setAssignedOverride] = React.useState(null);
   const a = MOCK.assessments[0];
+  const isLead = currentUser?.role === 'team-lead';
+  const isOfficer = currentUser?.role === 'officer';
+
+  // Access guard: normal officer can only review apps assigned to them.
+  // Use the first queue entry as the "current app" for this mocked screen.
+  const queueEntry = MOCK.officerQueue.find(q => q.id === a.id) || MOCK.officerQueue[0];
+  const assignedId = assignedOverride ?? queueEntry?.assignedTo;
+  const assignedOfficer = MOCK.officerPerformance.find(o => o.id === assignedId);
+  const canReview = !isOfficer || assignedId === currentUser.id;
+
+  if (!canReview) {
+    return (
+      <antd.Result
+        status="warning"
+        title="Not assigned to you"
+        subTitle={<>Application <Typography.Text code>{a.id}</Typography.Text> is currently assigned to <b>{assignedOfficer?.name || 'another officer'}</b>. Ask your Team Lead to reassign if needed.</>}
+        extra={<Button type="primary" onClick={() => nav('officer-queue')}>Back to My Queue</Button>}
+        style={{ padding: '80px 24px' }}
+      />
+    );
+  }
 
   return (
     <div>
       <div style={{ padding: '16px 32px', background: 'var(--color-bg-elevated)', borderBottom: '1px solid var(--color-divider)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <Breadcrumb items={[{ title: <a onClick={() => nav('applications')}>Queue</a> }, { title: <span style={{ fontFamily: 'var(--font-mono)' }}>{a.id}</span> }]} />
+          <Breadcrumb items={[{ title: <a onClick={() => nav('officer-queue')}>Queue</a> }, { title: <span style={{ fontFamily: 'var(--font-mono)' }}>{a.id}</span> }]} />
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6 }}>
             <SchemeBadge scheme={a.scheme} />
             <span style={{ fontSize: 18, fontWeight: 600 }}>{a.product}</span>
             <Text type="secondary">· {a.brand} {a.model}</Text>
             <StatusPill status={a.status} />
+            {assignedOfficer && (
+              <Tag color={assignedOfficer.role === 'team-lead' ? 'purple' : 'blue'}>
+                Assigned to {assignedOfficer.name}
+              </Tag>
+            )}
           </div>
         </div>
         <Space>
           <Tooltip title="Previous in queue"><Button icon="←">Prev</Button></Tooltip>
           <Tooltip title="Next in queue"><Button icon="→">Next</Button></Tooltip>
-          <Button>Reassign</Button>
+          {isLead && <Button onClick={() => setReassignOpen(true)}>Reassign</Button>}
           <Button type="text" danger>Flag</Button>
         </Space>
       </div>
+
+      {isLead && window.AssignOfficerModal && (
+        <window.AssignOfficerModal
+          open={reassignOpen}
+          onClose={() => setReassignOpen(false)}
+          applicationId={a.id}
+          currentAssigneeId={assignedId}
+          onAssign={(officerId) => {
+            setAssignedOverride(officerId);
+            const name = MOCK.officerPerformance.find(o => o.id === officerId)?.name;
+            antd.message.success(`${a.id} reassigned to ${name}`);
+          }}
+        />
+      )}
 
       <div className="officer-split">
         {/* LEFT: Document viewer */}

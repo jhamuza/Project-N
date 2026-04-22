@@ -7,6 +7,39 @@ window.MOCK = {
     supplierId: 'SUP-0426-00142',
     email: 'nurul.aisyah@axiatadigital.com.my',
   },
+  // Demo profile map — used by Login, Switch Profile, and header identity.
+  // All officers belong to MCMC's CPPG (Communications & Products Permit Group).
+  profiles: {
+    supplier: {
+      id: 'SUP-0426-00142',
+      role: 'supplier',
+      name: 'Nurul Aisyah binti Ahmad',
+      title: 'Supplier Administrator',
+      initials: 'NA',
+      email: 'nurul.aisyah@axiatadigital.com.my',
+      company: 'Axiata Digital Sdn Bhd',
+      supplierId: 'SUP-0426-00142',
+    },
+    'team-lead': {
+      id: 'OFF-001',
+      role: 'team-lead',
+      name: 'En. Faisal Rahman',
+      title: 'CPPG Team Lead',
+      initials: 'FR',
+      email: 'faisal.rahman@mcmc.gov.my',
+      team: 'CPPG-TL-01',
+    },
+    officer: {
+      id: 'OFF-002',
+      role: 'officer',
+      name: 'Pn. Rosnah Idris',
+      title: 'CPPG Officer',
+      initials: 'RI',
+      email: 'rosnah.idris@mcmc.gov.my',
+      team: 'CPPG-TL-01',
+      reportsTo: 'OFF-001',
+    },
+  },
   assessments: [
     { id: 'APP-0426-00087', rcn: 'RCN-0326-00451', scheme: 'A', status: 'under_review', product: 'Samsung Galaxy S24 Ultra', brand: 'Samsung', model: 'SM-S928B', updated: '2026-04-18T10:30:00', submitted: '2026-04-15T14:20:00', aiScore: 87, officer: 'En. Faisal Rahman', priority: 'normal' },
     { id: 'APP-0426-00088', rcn: null, scheme: 'B', status: 'draft', product: 'Huawei Mate 60 Pro', brand: 'Huawei', model: 'BRA-LX9', updated: '2026-04-17T09:15:00', aiScore: null, priority: 'normal' },
@@ -16,11 +49,11 @@ window.MOCK = {
     { id: 'APP-0426-00079', rcn: 'RCN-0326-00442', scheme: 'A', status: 'approved', product: 'OPPO Find X7 Ultra', brand: 'OPPO', model: 'CPH2583', updated: '2026-04-05T12:00:00', submitted: '2026-04-01T09:30:00', aiScore: 91, priority: 'normal' },
   ],
   officerQueue: [
-    { id: 'APP-0426-00087', scheme: 'A', applicant: 'Axiata Digital Sdn Bhd', product: 'Samsung Galaxy S24 Ultra', submitted: '2026-04-15T14:20:00', aiScore: 87, priority: 'normal', slaHours: 18, assignedTo: 'me' },
-    { id: 'APP-0426-00091', scheme: 'B', applicant: 'Celcom Axiata Berhad', product: 'HP LaserJet Pro MFP', submitted: '2026-04-16T11:05:00', aiScore: 78, priority: 'normal', slaHours: 36, assignedTo: 'me' },
-    { id: 'APP-0426-00092', scheme: 'C', applicant: 'TM Technology Services', product: 'Unifi Router AX3000', submitted: '2026-04-17T08:30:00', aiScore: 96, priority: 'low', slaHours: 60, assignedTo: 'me' },
-    { id: 'APP-0426-00094', scheme: 'SA', applicant: 'Maxis Broadband Sdn Bhd', product: '5G mmWave Test Unit', submitted: '2026-04-18T10:15:00', aiScore: 65, priority: 'high', slaHours: 8, assignedTo: 'unassigned' },
-    { id: 'APP-0426-00095', scheme: 'A', applicant: 'Digi Telecommunications', product: 'Ericsson AIR 6419', submitted: '2026-04-18T15:42:00', aiScore: 83, priority: 'normal', slaHours: 48, assignedTo: 'unassigned' },
+    { id: 'APP-0426-00087', scheme: 'A', applicant: 'Axiata Digital Sdn Bhd', product: 'Samsung Galaxy S24 Ultra', submitted: '2026-04-15T14:20:00', aiScore: 87, priority: 'normal', slaHours: 18, assignedTo: 'OFF-001' },
+    { id: 'APP-0426-00091', scheme: 'B', applicant: 'Celcom Axiata Berhad', product: 'HP LaserJet Pro MFP', submitted: '2026-04-16T11:05:00', aiScore: 78, priority: 'normal', slaHours: 36, assignedTo: 'OFF-002' },
+    { id: 'APP-0426-00092', scheme: 'C', applicant: 'TM Technology Services', product: 'Unifi Router AX3000', submitted: '2026-04-17T08:30:00', aiScore: 96, priority: 'low', slaHours: 60, assignedTo: 'OFF-002' },
+    { id: 'APP-0426-00094', scheme: 'SA', applicant: 'Maxis Broadband Sdn Bhd', product: '5G mmWave Test Unit', submitted: '2026-04-18T10:15:00', aiScore: 65, priority: 'high', slaHours: 8, assignedTo: null },
+    { id: 'APP-0426-00095', scheme: 'A', applicant: 'Digi Telecommunications', product: 'Ericsson AIR 6419', submitted: '2026-04-18T15:42:00', aiScore: 83, priority: 'normal', slaHours: 48, assignedTo: 'OFF-003' },
   ],
   aiReasoning: [
     { category: 'SSM/ROC/ROB Validation', score: 18, max: 20, note: 'BRN 201901023456 verified; entity active since 2019.', pass: true },
@@ -88,9 +121,9 @@ window.MOCK = {
   ],
   // Officer performance
   officerPerformance: [
-    { name: 'En. Faisal Rahman', id: 'OFF-001', approved: 48, rejected: 6, avgTurnaround: 4.2, slaCompliance: 96, aiOverrides: 3 },
-    { name: 'Pn. Rosnah Idris', id: 'OFF-002', approved: 41, rejected: 4, avgTurnaround: 5.8, slaCompliance: 92, aiOverrides: 7 },
-    { name: 'En. Syahrul Azlan', id: 'OFF-003', approved: 35, rejected: 8, avgTurnaround: 3.9, slaCompliance: 98, aiOverrides: 1 },
+    { name: 'En. Faisal Rahman', id: 'OFF-001', role: 'team-lead', team: 'CPPG-TL-01', approved: 48, rejected: 6, avgTurnaround: 4.2, slaCompliance: 96, aiOverrides: 3 },
+    { name: 'Pn. Rosnah Idris', id: 'OFF-002', role: 'officer', team: 'CPPG-TL-01', approved: 41, rejected: 4, avgTurnaround: 5.8, slaCompliance: 92, aiOverrides: 7 },
+    { name: 'En. Syahrul Azlan', id: 'OFF-003', role: 'officer', team: 'CPPG-TL-01', approved: 35, rejected: 8, avgTurnaround: 3.9, slaCompliance: 98, aiOverrides: 1 },
   ],
   // Top applicants by volume (for Reports screen)
   topApplicants: [
