@@ -753,4 +753,281 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
   );
 };
 
+// ============ SUPPLIERS MANAGEMENT (MCMC Admin / Officer) ============
+// Per amended URS: ADMIN and OFFICER can view/add/remove suppliers without verification
+// (their authority replaces the normal 2-layer verification flow). Removal is soft-delete.
+// They may NOT create SDoC registrations on a supplier's behalf — that remains a supplier action.
+SCREENS['suppliers-mgmt'] = function SuppliersManagement({ nav, currentUser }) {
+  const role = currentUser?.role || 'officer';
+  const roleLabel = role === 'team-lead' ? 'MCMC System Administrator' : 'MCMC Officer';
+  const [suppliers, setSuppliers] = React.useState(MOCK.supplierDirectory);
+  const [filter, setFilter] = React.useState('active');
+  const [search, setSearch] = React.useState('');
+  const [addOpen, setAddOpen] = React.useState(false);
+  const [bulkOpen, setBulkOpen] = React.useState(false);
+  const [confirmRemove, setConfirmRemove] = React.useState(null);
+  const [toast, setToast] = React.useState(null);
+
+  const list = suppliers
+    .filter(s => filter === 'all' ? true : filter === 'active' ? !s.deletedAt : !!s.deletedAt)
+    .filter(s => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return s.name.toLowerCase().includes(q) || s.brn.includes(q) || s.id.toLowerCase().includes(q);
+    });
+
+  const counts = {
+    all: suppliers.length,
+    active: suppliers.filter(s => !s.deletedAt).length,
+    deleted: suppliers.filter(s => s.deletedAt).length,
+  };
+
+  function handleAdd(values) {
+    const next = {
+      id: 'SUP-0426-' + String(suppliers.length + 1).padStart(5, '0'),
+      name: values.name,
+      brn: values.brn,
+      category: values.category,
+      since: new Date().toISOString().slice(0, 10),
+      approvals: 0,
+      active: true,
+      address: values.address,
+      pic: values.pic,
+      picEmail: values.picEmail,
+      addedBy: role === 'team-lead' ? 'mcmc-admin' : 'mcmc-officer',
+      addedAt: new Date().toISOString().slice(0, 10),
+      verifiedAt: null,
+      deletedAt: null,
+    };
+    setSuppliers([next, ...suppliers]);
+    setAddOpen(false);
+    setToast({ type: 'success', msg: `Added ${values.name} (${next.id}) — no verification required.` });
+  }
+
+  function handleBulkImport(rows) {
+    const start = suppliers.length;
+    const added = rows.map((r, i) => ({
+      id: 'SUP-0426-' + String(start + i + 1).padStart(5, '0'),
+      name: r.name, brn: r.brn, category: r.category || 'A',
+      since: new Date().toISOString().slice(0, 10),
+      approvals: 0, active: true, address: r.address || '',
+      pic: r.pic || '', picEmail: r.picEmail || '',
+      addedBy: role === 'team-lead' ? 'mcmc-admin' : 'mcmc-officer',
+      addedAt: new Date().toISOString().slice(0, 10),
+      verifiedAt: null, deletedAt: null,
+    }));
+    setSuppliers([...added, ...suppliers]);
+    setBulkOpen(false);
+    setToast({ type: 'success', msg: `Bulk imported ${added.length} suppliers.` });
+  }
+
+  function handleRemove(s) {
+    setSuppliers(suppliers.map(x => x.id === s.id ? { ...x, deletedAt: new Date().toISOString().slice(0, 10), active: false } : x));
+    setConfirmRemove(null);
+    setToast({ type: 'warning', msg: `${s.name} soft-deleted. Records preserved for audit.` });
+  }
+
+  function handleRestore(s) {
+    setSuppliers(suppliers.map(x => x.id === s.id ? { ...x, deletedAt: null, active: true } : x));
+    setToast({ type: 'success', msg: `${s.name} restored.` });
+  }
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>{roleLabel} · {currentUser?.name}</div>
+          <Typography.Title level={3} style={{ margin: '4px 0 0' }}>Suppliers Management</Typography.Title>
+          <Typography.Text type="secondary">Master directory of registered suppliers. MCMC-added entries skip the 2-layer verification.</Typography.Text>
+        </div>
+        <Space>
+          <Button icon={<UploadOutlined />} onClick={() => setBulkOpen(true)}>Bulk import</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>Add supplier</Button>
+        </Space>
+      </div>
+
+      {toast && (
+        <Alert
+          type={toast.type}
+          message={toast.msg}
+          showIcon closable
+          afterClose={() => setToast(null)}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        {[
+          { l: 'Total registered', v: counts.all, d: `Across categories A, B, C, D` },
+          { l: 'Active', v: counts.active, d: 'Visible to suppliers + officers', color: 'var(--color-success)' },
+          { l: 'Soft-deleted', v: counts.deleted, d: 'Records retained for audit', color: 'var(--color-warning)' },
+          { l: 'MCMC-added (this year)', v: suppliers.filter(s => (s.addedBy || '').startsWith('mcmc-') && s.addedAt >= '2026-01-01').length, d: 'No verification required' },
+        ].map((k, i) => (
+          <Col xs={12} md={6} key={i}>
+            <div className="kpi-card">
+              <div className="kpi-label">{k.l}</div>
+              <div className="kpi-value" style={{ color: k.color }}>{k.v}</div>
+              <div className="kpi-delta">{k.d}</div>
+            </div>
+          </Col>
+        ))}
+      </Row>
+
+      <Card bordered>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Segmented
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { label: `Active (${counts.active})`, value: 'active' },
+              { label: `Soft-deleted (${counts.deleted})`, value: 'deleted' },
+              { label: `All (${counts.all})`, value: 'all' },
+            ]}
+          />
+          <Input
+            placeholder="Search name, BRN, or supplier ID…"
+            prefix={<SearchOutlined />}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ flex: 1, minWidth: 240, maxWidth: 480 }}
+            allowClear
+          />
+        </div>
+        <Table
+          rowKey="id"
+          dataSource={list}
+          pagination={{ pageSize: 8 }}
+          columns={[
+            { title: 'Supplier ID', dataIndex: 'id', render: v => <Typography.Text code style={{ fontSize: 12 }}>{v}</Typography.Text> },
+            { title: 'Name', dataIndex: 'name', render: (v, r) => <span style={{ fontWeight: 600, color: r.deletedAt ? 'var(--color-text-muted)' : 'inherit', textDecoration: r.deletedAt ? 'line-through' : 'none' }}>{v}</span> },
+            { title: 'BRN', dataIndex: 'brn' },
+            { title: 'Category', dataIndex: 'category', render: c => <Tag color={c === 'A' ? 'blue' : c === 'B' ? 'green' : c === 'C' ? 'purple' : 'default'}>Cat {c}</Tag> },
+            { title: 'PIC', dataIndex: 'pic', render: (v, r) => v ? <div style={{ fontSize: 12 }}><div>{v}</div><div style={{ color: 'var(--color-text-muted)' }}>{r.picEmail}</div></div> : '—' },
+            { title: 'Approvals', dataIndex: 'approvals', align: 'right' },
+            { title: 'Added by', dataIndex: 'addedBy', render: v => v === 'self-registration' ? <Tag>Self</Tag> : v === 'mcmc-admin' ? <Tag color="blue" icon={<CrownOutlined />}>Admin</Tag> : <Tag color="cyan" icon={<UserOutlined />}>Officer</Tag> },
+            { title: 'Verified', dataIndex: 'verifiedAt', render: v => v ? <Tag color="green" icon={<CheckCircleOutlined />}>{v}</Tag> : <Tag color="orange">No verification</Tag> },
+            {
+              title: 'Action',
+              key: 'action',
+              render: (_, r) => r.deletedAt
+                ? <Button size="small" type="link" onClick={() => handleRestore(r)}>Restore</Button>
+                : <Button size="small" type="link" danger icon={<DeleteOutlined />} onClick={() => setConfirmRemove(r)}>Remove</Button>,
+            },
+          ]}
+        />
+        <div style={{ marginTop: 12, fontSize: 12, color: 'var(--color-text-muted)' }}>
+          Showing {list.length} of {counts.all} suppliers · Soft-deleted entries are hidden from suppliers but kept for audit trail.
+        </div>
+      </Card>
+
+      {/* Add supplier modal — admin/officer flow, no verification */}
+      <Modal
+        title={<Space><PlusOutlined /> Add supplier (no verification)</Space>}
+        open={addOpen}
+        onCancel={() => setAddOpen(false)}
+        footer={null}
+        width={560}
+      >
+        <Alert
+          type="info"
+          showIcon
+          message="MCMC-added suppliers skip the 2-layer verification flow"
+          description="As an authorised MCMC user, your registration is treated as already verified. The supplier can immediately submit applications."
+          style={{ marginBottom: 16 }}
+        />
+        <Form layout="vertical" onFinish={handleAdd}>
+          <Row gutter={12}>
+            <Col span={16}><Form.Item label="Company name" name="name" rules={[{ required: true }]}><Input placeholder="e.g. Acme Communications Sdn Bhd" /></Form.Item></Col>
+            <Col span={8}><Form.Item label="Category" name="category" initialValue="A" rules={[{ required: true }]}>
+              <Select options={[
+                { value: 'A', label: 'Cat A — Company' },
+                { value: 'B', label: 'Cat B — Individual' },
+                { value: 'C', label: 'Cat C — Institution' },
+              ]} />
+            </Form.Item></Col>
+          </Row>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item label="BRN (SSM number)" name="brn" rules={[{ required: true }]}><Input placeholder="e.g. 201901023456" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="Address" name="address"><Input placeholder="Registered address" /></Form.Item></Col>
+          </Row>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item label="Person in charge" name="pic" rules={[{ required: true }]}><Input placeholder="Full name" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="PIC email" name="picEmail" rules={[{ required: true, type: 'email' }]}><Input placeholder="pic@company.com.my" /></Form.Item></Col>
+          </Row>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+            <Button onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button type="primary" htmlType="submit" icon={<CheckCircleOutlined />}>Add supplier</Button>
+          </div>
+        </Form>
+      </Modal>
+
+      {/* Bulk import modal */}
+      <Modal
+        title={<Space><UploadOutlined /> Bulk import suppliers (CSV)</Space>}
+        open={bulkOpen}
+        onCancel={() => setBulkOpen(false)}
+        footer={null}
+        width={560}
+      >
+        <Alert
+          type="info"
+          showIcon
+          message="CSV format: name,brn,category,address,pic,picEmail"
+          description="Each row creates a supplier with no verification. Duplicate BRNs are merged into the existing record."
+          style={{ marginBottom: 16 }}
+        />
+        <Upload.Dragger
+          accept=".csv"
+          showUploadList={false}
+          beforeUpload={(file) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const lines = String(e.target.result).split('\n').filter(Boolean).slice(1);
+              const rows = lines.map(line => {
+                const [name, brn, category, address, pic, picEmail] = line.split(',').map(c => (c || '').trim());
+                return { name, brn, category, address, pic, picEmail };
+              }).filter(r => r.name && r.brn);
+              if (rows.length === 0) {
+                setToast({ type: 'error', msg: 'No valid rows found in the CSV.' });
+                setBulkOpen(false);
+              } else {
+                handleBulkImport(rows);
+              }
+            };
+            reader.readAsText(file);
+            return false;
+          }}
+        >
+          <p style={{ fontSize: 32, margin: 0 }}><UploadOutlined /></p>
+          <p style={{ margin: '8px 0' }}>Click or drag CSV file here</p>
+          <p style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Maximum 500 rows per upload</p>
+        </Upload.Dragger>
+        <div style={{ marginTop: 16, padding: 12, background: 'var(--color-bg-subtle)', borderRadius: 6, fontSize: 12 }}>
+          <strong>Sample row:</strong><br/>
+          <code>Acme Comms Sdn Bhd,201901023456,A,"Level 5, Wisma Acme",Ali bin Abu,ali.abu@acme.my</code>
+        </div>
+      </Modal>
+
+      {/* Confirm soft-delete */}
+      <Modal
+        title={<Space style={{ color: 'var(--color-warning)' }}><WarningOutlined /> Soft-delete supplier?</Space>}
+        open={!!confirmRemove}
+        onCancel={() => setConfirmRemove(null)}
+        onOk={() => handleRemove(confirmRemove)}
+        okText="Soft-delete"
+        okButtonProps={{ danger: true }}
+        cancelText="Cancel"
+        width={460}
+      >
+        {confirmRemove && (
+          <div>
+            <p>The supplier <strong>{confirmRemove.name}</strong> ({confirmRemove.id}) will be hidden from the active directory but their records — applications, certificates, payments — will be preserved for audit.</p>
+            <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>This action can be reversed by toggling the <em>Soft-deleted</em> filter and clicking Restore.</p>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+};
+
 Object.assign(window, { SCREENS });

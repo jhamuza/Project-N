@@ -602,4 +602,211 @@ function InviteDrawer({ open, onClose }) {
   );
 }
 
+// ============ CONSULTANTS (Supplier Admin) ============
+// Per amended URS: Supplier Admin can view/add/remove consultants linked to their company.
+// Add picks from system-wide MOCK.consultantDirectory (Category D users); remove unlinks
+// from this supplier but does not delete the consultant globally.
+SCREENS.consultants = function Consultants({ nav }) {
+  const me = MOCK.profiles.supplier;
+  const [linked, setLinked] = React.useState(MOCK.myConsultants);
+  const [linkOpen, setLinkOpen] = React.useState(false);
+  const [confirmUnlink, setConfirmUnlink] = React.useState(null);
+  const [pickedId, setPickedId] = React.useState(null);
+  const [primaryFor, setPrimaryFor] = React.useState([]);
+  const [notes, setNotes] = React.useState('');
+  const [toast, setToast] = React.useState(null);
+
+  // Resolve full consultant info by joining linked rows with the directory.
+  const enriched = linked.map(l => ({ ...MOCK.consultantDirectory.find(c => c.id === l.id), ...l }));
+  const linkedIds = new Set(linked.map(l => l.id));
+  const available = MOCK.consultantDirectory.filter(c => !linkedIds.has(c.id) && c.active);
+
+  function handleLink() {
+    if (!pickedId) return;
+    setLinked([...linked, { id: pickedId, linkedAt: new Date().toISOString().slice(0, 10), primaryFor, notes }]);
+    setLinkOpen(false);
+    setPickedId(null); setPrimaryFor([]); setNotes('');
+    const c = MOCK.consultantDirectory.find(x => x.id === pickedId);
+    setToast({ type: 'success', msg: `Linked ${c.name} (${c.firm}) to ${me.company}.` });
+  }
+
+  function handleUnlink(c) {
+    setLinked(linked.filter(l => l.id !== c.id));
+    setConfirmUnlink(null);
+    setToast({ type: 'warning', msg: `${c.name} unlinked from your account. (Their NCEF profile remains active.)` });
+  }
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Supplier Administrator · {me.company}</div>
+          <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Consultants</antd.Typography.Title>
+          <antd.Typography.Text type="secondary">Telecom / EMC / Safety consultants linked to your supplier account. They may submit applications on your behalf when you grant access.</antd.Typography.Text>
+        </div>
+        <antd.Button type="primary" icon={<PlusOutlined />} onClick={() => setLinkOpen(true)}>Add consultant</antd.Button>
+      </div>
+
+      {toast && (
+        <antd.Alert
+          type={toast.type}
+          message={toast.msg}
+          showIcon closable
+          afterClose={() => setToast(null)}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      <antd.Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        {[
+          { l: 'Linked consultants', v: linked.length, d: 'Currently active for this account', color: 'var(--color-primary)' },
+          { l: 'Engagements (last 12m)', v: enriched.reduce((a, c) => a + (c.engagements || 0), 0), d: 'Across all linked consultants' },
+          { l: 'Available in directory', v: available.length, d: 'Other registered Category D users' },
+        ].map((k, i) => (
+          <antd.Col xs={24} md={8} key={i}>
+            <div className="kpi-card">
+              <div className="kpi-label">{k.l}</div>
+              <div className="kpi-value" style={{ color: k.color }}>{k.v}</div>
+              <div className="kpi-delta">{k.d}</div>
+            </div>
+          </antd.Col>
+        ))}
+      </antd.Row>
+
+      <antd.Card bordered title={<antd.Space><ApartmentOutlined /> Linked to {me.company}</antd.Space>}>
+        {enriched.length === 0 ? (
+          <antd.Empty
+            description="No consultants linked yet"
+            image={antd.Empty.PRESENTED_IMAGE_SIMPLE}
+          >
+            <antd.Button type="primary" icon={<PlusOutlined />} onClick={() => setLinkOpen(true)}>Add consultant</antd.Button>
+          </antd.Empty>
+        ) : (
+          <antd.Table
+            rowKey="id"
+            dataSource={enriched}
+            pagination={false}
+            columns={[
+              { title: 'Consultant', key: 'who', render: (_, r) => (
+                <div>
+                  <div style={{ fontWeight: 600 }}>{r.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.firm}</div>
+                </div>
+              ) },
+              { title: 'Expertise', dataIndex: 'expertise', render: tags => (
+                <antd.Space size={[4, 4]} wrap>
+                  {(tags || []).map((t, i) => <antd.Tag key={i}>{t}</antd.Tag>)}
+                </antd.Space>
+              ) },
+              { title: 'Primary for', dataIndex: 'primaryFor', render: (v) => (v || []).map((x, i) => <antd.Tag key={i} color="blue">{x}</antd.Tag>) },
+              { title: 'Contact', key: 'contact', render: (_, r) => (
+                <div style={{ fontSize: 12 }}>
+                  <div><MailOutlined style={{ marginRight: 4, color: 'var(--color-text-muted)' }} />{r.email}</div>
+                  <div><PhoneOutlined style={{ marginRight: 4, color: 'var(--color-text-muted)' }} />{r.phone}</div>
+                </div>
+              ) },
+              { title: 'Linked', dataIndex: 'linkedAt' },
+              { title: 'Engagements', dataIndex: 'engagements', align: 'right' },
+              {
+                title: 'Action',
+                key: 'action',
+                render: (_, r) => <antd.Button size="small" type="link" danger icon={<DeleteOutlined />} onClick={() => setConfirmUnlink(r)}>Remove</antd.Button>,
+              },
+            ]}
+          />
+        )}
+        <div style={{ marginTop: 12, fontSize: 12, color: 'var(--color-text-muted)' }}>
+          Removing a consultant unlinks them from this account only — their NCEF registration stays active for other suppliers.
+        </div>
+      </antd.Card>
+
+      {/* Link existing consultant modal */}
+      <antd.Modal
+        title={<antd.Space><PlusOutlined /> Link consultant to {me.company}</antd.Space>}
+        open={linkOpen}
+        onCancel={() => setLinkOpen(false)}
+        onOk={handleLink}
+        okText="Link consultant"
+        okButtonProps={{ disabled: !pickedId }}
+        cancelText="Cancel"
+        width={560}
+      >
+        <antd.Alert
+          type="info"
+          showIcon
+          message="Pick from registered Category D consultants"
+          description="If your consultant isn't in the list, ask them to register at the NCEF Portal first. Self-registration is required before linking."
+          style={{ marginBottom: 16 }}
+        />
+        <antd.Form layout="vertical">
+          <antd.Form.Item label="Consultant" required>
+            <antd.Select
+              showSearch
+              placeholder="Search by name or firm…"
+              optionFilterProp="label"
+              value={pickedId}
+              onChange={setPickedId}
+              options={available.map(c => ({
+                value: c.id,
+                label: `${c.name} — ${c.firm}`,
+              }))}
+            />
+          </antd.Form.Item>
+          {pickedId && (() => {
+            const c = MOCK.consultantDirectory.find(x => x.id === pickedId);
+            return (
+              <div style={{ padding: 12, background: 'var(--color-bg-subtle)', borderRadius: 6, marginBottom: 16, fontSize: 13 }}>
+                <div><strong>{c.name}</strong> · {c.firm}</div>
+                <div style={{ color: 'var(--color-text-muted)', marginTop: 4 }}>{c.email} · {c.phone}</div>
+                <div style={{ marginTop: 6 }}>
+                  <antd.Space size={[4, 4]} wrap>
+                    {c.expertise.map((t, i) => <antd.Tag key={i}>{t}</antd.Tag>)}
+                  </antd.Space>
+                </div>
+                <div style={{ marginTop: 6, fontSize: 12, color: 'var(--color-text-muted)' }}>{c.engagements} prior engagements · Registered since {c.since}</div>
+              </div>
+            );
+          })()}
+          <antd.Form.Item label="Primary for (optional)">
+            <antd.Select
+              mode="multiple"
+              placeholder="Select schemes this consultant handles"
+              value={primaryFor}
+              onChange={setPrimaryFor}
+              options={[
+                { value: 'Scheme A', label: 'Scheme A — Standard' },
+                { value: 'Scheme B', label: 'Scheme B — Type Approval' },
+                { value: 'Scheme C', label: 'Scheme C — Self-Declaration' },
+                { value: 'Scheme SA', label: 'Scheme SA — Special Approval' },
+              ]}
+            />
+          </antd.Form.Item>
+          <antd.Form.Item label="Internal notes (optional)">
+            <antd.Input.TextArea rows={2} placeholder="e.g. Handles all our IoT submissions" value={notes} onChange={e => setNotes(e.target.value)} />
+          </antd.Form.Item>
+        </antd.Form>
+      </antd.Modal>
+
+      {/* Confirm unlink */}
+      <antd.Modal
+        title={<antd.Space style={{ color: 'var(--color-warning)' }}><WarningOutlined /> Remove consultant?</antd.Space>}
+        open={!!confirmUnlink}
+        onCancel={() => setConfirmUnlink(null)}
+        onOk={() => handleUnlink(confirmUnlink)}
+        okText="Remove"
+        okButtonProps={{ danger: true }}
+        cancelText="Cancel"
+        width={460}
+      >
+        {confirmUnlink && (
+          <div>
+            <p><strong>{confirmUnlink.name}</strong> ({confirmUnlink.firm}) will be unlinked from {me.company}.</p>
+            <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>They will lose access to submit applications on your behalf. Past applications they submitted are not affected.</p>
+          </div>
+        )}
+      </antd.Modal>
+    </div>
+  );
+};
+
 Object.assign(window, { SCREENS });

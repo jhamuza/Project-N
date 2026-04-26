@@ -232,7 +232,7 @@ window.MOCK = {
       id: 'OFF-001',
       role: 'team-lead',
       name: 'En. Faisal Rahman',
-      title: 'CPPG Team Lead',
+      title: 'MCMC System Administrator',
       initials: 'FR',
       email: 'faisal.rahman@mcmc.gov.my',
       team: 'CPPG-TL-01',
@@ -241,7 +241,7 @@ window.MOCK = {
       id: 'OFF-002',
       role: 'officer',
       name: 'Pn. Rosnah Idris',
-      title: 'CPPG Officer',
+      title: 'MCMC Officer',
       initials: 'RI',
       email: 'rosnah.idris@mcmc.gov.my',
       team: 'CPPG-TL-01',
@@ -285,14 +285,37 @@ window.MOCK = {
     supplier: { totalApps: 23, approved: 17, pending: 3, expiringSoon: 2 },
     officer: { pending: 5, approvedToday: 8, rejectedToday: 1, avgTurnaround: 4.2 },
   },
-  // Existing supplier directory (onboarding picker)
+  // Master supplier directory — used by:
+  //   • Onboarding picker (existing supplier flow)
+  //   • Officer/Admin Suppliers Management screen (view all, add, soft-delete)
+  // `addedBy`: 'self-registration' | 'mcmc-admin' | 'mcmc-officer'
+  // `deletedAt` is null when active; populated with ISO timestamp on soft-delete.
   supplierDirectory: [
-    { id: 'SUP-0126-00087', name: 'Axiata Digital Sdn Bhd', brn: '201901023456', category: 'A', since: '2019-03-14', approvals: 47, active: true, address: 'Level 21, Axiata Tower, KL Sentral' },
-    { id: 'SUP-0322-00045', name: 'Celcom Axiata Berhad', brn: '199201015249', category: 'A', since: '2022-08-21', approvals: 32, active: true, address: 'Menara Celcom, Jalan Semangat, PJ' },
-    { id: 'SUP-0420-00012', name: 'Maxis Broadband Sdn Bhd', brn: '234582400900', category: 'A', since: '2020-01-07', approvals: 58, active: true, address: 'Menara Maxis, KLCC' },
-    { id: 'SUP-0621-00091', name: 'TM Technology Services', brn: '198401023456', category: 'A', since: '2021-06-15', approvals: 21, active: true, address: 'TM Tower, Jalan Pantai Baharu' },
-    { id: 'SUP-0823-00210', name: 'Digi Telecommunications', brn: '199701009694', category: 'A', since: '2023-09-04', approvals: 9, active: true, address: 'D\'House, Shah Alam' },
-    { id: 'SUP-0224-00142', name: 'Huawei Technologies (M) Sdn Bhd', brn: '200101020034', category: 'A', since: '2024-02-19', approvals: 14, active: true, address: 'Level 9, Quill 7 Tower, KL Sentral' },
+    { id: 'SUP-0126-00087', name: 'Axiata Digital Sdn Bhd',         brn: '201901023456', category: 'A', since: '2019-03-14', approvals: 47, active: true, address: 'Level 21, Axiata Tower, KL Sentral',     pic: 'Nurul Aisyah binti Ahmad', picEmail: 'nurul.aisyah@axiatadigital.com.my', addedBy: 'self-registration', addedAt: '2019-03-14', verifiedAt: '2019-03-20', deletedAt: null },
+    { id: 'SUP-0322-00045', name: 'Celcom Axiata Berhad',           brn: '199201015249', category: 'A', since: '2022-08-21', approvals: 32, active: true, address: 'Menara Celcom, Jalan Semangat, PJ',       pic: 'Mohd Faizal Ismail',       picEmail: 'mohd.faizal@celcom.com.my',          addedBy: 'self-registration', addedAt: '2022-08-21', verifiedAt: '2022-08-26', deletedAt: null },
+    { id: 'SUP-0420-00012', name: 'Maxis Broadband Sdn Bhd',        brn: '234582400900', category: 'A', since: '2020-01-07', approvals: 58, active: true, address: 'Menara Maxis, KLCC',                     pic: 'Tan Wei Loong',            picEmail: 'tan.weiloong@maxis.com.my',          addedBy: 'self-registration', addedAt: '2020-01-07', verifiedAt: '2020-01-14', deletedAt: null },
+    { id: 'SUP-0621-00091', name: 'TM Technology Services',         brn: '198401023456', category: 'A', since: '2021-06-15', approvals: 21, active: true, address: 'TM Tower, Jalan Pantai Baharu',          pic: 'Siti Aminah Ismail',       picEmail: 'siti.aminah@tm.com.my',              addedBy: 'self-registration', addedAt: '2021-06-15', verifiedAt: '2021-06-22', deletedAt: null },
+    { id: 'SUP-0823-00210', name: 'Digi Telecommunications',        brn: '199701009694', category: 'A', since: '2023-09-04', approvals: 9,  active: true, address: 'D\'House, Shah Alam',                    pic: 'Ravi Kumar Pillai',        picEmail: 'ravi.k@digi.com.my',                 addedBy: 'self-registration', addedAt: '2023-09-04', verifiedAt: '2023-09-11', deletedAt: null },
+    { id: 'SUP-0224-00142', name: 'Huawei Technologies (M) Sdn Bhd',brn: '200101020034', category: 'A', since: '2024-02-19', approvals: 14, active: true, address: 'Level 9, Quill 7 Tower, KL Sentral',     pic: 'Wong Chee Wai',            picEmail: 'wong.cw@huawei.com',                 addedBy: 'self-registration', addedAt: '2024-02-19', verifiedAt: '2024-02-26', deletedAt: null },
+    { id: 'SUP-0125-00355', name: 'YTL Communications Sdn Bhd',     brn: '200401012345', category: 'A', since: '2025-01-12', approvals: 5,  active: true, address: 'YTL Plaza, Jalan Bukit Bintang, KL',     pic: 'Lee Ai Ling',              picEmail: 'lee.aling@ytlcomms.my',              addedBy: 'mcmc-admin',        addedAt: '2025-01-12', verifiedAt: null,        deletedAt: null },
+    { id: 'SUP-0326-00478', name: 'Sapura Industrial Berhad',       brn: '199001003456', category: 'B', since: '2026-03-02', approvals: 1,  active: true, address: 'Wisma Sapura, Jalan Tun Razak, KL',      pic: 'Ahmad Bin Hassan',         picEmail: 'ahmad.h@sapura.com.my',              addedBy: 'mcmc-officer',      addedAt: '2026-03-02', verifiedAt: null,        deletedAt: null },
+    { id: 'SUP-0922-00067', name: 'Iris Corporation Berhad',        brn: '199801007890', category: 'C', since: '2022-09-15', approvals: 0,  active: false,address: 'IRIS Smart Complex, Cyberjaya',          pic: 'Rajesh Singh',             picEmail: 'rajesh.s@iris.com.my',               addedBy: 'self-registration', addedAt: '2022-09-15', verifiedAt: '2022-09-25', deletedAt: '2025-11-30' },
+  ],
+  // System-wide consultant directory (Category D users in URS classification).
+  // Suppliers can pick from these via dropdown (per SDD §5.1.2 Principal & Consultant Mgmt).
+  consultantDirectory: [
+    { id: 'CON-0119-00012', name: 'En. Zaki Aziz',          firm: 'TelecomCert Consulting Sdn Bhd', expertise: ['Telecom', 'EMC'],        email: 'zaki.aziz@telecomcert.my',     phone: '+60-3-7831-2200', since: '2019-08-12', engagements: 38, active: true },
+    { id: 'CON-0220-00045', name: 'Ms. Priya Devi',         firm: 'EMCert Solutions Sdn Bhd',       expertise: ['EMC', 'Safety'],          email: 'priya.d@emcert.my',            phone: '+60-3-2161-4488', since: '2020-02-04', engagements: 27, active: true },
+    { id: 'CON-0721-00033', name: 'Dr. Lim Boon Chin',      firm: 'SpectrumLab Advisory',           expertise: ['Spectrum', 'Telecom'],    email: 'limbc@spectrumlab.my',         phone: '+60-3-9056-1180', since: '2021-07-19', engagements: 19, active: true },
+    { id: 'CON-0322-00071', name: 'En. Mohd Hafiz Suleiman',firm: 'Hafiz Tech Consultancy',         expertise: ['Telecom', 'Wi-Fi'],       email: 'hafiz@hafiztech.my',           phone: '+60-3-2173-6655', since: '2022-03-08', engagements: 14, active: true },
+    { id: 'CON-1023-00088', name: 'Pn. Norliza Mansor',     firm: 'Independent (freelance)',        expertise: ['Documentation', 'SDoC'],  email: 'norliza.mansor@gmail.com',     phone: '+60-12-345-6789', since: '2023-10-22', engagements: 8,  active: true },
+    { id: 'CON-0124-00112', name: 'Ir. Tan Kok Wai',        firm: 'KW Engineering Services',        expertise: ['Safety', 'EMC'],          email: 'tankw@kweng.my',               phone: '+60-3-7956-2241', since: '2024-01-18', engagements: 5,  active: true },
+  ],
+  // Consultants linked to the current supplier (Axiata Digital). Editable by Supplier Admin.
+  myConsultants: [
+    { id: 'CON-0119-00012', linkedAt: '2024-08-12', primaryFor: ['Scheme A', 'Scheme B'], notes: 'Lead consultant for telecom equipment registrations.' },
+    { id: 'CON-0220-00045', linkedAt: '2025-02-19', primaryFor: ['Scheme A'],             notes: 'EMC compliance review.' },
+    { id: 'CON-1023-00088', linkedAt: '2026-01-07', primaryFor: ['Scheme C'],             notes: 'Documentation support for low-risk products.' },
   ],
   // Team members for current supplier account
   teamMembers: [
@@ -2112,6 +2135,283 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
   );
 };
 
+// ============ SUPPLIERS MANAGEMENT (MCMC Admin / Officer) ============
+// Per amended URS: ADMIN and OFFICER can view/add/remove suppliers without verification
+// (their authority replaces the normal 2-layer verification flow). Removal is soft-delete.
+// They may NOT create SDoC registrations on a supplier's behalf — that remains a supplier action.
+SCREENS['suppliers-mgmt'] = function SuppliersManagement({ nav, currentUser }) {
+  const role = currentUser?.role || 'officer';
+  const roleLabel = role === 'team-lead' ? 'MCMC System Administrator' : 'MCMC Officer';
+  const [suppliers, setSuppliers] = React.useState(MOCK.supplierDirectory);
+  const [filter, setFilter] = React.useState('active');
+  const [search, setSearch] = React.useState('');
+  const [addOpen, setAddOpen] = React.useState(false);
+  const [bulkOpen, setBulkOpen] = React.useState(false);
+  const [confirmRemove, setConfirmRemove] = React.useState(null);
+  const [toast, setToast] = React.useState(null);
+
+  const list = suppliers
+    .filter(s => filter === 'all' ? true : filter === 'active' ? !s.deletedAt : !!s.deletedAt)
+    .filter(s => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return s.name.toLowerCase().includes(q) || s.brn.includes(q) || s.id.toLowerCase().includes(q);
+    });
+
+  const counts = {
+    all: suppliers.length,
+    active: suppliers.filter(s => !s.deletedAt).length,
+    deleted: suppliers.filter(s => s.deletedAt).length,
+  };
+
+  function handleAdd(values) {
+    const next = {
+      id: 'SUP-0426-' + String(suppliers.length + 1).padStart(5, '0'),
+      name: values.name,
+      brn: values.brn,
+      category: values.category,
+      since: new Date().toISOString().slice(0, 10),
+      approvals: 0,
+      active: true,
+      address: values.address,
+      pic: values.pic,
+      picEmail: values.picEmail,
+      addedBy: role === 'team-lead' ? 'mcmc-admin' : 'mcmc-officer',
+      addedAt: new Date().toISOString().slice(0, 10),
+      verifiedAt: null,
+      deletedAt: null,
+    };
+    setSuppliers([next, ...suppliers]);
+    setAddOpen(false);
+    setToast({ type: 'success', msg: `Added ${values.name} (${next.id}) — no verification required.` });
+  }
+
+  function handleBulkImport(rows) {
+    const start = suppliers.length;
+    const added = rows.map((r, i) => ({
+      id: 'SUP-0426-' + String(start + i + 1).padStart(5, '0'),
+      name: r.name, brn: r.brn, category: r.category || 'A',
+      since: new Date().toISOString().slice(0, 10),
+      approvals: 0, active: true, address: r.address || '',
+      pic: r.pic || '', picEmail: r.picEmail || '',
+      addedBy: role === 'team-lead' ? 'mcmc-admin' : 'mcmc-officer',
+      addedAt: new Date().toISOString().slice(0, 10),
+      verifiedAt: null, deletedAt: null,
+    }));
+    setSuppliers([...added, ...suppliers]);
+    setBulkOpen(false);
+    setToast({ type: 'success', msg: `Bulk imported ${added.length} suppliers.` });
+  }
+
+  function handleRemove(s) {
+    setSuppliers(suppliers.map(x => x.id === s.id ? { ...x, deletedAt: new Date().toISOString().slice(0, 10), active: false } : x));
+    setConfirmRemove(null);
+    setToast({ type: 'warning', msg: `${s.name} soft-deleted. Records preserved for audit.` });
+  }
+
+  function handleRestore(s) {
+    setSuppliers(suppliers.map(x => x.id === s.id ? { ...x, deletedAt: null, active: true } : x));
+    setToast({ type: 'success', msg: `${s.name} restored.` });
+  }
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>{roleLabel} · {currentUser?.name}</div>
+          <Typography.Title level={3} style={{ margin: '4px 0 0' }}>Suppliers Management</Typography.Title>
+          <Typography.Text type="secondary">Master directory of registered suppliers. MCMC-added entries skip the 2-layer verification.</Typography.Text>
+        </div>
+        <Space>
+          <Button icon={<UploadOutlined />} onClick={() => setBulkOpen(true)}>Bulk import</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>Add supplier</Button>
+        </Space>
+      </div>
+
+      {toast && (
+        <Alert
+          type={toast.type}
+          message={toast.msg}
+          showIcon closable
+          afterClose={() => setToast(null)}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        {[
+          { l: 'Total registered', v: counts.all, d: `Across categories A, B, C, D` },
+          { l: 'Active', v: counts.active, d: 'Visible to suppliers + officers', color: 'var(--color-success)' },
+          { l: 'Soft-deleted', v: counts.deleted, d: 'Records retained for audit', color: 'var(--color-warning)' },
+          { l: 'MCMC-added (this year)', v: suppliers.filter(s => (s.addedBy || '').startsWith('mcmc-') && s.addedAt >= '2026-01-01').length, d: 'No verification required' },
+        ].map((k, i) => (
+          <Col xs={12} md={6} key={i}>
+            <div className="kpi-card">
+              <div className="kpi-label">{k.l}</div>
+              <div className="kpi-value" style={{ color: k.color }}>{k.v}</div>
+              <div className="kpi-delta">{k.d}</div>
+            </div>
+          </Col>
+        ))}
+      </Row>
+
+      <Card bordered>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Segmented
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { label: `Active (${counts.active})`, value: 'active' },
+              { label: `Soft-deleted (${counts.deleted})`, value: 'deleted' },
+              { label: `All (${counts.all})`, value: 'all' },
+            ]}
+          />
+          <Input
+            placeholder="Search name, BRN, or supplier ID…"
+            prefix={<SearchOutlined />}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ flex: 1, minWidth: 240, maxWidth: 480 }}
+            allowClear
+          />
+        </div>
+        <Table
+          rowKey="id"
+          dataSource={list}
+          pagination={{ pageSize: 8 }}
+          columns={[
+            { title: 'Supplier ID', dataIndex: 'id', render: v => <Typography.Text code style={{ fontSize: 12 }}>{v}</Typography.Text> },
+            { title: 'Name', dataIndex: 'name', render: (v, r) => <span style={{ fontWeight: 600, color: r.deletedAt ? 'var(--color-text-muted)' : 'inherit', textDecoration: r.deletedAt ? 'line-through' : 'none' }}>{v}</span> },
+            { title: 'BRN', dataIndex: 'brn' },
+            { title: 'Category', dataIndex: 'category', render: c => <Tag color={c === 'A' ? 'blue' : c === 'B' ? 'green' : c === 'C' ? 'purple' : 'default'}>Cat {c}</Tag> },
+            { title: 'PIC', dataIndex: 'pic', render: (v, r) => v ? <div style={{ fontSize: 12 }}><div>{v}</div><div style={{ color: 'var(--color-text-muted)' }}>{r.picEmail}</div></div> : '—' },
+            { title: 'Approvals', dataIndex: 'approvals', align: 'right' },
+            { title: 'Added by', dataIndex: 'addedBy', render: v => v === 'self-registration' ? <Tag>Self</Tag> : v === 'mcmc-admin' ? <Tag color="blue" icon={<CrownOutlined />}>Admin</Tag> : <Tag color="cyan" icon={<UserOutlined />}>Officer</Tag> },
+            { title: 'Verified', dataIndex: 'verifiedAt', render: v => v ? <Tag color="green" icon={<CheckCircleOutlined />}>{v}</Tag> : <Tag color="orange">No verification</Tag> },
+            {
+              title: 'Action',
+              key: 'action',
+              render: (_, r) => r.deletedAt
+                ? <Button size="small" type="link" onClick={() => handleRestore(r)}>Restore</Button>
+                : <Button size="small" type="link" danger icon={<DeleteOutlined />} onClick={() => setConfirmRemove(r)}>Remove</Button>,
+            },
+          ]}
+        />
+        <div style={{ marginTop: 12, fontSize: 12, color: 'var(--color-text-muted)' }}>
+          Showing {list.length} of {counts.all} suppliers · Soft-deleted entries are hidden from suppliers but kept for audit trail.
+        </div>
+      </Card>
+
+      {/* Add supplier modal — admin/officer flow, no verification */}
+      <Modal
+        title={<Space><PlusOutlined /> Add supplier (no verification)</Space>}
+        open={addOpen}
+        onCancel={() => setAddOpen(false)}
+        footer={null}
+        width={560}
+      >
+        <Alert
+          type="info"
+          showIcon
+          message="MCMC-added suppliers skip the 2-layer verification flow"
+          description="As an authorised MCMC user, your registration is treated as already verified. The supplier can immediately submit applications."
+          style={{ marginBottom: 16 }}
+        />
+        <Form layout="vertical" onFinish={handleAdd}>
+          <Row gutter={12}>
+            <Col span={16}><Form.Item label="Company name" name="name" rules={[{ required: true }]}><Input placeholder="e.g. Acme Communications Sdn Bhd" /></Form.Item></Col>
+            <Col span={8}><Form.Item label="Category" name="category" initialValue="A" rules={[{ required: true }]}>
+              <Select options={[
+                { value: 'A', label: 'Cat A — Company' },
+                { value: 'B', label: 'Cat B — Individual' },
+                { value: 'C', label: 'Cat C — Institution' },
+              ]} />
+            </Form.Item></Col>
+          </Row>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item label="BRN (SSM number)" name="brn" rules={[{ required: true }]}><Input placeholder="e.g. 201901023456" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="Address" name="address"><Input placeholder="Registered address" /></Form.Item></Col>
+          </Row>
+          <Row gutter={12}>
+            <Col span={12}><Form.Item label="Person in charge" name="pic" rules={[{ required: true }]}><Input placeholder="Full name" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="PIC email" name="picEmail" rules={[{ required: true, type: 'email' }]}><Input placeholder="pic@company.com.my" /></Form.Item></Col>
+          </Row>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+            <Button onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button type="primary" htmlType="submit" icon={<CheckCircleOutlined />}>Add supplier</Button>
+          </div>
+        </Form>
+      </Modal>
+
+      {/* Bulk import modal */}
+      <Modal
+        title={<Space><UploadOutlined /> Bulk import suppliers (CSV)</Space>}
+        open={bulkOpen}
+        onCancel={() => setBulkOpen(false)}
+        footer={null}
+        width={560}
+      >
+        <Alert
+          type="info"
+          showIcon
+          message="CSV format: name,brn,category,address,pic,picEmail"
+          description="Each row creates a supplier with no verification. Duplicate BRNs are merged into the existing record."
+          style={{ marginBottom: 16 }}
+        />
+        <Upload.Dragger
+          accept=".csv"
+          showUploadList={false}
+          beforeUpload={(file) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const lines = String(e.target.result).split('\n').filter(Boolean).slice(1);
+              const rows = lines.map(line => {
+                const [name, brn, category, address, pic, picEmail] = line.split(',').map(c => (c || '').trim());
+                return { name, brn, category, address, pic, picEmail };
+              }).filter(r => r.name && r.brn);
+              if (rows.length === 0) {
+                setToast({ type: 'error', msg: 'No valid rows found in the CSV.' });
+                setBulkOpen(false);
+              } else {
+                handleBulkImport(rows);
+              }
+            };
+            reader.readAsText(file);
+            return false;
+          }}
+        >
+          <p style={{ fontSize: 32, margin: 0 }}><UploadOutlined /></p>
+          <p style={{ margin: '8px 0' }}>Click or drag CSV file here</p>
+          <p style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Maximum 500 rows per upload</p>
+        </Upload.Dragger>
+        <div style={{ marginTop: 16, padding: 12, background: 'var(--color-bg-subtle)', borderRadius: 6, fontSize: 12 }}>
+          <strong>Sample row:</strong><br/>
+          <code>Acme Comms Sdn Bhd,201901023456,A,"Level 5, Wisma Acme",Ali bin Abu,ali.abu@acme.my</code>
+        </div>
+      </Modal>
+
+      {/* Confirm soft-delete */}
+      <Modal
+        title={<Space style={{ color: 'var(--color-warning)' }}><WarningOutlined /> Soft-delete supplier?</Space>}
+        open={!!confirmRemove}
+        onCancel={() => setConfirmRemove(null)}
+        onOk={() => handleRemove(confirmRemove)}
+        okText="Soft-delete"
+        okButtonProps={{ danger: true }}
+        cancelText="Cancel"
+        width={460}
+      >
+        {confirmRemove && (
+          <div>
+            <p>The supplier <strong>{confirmRemove.name}</strong> ({confirmRemove.id}) will be hidden from the active directory but their records — applications, certificates, payments — will be preserved for audit.</p>
+            <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>This action can be reversed by toggling the <em>Soft-deleted</em> filter and clicking Restore.</p>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+};
+
 Object.assign(window, { SCREENS });
 
 </script>
@@ -2720,6 +3020,213 @@ function InviteDrawer({ open, onClose }) {
   );
 }
 
+// ============ CONSULTANTS (Supplier Admin) ============
+// Per amended URS: Supplier Admin can view/add/remove consultants linked to their company.
+// Add picks from system-wide MOCK.consultantDirectory (Category D users); remove unlinks
+// from this supplier but does not delete the consultant globally.
+SCREENS.consultants = function Consultants({ nav }) {
+  const me = MOCK.profiles.supplier;
+  const [linked, setLinked] = React.useState(MOCK.myConsultants);
+  const [linkOpen, setLinkOpen] = React.useState(false);
+  const [confirmUnlink, setConfirmUnlink] = React.useState(null);
+  const [pickedId, setPickedId] = React.useState(null);
+  const [primaryFor, setPrimaryFor] = React.useState([]);
+  const [notes, setNotes] = React.useState('');
+  const [toast, setToast] = React.useState(null);
+
+  // Resolve full consultant info by joining linked rows with the directory.
+  const enriched = linked.map(l => ({ ...MOCK.consultantDirectory.find(c => c.id === l.id), ...l }));
+  const linkedIds = new Set(linked.map(l => l.id));
+  const available = MOCK.consultantDirectory.filter(c => !linkedIds.has(c.id) && c.active);
+
+  function handleLink() {
+    if (!pickedId) return;
+    setLinked([...linked, { id: pickedId, linkedAt: new Date().toISOString().slice(0, 10), primaryFor, notes }]);
+    setLinkOpen(false);
+    setPickedId(null); setPrimaryFor([]); setNotes('');
+    const c = MOCK.consultantDirectory.find(x => x.id === pickedId);
+    setToast({ type: 'success', msg: `Linked ${c.name} (${c.firm}) to ${me.company}.` });
+  }
+
+  function handleUnlink(c) {
+    setLinked(linked.filter(l => l.id !== c.id));
+    setConfirmUnlink(null);
+    setToast({ type: 'warning', msg: `${c.name} unlinked from your account. (Their NCEF profile remains active.)` });
+  }
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Supplier Administrator · {me.company}</div>
+          <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Consultants</antd.Typography.Title>
+          <antd.Typography.Text type="secondary">Telecom / EMC / Safety consultants linked to your supplier account. They may submit applications on your behalf when you grant access.</antd.Typography.Text>
+        </div>
+        <antd.Button type="primary" icon={<PlusOutlined />} onClick={() => setLinkOpen(true)}>Add consultant</antd.Button>
+      </div>
+
+      {toast && (
+        <antd.Alert
+          type={toast.type}
+          message={toast.msg}
+          showIcon closable
+          afterClose={() => setToast(null)}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      <antd.Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        {[
+          { l: 'Linked consultants', v: linked.length, d: 'Currently active for this account', color: 'var(--color-primary)' },
+          { l: 'Engagements (last 12m)', v: enriched.reduce((a, c) => a + (c.engagements || 0), 0), d: 'Across all linked consultants' },
+          { l: 'Available in directory', v: available.length, d: 'Other registered Category D users' },
+        ].map((k, i) => (
+          <antd.Col xs={24} md={8} key={i}>
+            <div className="kpi-card">
+              <div className="kpi-label">{k.l}</div>
+              <div className="kpi-value" style={{ color: k.color }}>{k.v}</div>
+              <div className="kpi-delta">{k.d}</div>
+            </div>
+          </antd.Col>
+        ))}
+      </antd.Row>
+
+      <antd.Card bordered title={<antd.Space><ApartmentOutlined /> Linked to {me.company}</antd.Space>}>
+        {enriched.length === 0 ? (
+          <antd.Empty
+            description="No consultants linked yet"
+            image={antd.Empty.PRESENTED_IMAGE_SIMPLE}
+          >
+            <antd.Button type="primary" icon={<PlusOutlined />} onClick={() => setLinkOpen(true)}>Add consultant</antd.Button>
+          </antd.Empty>
+        ) : (
+          <antd.Table
+            rowKey="id"
+            dataSource={enriched}
+            pagination={false}
+            columns={[
+              { title: 'Consultant', key: 'who', render: (_, r) => (
+                <div>
+                  <div style={{ fontWeight: 600 }}>{r.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.firm}</div>
+                </div>
+              ) },
+              { title: 'Expertise', dataIndex: 'expertise', render: tags => (
+                <antd.Space size={[4, 4]} wrap>
+                  {(tags || []).map((t, i) => <antd.Tag key={i}>{t}</antd.Tag>)}
+                </antd.Space>
+              ) },
+              { title: 'Primary for', dataIndex: 'primaryFor', render: (v) => (v || []).map((x, i) => <antd.Tag key={i} color="blue">{x}</antd.Tag>) },
+              { title: 'Contact', key: 'contact', render: (_, r) => (
+                <div style={{ fontSize: 12 }}>
+                  <div><MailOutlined style={{ marginRight: 4, color: 'var(--color-text-muted)' }} />{r.email}</div>
+                  <div><PhoneOutlined style={{ marginRight: 4, color: 'var(--color-text-muted)' }} />{r.phone}</div>
+                </div>
+              ) },
+              { title: 'Linked', dataIndex: 'linkedAt' },
+              { title: 'Engagements', dataIndex: 'engagements', align: 'right' },
+              {
+                title: 'Action',
+                key: 'action',
+                render: (_, r) => <antd.Button size="small" type="link" danger icon={<DeleteOutlined />} onClick={() => setConfirmUnlink(r)}>Remove</antd.Button>,
+              },
+            ]}
+          />
+        )}
+        <div style={{ marginTop: 12, fontSize: 12, color: 'var(--color-text-muted)' }}>
+          Removing a consultant unlinks them from this account only — their NCEF registration stays active for other suppliers.
+        </div>
+      </antd.Card>
+
+      {/* Link existing consultant modal */}
+      <antd.Modal
+        title={<antd.Space><PlusOutlined /> Link consultant to {me.company}</antd.Space>}
+        open={linkOpen}
+        onCancel={() => setLinkOpen(false)}
+        onOk={handleLink}
+        okText="Link consultant"
+        okButtonProps={{ disabled: !pickedId }}
+        cancelText="Cancel"
+        width={560}
+      >
+        <antd.Alert
+          type="info"
+          showIcon
+          message="Pick from registered Category D consultants"
+          description="If your consultant isn't in the list, ask them to register at the NCEF Portal first. Self-registration is required before linking."
+          style={{ marginBottom: 16 }}
+        />
+        <antd.Form layout="vertical">
+          <antd.Form.Item label="Consultant" required>
+            <antd.Select
+              showSearch
+              placeholder="Search by name or firm…"
+              optionFilterProp="label"
+              value={pickedId}
+              onChange={setPickedId}
+              options={available.map(c => ({
+                value: c.id,
+                label: `${c.name} — ${c.firm}`,
+              }))}
+            />
+          </antd.Form.Item>
+          {pickedId && (() => {
+            const c = MOCK.consultantDirectory.find(x => x.id === pickedId);
+            return (
+              <div style={{ padding: 12, background: 'var(--color-bg-subtle)', borderRadius: 6, marginBottom: 16, fontSize: 13 }}>
+                <div><strong>{c.name}</strong> · {c.firm}</div>
+                <div style={{ color: 'var(--color-text-muted)', marginTop: 4 }}>{c.email} · {c.phone}</div>
+                <div style={{ marginTop: 6 }}>
+                  <antd.Space size={[4, 4]} wrap>
+                    {c.expertise.map((t, i) => <antd.Tag key={i}>{t}</antd.Tag>)}
+                  </antd.Space>
+                </div>
+                <div style={{ marginTop: 6, fontSize: 12, color: 'var(--color-text-muted)' }}>{c.engagements} prior engagements · Registered since {c.since}</div>
+              </div>
+            );
+          })()}
+          <antd.Form.Item label="Primary for (optional)">
+            <antd.Select
+              mode="multiple"
+              placeholder="Select schemes this consultant handles"
+              value={primaryFor}
+              onChange={setPrimaryFor}
+              options={[
+                { value: 'Scheme A', label: 'Scheme A — Standard' },
+                { value: 'Scheme B', label: 'Scheme B — Type Approval' },
+                { value: 'Scheme C', label: 'Scheme C — Self-Declaration' },
+                { value: 'Scheme SA', label: 'Scheme SA — Special Approval' },
+              ]}
+            />
+          </antd.Form.Item>
+          <antd.Form.Item label="Internal notes (optional)">
+            <antd.Input.TextArea rows={2} placeholder="e.g. Handles all our IoT submissions" value={notes} onChange={e => setNotes(e.target.value)} />
+          </antd.Form.Item>
+        </antd.Form>
+      </antd.Modal>
+
+      {/* Confirm unlink */}
+      <antd.Modal
+        title={<antd.Space style={{ color: 'var(--color-warning)' }}><WarningOutlined /> Remove consultant?</antd.Space>}
+        open={!!confirmUnlink}
+        onCancel={() => setConfirmUnlink(null)}
+        onOk={() => handleUnlink(confirmUnlink)}
+        okText="Remove"
+        okButtonProps={{ danger: true }}
+        cancelText="Cancel"
+        width={460}
+      >
+        {confirmUnlink && (
+          <div>
+            <p><strong>{confirmUnlink.name}</strong> ({confirmUnlink.firm}) will be unlinked from {me.company}.</p>
+            <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>They will lose access to submit applications on your behalf. Past applications they submitted are not affected.</p>
+          </div>
+        )}
+      </antd.Modal>
+    </div>
+  );
+};
+
 Object.assign(window, { SCREENS });
 
 </script>
@@ -2760,6 +3267,7 @@ const NAV_SUPPLIER = [
   { key: 'certificates', label: 'Certificates', icon: <SafetyCertificateOutlined /> },
   { key: 'imei-register', label: 'Register IMEI / SN', icon: <QrcodeOutlined /> },
   { key: 'payments', label: 'Payments', icon: <WalletOutlined /> },
+  { key: 'consultants', label: 'Consultants', icon: <ApartmentOutlined /> },
   { key: 'onboarding', label: 'Supplier Onboarding', icon: <IdcardOutlined /> },
   { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
 ];
@@ -2767,6 +3275,7 @@ const NAV_TEAM_LEAD = [
   { key: 'officer-queue', label: 'Review Queue', icon: <FlagOutlined /> },
   { key: 'officer-review', label: 'Active Review', icon: <EyeOutlined /> },
   { key: 'applications', label: 'All Applications', icon: <FileSearchOutlined /> },
+  { key: 'suppliers-mgmt', label: 'Suppliers', icon: <ShopOutlined /> },
   { key: 'reports', label: 'Reports & Analytics', icon: <BarChartOutlined /> },
   { key: 'audit', label: 'Audit Log', icon: <AuditOutlined /> },
   { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
@@ -2774,6 +3283,7 @@ const NAV_TEAM_LEAD = [
 const NAV_OFFICER = [
   { key: 'officer-queue', label: 'My Queue', icon: <FlagOutlined /> },
   { key: 'officer-review', label: 'Active Review', icon: <EyeOutlined /> },
+  { key: 'suppliers-mgmt', label: 'Suppliers', icon: <ShopOutlined /> },
   { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
 ];
 const NAV_BY_ROLE = { supplier: NAV_SUPPLIER, 'team-lead': NAV_TEAM_LEAD, officer: NAV_OFFICER };
@@ -3322,7 +3832,7 @@ function SwitchProfileModal({ open, currentRole, onClose, onSwitch }) {
   const [pick, setPick] = React.useState(currentRole);
   React.useEffect(() => { if (open) setPick(currentRole); }, [open, currentRole]);
   const roleAccent = { supplier: 'var(--color-primary)', 'team-lead': '#7B3FA0', officer: '#0F6ABF' };
-  const roleLabel = { supplier: 'Supplier', 'team-lead': 'Team Lead', officer: 'Normal Officer' };
+  const roleLabel = { supplier: 'Supplier', 'team-lead': 'MCMC Admin', officer: 'MCMC Officer' };
 
   return (
     <antd.Modal
@@ -3448,7 +3958,29 @@ function App() {
     );
   }
 
-  const Screen = SCREENS[screen] || (() => <div style={{ padding: 40 }}>Screen "{screen}" not found</div>);
+  // Per amended URS: ADMIN and OFFICER cannot create registrations on a vendor's behalf.
+  // These supplier-only screens are gated even if a user navigates here via direct URL or stale localStorage.
+  const SUPPLIER_ONLY = new Set(['dashboard', 'sdoc-wizard', 'special-approval', 'certificates', 'imei-register', 'cert-renewal', 'payments', 'consultants', 'onboarding']);
+  const isRestricted = SUPPLIER_ONLY.has(screen) && !isSupplier;
+  const RestrictedScreen = () => (
+    <div style={{ padding: 32 }}>
+      <antd.Result
+        status="403"
+        icon={<LockOutlined style={{ color: 'var(--color-warning)' }} />}
+        title="Restricted to Suppliers"
+        subTitle={
+          <div>
+            <p>This action ({screen.replace(/-/g, ' ')}) is reserved for supplier-tier users. As an MCMC Admin/Officer you can review applications, manage the supplier directory, and assign reviews — but you cannot submit registrations on a vendor's behalf.</p>
+            <p style={{ marginTop: 4 }}>Use <strong>Switch Profile</strong> in the top-right menu to demo the supplier flow.</p>
+          </div>
+        }
+        extra={<antd.Button type="primary" onClick={() => setScreen(DEFAULT_SCREEN_BY_ROLE[tweaks.role])}>Back to {DEFAULT_SCREEN_BY_ROLE[tweaks.role].replace(/-/g, ' ')}</antd.Button>}
+      />
+    </div>
+  );
+  const Screen = isRestricted
+    ? RestrictedScreen
+    : (SCREENS[screen] || (() => <div style={{ padding: 40 }}>Screen "{screen}" not found</div>));
 
   return (
     <ConfigProvider theme={{

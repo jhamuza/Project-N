@@ -24,7 +24,7 @@ window.MOCK = {
       id: 'OFF-001',
       role: 'team-lead',
       name: 'En. Faisal Rahman',
-      title: 'CPPG Team Lead',
+      title: 'MCMC System Administrator',
       initials: 'FR',
       email: 'faisal.rahman@mcmc.gov.my',
       team: 'CPPG-TL-01',
@@ -33,7 +33,7 @@ window.MOCK = {
       id: 'OFF-002',
       role: 'officer',
       name: 'Pn. Rosnah Idris',
-      title: 'CPPG Officer',
+      title: 'MCMC Officer',
       initials: 'RI',
       email: 'rosnah.idris@mcmc.gov.my',
       team: 'CPPG-TL-01',
@@ -77,14 +77,37 @@ window.MOCK = {
     supplier: { totalApps: 23, approved: 17, pending: 3, expiringSoon: 2 },
     officer: { pending: 5, approvedToday: 8, rejectedToday: 1, avgTurnaround: 4.2 },
   },
-  // Existing supplier directory (onboarding picker)
+  // Master supplier directory — used by:
+  //   • Onboarding picker (existing supplier flow)
+  //   • Officer/Admin Suppliers Management screen (view all, add, soft-delete)
+  // `addedBy`: 'self-registration' | 'mcmc-admin' | 'mcmc-officer'
+  // `deletedAt` is null when active; populated with ISO timestamp on soft-delete.
   supplierDirectory: [
-    { id: 'SUP-0126-00087', name: 'Axiata Digital Sdn Bhd', brn: '201901023456', category: 'A', since: '2019-03-14', approvals: 47, active: true, address: 'Level 21, Axiata Tower, KL Sentral' },
-    { id: 'SUP-0322-00045', name: 'Celcom Axiata Berhad', brn: '199201015249', category: 'A', since: '2022-08-21', approvals: 32, active: true, address: 'Menara Celcom, Jalan Semangat, PJ' },
-    { id: 'SUP-0420-00012', name: 'Maxis Broadband Sdn Bhd', brn: '234582400900', category: 'A', since: '2020-01-07', approvals: 58, active: true, address: 'Menara Maxis, KLCC' },
-    { id: 'SUP-0621-00091', name: 'TM Technology Services', brn: '198401023456', category: 'A', since: '2021-06-15', approvals: 21, active: true, address: 'TM Tower, Jalan Pantai Baharu' },
-    { id: 'SUP-0823-00210', name: 'Digi Telecommunications', brn: '199701009694', category: 'A', since: '2023-09-04', approvals: 9, active: true, address: 'D\'House, Shah Alam' },
-    { id: 'SUP-0224-00142', name: 'Huawei Technologies (M) Sdn Bhd', brn: '200101020034', category: 'A', since: '2024-02-19', approvals: 14, active: true, address: 'Level 9, Quill 7 Tower, KL Sentral' },
+    { id: 'SUP-0126-00087', name: 'Axiata Digital Sdn Bhd',         brn: '201901023456', category: 'A', since: '2019-03-14', approvals: 47, active: true, address: 'Level 21, Axiata Tower, KL Sentral',     pic: 'Nurul Aisyah binti Ahmad', picEmail: 'nurul.aisyah@axiatadigital.com.my', addedBy: 'self-registration', addedAt: '2019-03-14', verifiedAt: '2019-03-20', deletedAt: null },
+    { id: 'SUP-0322-00045', name: 'Celcom Axiata Berhad',           brn: '199201015249', category: 'A', since: '2022-08-21', approvals: 32, active: true, address: 'Menara Celcom, Jalan Semangat, PJ',       pic: 'Mohd Faizal Ismail',       picEmail: 'mohd.faizal@celcom.com.my',          addedBy: 'self-registration', addedAt: '2022-08-21', verifiedAt: '2022-08-26', deletedAt: null },
+    { id: 'SUP-0420-00012', name: 'Maxis Broadband Sdn Bhd',        brn: '234582400900', category: 'A', since: '2020-01-07', approvals: 58, active: true, address: 'Menara Maxis, KLCC',                     pic: 'Tan Wei Loong',            picEmail: 'tan.weiloong@maxis.com.my',          addedBy: 'self-registration', addedAt: '2020-01-07', verifiedAt: '2020-01-14', deletedAt: null },
+    { id: 'SUP-0621-00091', name: 'TM Technology Services',         brn: '198401023456', category: 'A', since: '2021-06-15', approvals: 21, active: true, address: 'TM Tower, Jalan Pantai Baharu',          pic: 'Siti Aminah Ismail',       picEmail: 'siti.aminah@tm.com.my',              addedBy: 'self-registration', addedAt: '2021-06-15', verifiedAt: '2021-06-22', deletedAt: null },
+    { id: 'SUP-0823-00210', name: 'Digi Telecommunications',        brn: '199701009694', category: 'A', since: '2023-09-04', approvals: 9,  active: true, address: 'D\'House, Shah Alam',                    pic: 'Ravi Kumar Pillai',        picEmail: 'ravi.k@digi.com.my',                 addedBy: 'self-registration', addedAt: '2023-09-04', verifiedAt: '2023-09-11', deletedAt: null },
+    { id: 'SUP-0224-00142', name: 'Huawei Technologies (M) Sdn Bhd',brn: '200101020034', category: 'A', since: '2024-02-19', approvals: 14, active: true, address: 'Level 9, Quill 7 Tower, KL Sentral',     pic: 'Wong Chee Wai',            picEmail: 'wong.cw@huawei.com',                 addedBy: 'self-registration', addedAt: '2024-02-19', verifiedAt: '2024-02-26', deletedAt: null },
+    { id: 'SUP-0125-00355', name: 'YTL Communications Sdn Bhd',     brn: '200401012345', category: 'A', since: '2025-01-12', approvals: 5,  active: true, address: 'YTL Plaza, Jalan Bukit Bintang, KL',     pic: 'Lee Ai Ling',              picEmail: 'lee.aling@ytlcomms.my',              addedBy: 'mcmc-admin',        addedAt: '2025-01-12', verifiedAt: null,        deletedAt: null },
+    { id: 'SUP-0326-00478', name: 'Sapura Industrial Berhad',       brn: '199001003456', category: 'B', since: '2026-03-02', approvals: 1,  active: true, address: 'Wisma Sapura, Jalan Tun Razak, KL',      pic: 'Ahmad Bin Hassan',         picEmail: 'ahmad.h@sapura.com.my',              addedBy: 'mcmc-officer',      addedAt: '2026-03-02', verifiedAt: null,        deletedAt: null },
+    { id: 'SUP-0922-00067', name: 'Iris Corporation Berhad',        brn: '199801007890', category: 'C', since: '2022-09-15', approvals: 0,  active: false,address: 'IRIS Smart Complex, Cyberjaya',          pic: 'Rajesh Singh',             picEmail: 'rajesh.s@iris.com.my',               addedBy: 'self-registration', addedAt: '2022-09-15', verifiedAt: '2022-09-25', deletedAt: '2025-11-30' },
+  ],
+  // System-wide consultant directory (Category D users in URS classification).
+  // Suppliers can pick from these via dropdown (per SDD §5.1.2 Principal & Consultant Mgmt).
+  consultantDirectory: [
+    { id: 'CON-0119-00012', name: 'En. Zaki Aziz',          firm: 'TelecomCert Consulting Sdn Bhd', expertise: ['Telecom', 'EMC'],        email: 'zaki.aziz@telecomcert.my',     phone: '+60-3-7831-2200', since: '2019-08-12', engagements: 38, active: true },
+    { id: 'CON-0220-00045', name: 'Ms. Priya Devi',         firm: 'EMCert Solutions Sdn Bhd',       expertise: ['EMC', 'Safety'],          email: 'priya.d@emcert.my',            phone: '+60-3-2161-4488', since: '2020-02-04', engagements: 27, active: true },
+    { id: 'CON-0721-00033', name: 'Dr. Lim Boon Chin',      firm: 'SpectrumLab Advisory',           expertise: ['Spectrum', 'Telecom'],    email: 'limbc@spectrumlab.my',         phone: '+60-3-9056-1180', since: '2021-07-19', engagements: 19, active: true },
+    { id: 'CON-0322-00071', name: 'En. Mohd Hafiz Suleiman',firm: 'Hafiz Tech Consultancy',         expertise: ['Telecom', 'Wi-Fi'],       email: 'hafiz@hafiztech.my',           phone: '+60-3-2173-6655', since: '2022-03-08', engagements: 14, active: true },
+    { id: 'CON-1023-00088', name: 'Pn. Norliza Mansor',     firm: 'Independent (freelance)',        expertise: ['Documentation', 'SDoC'],  email: 'norliza.mansor@gmail.com',     phone: '+60-12-345-6789', since: '2023-10-22', engagements: 8,  active: true },
+    { id: 'CON-0124-00112', name: 'Ir. Tan Kok Wai',        firm: 'KW Engineering Services',        expertise: ['Safety', 'EMC'],          email: 'tankw@kweng.my',               phone: '+60-3-7956-2241', since: '2024-01-18', engagements: 5,  active: true },
+  ],
+  // Consultants linked to the current supplier (Axiata Digital). Editable by Supplier Admin.
+  myConsultants: [
+    { id: 'CON-0119-00012', linkedAt: '2024-08-12', primaryFor: ['Scheme A', 'Scheme B'], notes: 'Lead consultant for telecom equipment registrations.' },
+    { id: 'CON-0220-00045', linkedAt: '2025-02-19', primaryFor: ['Scheme A'],             notes: 'EMC compliance review.' },
+    { id: 'CON-1023-00088', linkedAt: '2026-01-07', primaryFor: ['Scheme C'],             notes: 'Documentation support for low-risk products.' },
   ],
   // Team members for current supplier account
   teamMembers: [

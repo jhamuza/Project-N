@@ -68,6 +68,7 @@ const NAV_SUPPLIER = [
   { key: 'certificates', label: 'Certificates', icon: <SafetyCertificateOutlined /> },
   { key: 'imei-register', label: 'Register IMEI / SN', icon: <QrcodeOutlined /> },
   { key: 'payments', label: 'Payments', icon: <WalletOutlined /> },
+  { key: 'consultants', label: 'Consultants', icon: <ApartmentOutlined /> },
   { key: 'onboarding', label: 'Supplier Onboarding', icon: <IdcardOutlined /> },
   { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
 ];
@@ -75,6 +76,7 @@ const NAV_TEAM_LEAD = [
   { key: 'officer-queue', label: 'Review Queue', icon: <FlagOutlined /> },
   { key: 'officer-review', label: 'Active Review', icon: <EyeOutlined /> },
   { key: 'applications', label: 'All Applications', icon: <FileSearchOutlined /> },
+  { key: 'suppliers-mgmt', label: 'Suppliers', icon: <ShopOutlined /> },
   { key: 'reports', label: 'Reports & Analytics', icon: <BarChartOutlined /> },
   { key: 'audit', label: 'Audit Log', icon: <AuditOutlined /> },
   { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
@@ -82,6 +84,7 @@ const NAV_TEAM_LEAD = [
 const NAV_OFFICER = [
   { key: 'officer-queue', label: 'My Queue', icon: <FlagOutlined /> },
   { key: 'officer-review', label: 'Active Review', icon: <EyeOutlined /> },
+  { key: 'suppliers-mgmt', label: 'Suppliers', icon: <ShopOutlined /> },
   { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
 ];
 const NAV_BY_ROLE = { supplier: NAV_SUPPLIER, 'team-lead': NAV_TEAM_LEAD, officer: NAV_OFFICER };
@@ -630,7 +633,7 @@ function SwitchProfileModal({ open, currentRole, onClose, onSwitch }) {
   const [pick, setPick] = React.useState(currentRole);
   React.useEffect(() => { if (open) setPick(currentRole); }, [open, currentRole]);
   const roleAccent = { supplier: 'var(--color-primary)', 'team-lead': '#7B3FA0', officer: '#0F6ABF' };
-  const roleLabel = { supplier: 'Supplier', 'team-lead': 'Team Lead', officer: 'Normal Officer' };
+  const roleLabel = { supplier: 'Supplier', 'team-lead': 'MCMC Admin', officer: 'MCMC Officer' };
 
   return (
     <antd.Modal
@@ -756,7 +759,29 @@ function App() {
     );
   }
 
-  const Screen = SCREENS[screen] || (() => <div style={{ padding: 40 }}>Screen "{screen}" not found</div>);
+  // Per amended URS: ADMIN and OFFICER cannot create registrations on a vendor's behalf.
+  // These supplier-only screens are gated even if a user navigates here via direct URL or stale localStorage.
+  const SUPPLIER_ONLY = new Set(['dashboard', 'sdoc-wizard', 'special-approval', 'certificates', 'imei-register', 'cert-renewal', 'payments', 'consultants', 'onboarding']);
+  const isRestricted = SUPPLIER_ONLY.has(screen) && !isSupplier;
+  const RestrictedScreen = () => (
+    <div style={{ padding: 32 }}>
+      <antd.Result
+        status="403"
+        icon={<LockOutlined style={{ color: 'var(--color-warning)' }} />}
+        title="Restricted to Suppliers"
+        subTitle={
+          <div>
+            <p>This action ({screen.replace(/-/g, ' ')}) is reserved for supplier-tier users. As an MCMC Admin/Officer you can review applications, manage the supplier directory, and assign reviews — but you cannot submit registrations on a vendor's behalf.</p>
+            <p style={{ marginTop: 4 }}>Use <strong>Switch Profile</strong> in the top-right menu to demo the supplier flow.</p>
+          </div>
+        }
+        extra={<antd.Button type="primary" onClick={() => setScreen(DEFAULT_SCREEN_BY_ROLE[tweaks.role])}>Back to {DEFAULT_SCREEN_BY_ROLE[tweaks.role].replace(/-/g, ' ')}</antd.Button>}
+      />
+    </div>
+  );
+  const Screen = isRestricted
+    ? RestrictedScreen
+    : (SCREENS[screen] || (() => <div style={{ padding: 40 }}>Screen "{screen}" not found</div>));
 
   return (
     <ConfigProvider theme={{
