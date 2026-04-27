@@ -220,6 +220,8 @@ Primary database: **PostgreSQL** (structured data). Unstructured documents: **Mi
 
 ### 5.1 User Management Module
 
+> **PROTOTYPE STATUS: ⚠️ PARTIAL** — Login screen, demo account selector, supplier onboarding wizard (6 steps), profile & settings, consultant management, and team members UI are implemented. Keycloak SSO, 2FA enrollment, Approver/Verifier/Recommender role split, password reset, and waiver code redemption are not yet built.
+
 #### Purpose
 Foundation of NCEF security. Handles the entire lifecycle of user accounts — registration, authentication, authorization, and profile management — for all internal (MCMC) and external (Applicant) users via **Keycloak**.
 
@@ -352,6 +354,8 @@ All users can view and update their profile information after login, including c
 
 ### 5.2 Equipment Registration Module (SDoC)
 
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — Full 7-step SDoC wizard (Scheme A/B/C selection → product details → document upload → AI validation → review → payment → confirmation). AI score display with gauge/bar/verdict visualisations. Application list with status filtering. Certificate detail view with renewal and IMEI registration shortcuts.
+
 #### Purpose
 Central NCEF component managing the **Supplier's Declaration of Conformity (SDoC)** process. Risk-based workflows for Scheme A, B, and C.
 
@@ -433,6 +437,8 @@ All applications must be concluded with a **digital signature compliant with the
 
 ### 5.3 Special Approval Module
 
+> **PROTOTYPE STATUS: ⚠️ PARTIAL** — 6-step wizard implemented (purpose selection → equipment classification → research details → document upload → declaration → confirmation), including prohibited equipment extra-doc flow. Multi-level approval chain routing (OIC → Recommender → Verifier → Approver), SA Letter draft/download, and waiver/reclassification flows are not yet built.
+
 #### Purpose
 Dedicated workflow for importing communications equipment for **specific non-commercial purposes**:
 - Personal (individual or company)
@@ -504,6 +510,8 @@ The multi-level workflow for Prohibited equipment is configurable in terms of st
 
 ### 5.4 Renewal Module
 
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — 5-step renewal wizard (select certificate → document review with reuse/re-upload logic → AI re-validation with updated score → payment with fee calculation → confirmation with new RCN and expiry date). Document age tracking and 6-month reusability rule displayed. Renewal button surfaced from Certificates list for expiring certs.
+
 #### Purpose
 Automates renewal of both **applicant registrations** (Supplier/Principal/Consultant) and **equipment certifications** (SDoC). Prevents lapses through timely notifications.
 
@@ -550,6 +558,8 @@ Automates renewal of both **applicant registrations** (Supplier/Principal/Consul
 
 ### 5.5 IMEI / Serial Number Registration Module
 
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — 4-step wizard (select active certificate → manual entry or CSV bulk upload → format validation with duplicate detection → confirmation with receipt and fee summary). Per-unit fee display (RM 0.50/IMEI, RM 0.15/SN). Validation status badges (valid / duplicate / invalid format) shown inline.
+
 #### Purpose
 Register unique equipment identifiers — **IMEI** (cellular devices) and **Serial Numbers** (non-cellular) — for post-market surveillance and customs clearance tracking.
 
@@ -578,6 +588,8 @@ Register unique equipment identifiers — **IMEI** (cellular devices) and **Seri
 ---
 
 ### 5.6 Modification of Registration Module
+
+> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No screen, wizard, or mock data exists for modification requests. To build: modification request form, document re-upload, officer review routing, and approval/rejection flow. Reference spec §5.6 for full requirements.
 
 #### Purpose
 Formal process for applicants to submit modification requests for existing equipment registrations, with complete audit trail.
@@ -612,6 +624,8 @@ Formal process for applicants to submit modification requests for existing equip
 ---
 
 ### 5.7 Importation Module
+
+> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No screen exists. To build: import permit application form (Permit Type selector, goods details, HS code, port of entry), RMCD MyOGA mock integration, permit status tracking, and officer review. Reference spec §5.7 for full requirements.
 
 #### Purpose
 Streamlines import permit acquisition by integrating with **RMCD MyOGA System**, allowing applicants to initiate the permit process directly from NCEF.
@@ -660,6 +674,8 @@ Streamlines import permit acquisition by integrating with **RMCD MyOGA System**,
 
 ### 5.8 Post-Market Surveillance (PMS) Module
 
+> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No screen exists. To build: audit case management (sampling plans, on-site audit scheduling, non-conformance reports), supplier compliance tracking dashboard, enforcement action logging, and regulatory authority integration. Reference spec §5.8 for full requirements.
+
 #### Purpose
 Supports MCMC in monitoring ongoing compliance of registered equipment and suppliers after market entry. Enables end-to-end audit management, product sampling, and compliance verification.
 
@@ -701,6 +717,8 @@ Supports MCMC in monitoring ongoing compliance of registered equipment and suppl
 
 ### 5.9 Post Monitoring Module
 
+> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No screen exists. To build: IntelliGenCE knowledge base, equipment complaint intake, AI web-crawling feed, market intelligence reports, complaint-to-case workflow, and equipment blacklist management. Reference spec §5.9 for full requirements.
+
 > Previously referred to as "Complaint & Surveillance". URS v1.7 names it **Post Monitoring Module**.
 
 #### Purpose
@@ -737,6 +755,8 @@ Data captured per record:
 ---
 
 ### 5.10 Compliance Status Management Module
+
+> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No screen exists. To build: compliance status dashboard, status override controls (Compliant / Non-Compliant / Suspended / Revoked), enforcement action logging, supplier/equipment status timeline, and bulk status updates. Reference spec §5.10 for full requirements.
 
 #### Purpose
 Provides MCMC officers with direct capability to govern and update the **compliance status** of registered equipment and suppliers based on audit findings, intelligence, or enforcement decisions.
@@ -775,6 +795,8 @@ Status records support:
 
 ### 5.11 Public Module
 
+> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No public-facing screen exists. To build: unauthenticated product registry search (by brand/model/RCN), certificate validity lookup, public announcements page, and downloadable standards/fee schedule. Reference spec §5.11 for full requirements.
+
 #### Purpose
 Public-facing portal providing transparent access to information for the general public and serving as the central repository for official NCEF content.
 
@@ -809,6 +831,8 @@ Public-facing portal providing transparent access to information for the general
 
 ### 5.12 Mobile Application
 
+> **PROTOTYPE STATUS: 🚫 OUT OF SCOPE** — Native Flutter apps (Android / iOS / Huawei) are not part of the web prototype. This module is a full production deliverable only. No prototype screens planned.
+
 #### Purpose
 On-the-go access and MCMC announcement channel. **Three separate native apps** — Android, iOS, Huawei — each built with Flutter.
 
@@ -831,6 +855,8 @@ Client-side only — no dedicated backend data store; relies on main NCEF databa
 ---
 
 ### 5.13 Payment Integration Module
+
+> **PROTOTYPE STATUS: ⚠️ PARTIAL** — Payment selection UI (FPX, card, DuitNow, corporate invoice) is embedded as the final step in SDoC, IMEI, and Renewal wizards. Fee calculations and invoice display are mocked. No standalone payment portal, real MCMC Pay gateway, SIFS reconciliation, or refund/offset workflow is implemented.
 
 #### Purpose
 Handles all NCEF financial transactions securely via **MCMC Pay**, with reconciliation through **MCMC SIFS**.
@@ -875,6 +901,8 @@ Handles all NCEF financial transactions securely via **MCMC Pay**, with reconcil
 ---
 
 ### 5.14 AI-Enabled Features
+
+> **PROTOTYPE STATUS: ⚠️ PARTIAL** — AI score card with three visualisation modes (gauge / bar / verdict), expandable scoring criteria (8 sub-scores), and threshold commentary (≥90 auto-accept, 70–89 priority review, <70 standard) are implemented. MINA assistant chatbot is a stub with mock Q&A. Real Qwen2.5-VL service, auto-accept routing, OCR extraction, and IntelliGenCE web-crawling are not connected.
 
 #### Purpose
 AI capabilities built on a dedicated **Python FastAPI** microservices stack, enhancing efficiency, accuracy, and decision support throughout the registration lifecycle.
@@ -925,6 +953,8 @@ AI capabilities built on a dedicated **Python FastAPI** microservices stack, enh
 
 ### 5.15 Dashboard & Reporting Module
 
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — Supplier Dashboard (KPI cards, recent applications, quick actions, notifications widget), Officer Queue (my/team/unassigned tabs, SLA circles, assign modal), Reports & Analytics (monthly trend bar chart, top applicants, officer performance table — Team Lead only), All Applications master list, and Audit Log (searchable, filterable, expandable — Team Lead only) are all implemented.
+
 #### Purpose
 Real-time insights and analytics for MCMC officers and applicants. Tracks KPIs and generates reports for compliance and strategic planning.
 
@@ -965,6 +995,8 @@ Both internal and external users can monitor application status across the full 
 ---
 
 ### 5.16 Notification Module
+
+> **PROTOTYPE STATUS: ⚠️ PARTIAL** — Notification preferences matrix (email / SMS / in-app toggles for 6 event categories) is in Profile & Settings. A notifications widget appears on the supplier Dashboard. No dedicated Notifications centre screen, no real email/SMS/push delivery, and no in-app notification bell/dropdown are implemented.
 
 #### Purpose
 Keeps all stakeholders informed of key events, status changes, and required actions throughout the application lifecycle.
@@ -1007,6 +1039,8 @@ Triggered by:
 
 ### 5.17 Integration Requirements
 
+> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — All third-party integrations (SSM BizConnect, MyDigital ID, SIRIM eComM, RMCD MyOGA, MCMC Pay/SIFS, IBM webMethods ESB, Keycloak) are JavaScript mocks. No real API calls, webhooks, or ESB routing are wired. To build: integration stubs/adapters for each system listed in §5.17.
+
 #### Purpose
 Manages all data exchanges between NCEF and other enterprise systems using an **ESB pattern** with IBM webMethods as the central integration hub — secure, reliable, manageable, decoupled from core application logic.
 
@@ -1041,6 +1075,8 @@ Manages all data exchanges between NCEF and other enterprise systems using an **
 ---
 
 ### 5.18 Configuration & Settings
+
+> **PROTOTYPE STATUS: ⚠️ PARTIAL** — Supplier-facing Profile & Settings (personal info, organization, team members, security, notifications, API keys) is implemented. Admin-facing system config panel (fee table management, SLA thresholds, scheme parameters, user role assignments) is not yet built.
 
 #### Purpose
 Administrative interface for **System Administrators** to manage and configure operational parameters without code deployments.
@@ -1083,6 +1119,8 @@ Administrative interface for **System Administrators** to manage and configure o
 
 ### 5.19 Data Migration Strategy
 
+> **PROTOTYPE STATUS: 🚫 NOT APPLICABLE** — Data migration is a production go-live concern (ETL via IBM webMethods ESB). No prototype screens are required. Historical mock data in `data/mock.js` represents already-migrated records for demo purposes.
+
 #### Purpose
 Migrate all historical equipment registration data from legacy SIRIM-managed system to NCEF. Goal: seamless transition with high data integrity — all historical records accessible from day one.
 
@@ -1114,6 +1152,8 @@ Populates: `USERS`, `COMPANIES`, `EQUIPMENT`, `CERTIFICATES`, and associated tab
 ---
 
 ### 5.20 General System Requirements
+
+> **PROTOTYPE STATUS: ⚠️ PARTIAL** — Audit trail screen (searchable, role-filtered), role-based access guards (RestrictedScreen 403 component), IMEI format validation, and soft-delete pattern are implemented. Real session management, server-side audit logging infrastructure, API rate limiting, and PDPA data-handling controls are not yet built.
 
 #### 5.20.1 Data Validation Rules
 - **IMEI Validation:** All submitted IMEI numbers validated for uniqueness across NCEF database — no duplicates allowed
@@ -1160,12 +1200,30 @@ Populates: `USERS`, `COMPANIES`, `EQUIPMENT`, `CERTIFICATES`, and associated tab
 
 ### 6.2 Key Screen Flows
 
-1. **External User Onboarding:** Multi-step wizard — account creation (with security Q&A) → email verification → category selection → detailed profile + document submission → MCMC acceptance
-2. **SDoC Application Submission:** Tabbed five-part form (Parts A–E); CA multi-select dropdown; document upload with AI validation feedback
-3. **Special Approval Submission:** Single form with purpose-of-usage selector (hidden Prohibited option for general applicants); IMEI/SN bulk upload
-4. **Applicant Dashboard:** Summary view with clear calls-to-action; renewal alerts with direct links; sortable/filterable application status table
-5. **Officer Dashboard:** Role-based; prioritised work queue, SLA timers, AI-proposed audit lists, key operational metrics
-6. **Public Search:** Real-time equipment status lookup by Brand/Model/IMEI/SN/Supplier ID/RCN
+| # | Screen Flow | Prototype Status | Notes |
+|---|---|---|---|
+| 1 | **External User Onboarding** — account creation → email verification → category selection → profile + document submission → MCMC acceptance | ✅ Implemented | 6-step wizard in `screens-a.jsx`; email verification step is UI-only |
+| 2 | **SDoC Application Submission** — scheme selection → product details → document upload → AI validation → review → payment → confirmation | ✅ Implemented | 7-step wizard in `screens-b.jsx`; all 3 schemes; AI score display |
+| 3 | **Special Approval Submission** — purpose selector → equipment classification → research details → document upload → declaration → confirmation | ⚠️ Partial | 6-step wizard done; multi-level approval chain and SA Letter not built |
+| 4 | **Certificate Renewal** — select cert → review docs (reuse/re-upload) → AI re-validation → payment → new RCN confirmation | ✅ Implemented | 5-step wizard in `screens-a.jsx`; document age and reusability rules shown |
+| 5 | **IMEI / SN Registration** — select cert → enter/CSV serials → validation → receipt | ✅ Implemented | 4-step wizard in `screens-c.jsx`; bulk upload and duplicate detection |
+| 6 | **Applicant Dashboard** — KPI cards, recent applications, renewal alerts, quick actions | ✅ Implemented | `screens-a.jsx`; notifications widget included |
+| 7 | **Officer Review (Active Review)** — document viewer + extracted fields + audit trail ↔ AI score + decision panel + SLA timer | ✅ Implemented | Split-view in `screens-b.jsx`; Reassign (TL only); access guard for unassigned apps |
+| 8 | **Officer Queue** — my/team/unassigned tabs, KPI row, assign modal | ✅ Implemented | Inline in `NCEF Portal.html`; role-aware (TL vs normal officer) |
+| 9 | **Reports & Analytics** — monthly trend chart, top applicants, officer performance | ✅ Implemented | `NCEF Portal.html`; Team Lead only; mock chart data |
+| 10 | **Audit Log** — searchable timeline with role + event filters | ✅ Implemented | `NCEF Portal.html`; Team Lead only; expandable rows |
+| 11 | **Suppliers Management** — add/bulk import/soft-delete/restore supplier directory | ✅ Implemented | `screens-b.jsx`; admin/TL only |
+| 12 | **Certificates List** — filter by status, detail drawer, renew/IMEI shortcuts | ✅ Implemented | `screens-c.jsx` |
+| 13 | **Payments & Invoices** — transaction history, methods on file, export | ✅ Implemented | `screens-c.jsx`; mock data only |
+| 14 | **Consultant Management** — link/unlink Category D consultants, scheme assignment | ✅ Implemented | `screens-c.jsx` |
+| 15 | **Profile & Settings** — personal, org, team members, security, notifications, API | ✅ Implemented | `screens-c.jsx`; 6 tabs |
+| 16 | **Login / Switch Profile** — demo account selector, role login, switch-profile modal, sign out | ✅ Implemented | `screens-a.jsx` + `NCEF Portal.html` |
+| 17 | **Modification of Registration** | ❌ Not built | See §5.6 |
+| 18 | **Importation Permit Application** | ❌ Not built | See §5.7 |
+| 19 | **Post-Market Surveillance (PMS)** | ❌ Not built | See §5.8 |
+| 20 | **Post Monitoring / IntelliGenCE** | ❌ Not built | See §5.9 |
+| 21 | **Compliance Status Management** | ❌ Not built | See §5.10 |
+| 22 | **Public Search** — real-time lookup by Brand/Model/IMEI/SN/RCN (unauthenticated) | ❌ Not built | See §5.11 |
 
 ### 6.3 Wireframes
 Detailed wireframes and high-fidelity mockups to be created in a separate UI/UX design phase. Design adheres to MCMC branding and style guidelines.
@@ -1577,29 +1635,42 @@ This section maps the specification to the current prototype (`jhamuza/Project-N
 
 ### Implemented vs Pending
 
-| Feature | Status | Notes |
-|---|---|---|
-| User registration (2-layer) | Mocked — demo login only | No real Keycloak auth |
-| SDoC Scheme A flow | Implemented (mock) | Multi-step wizard; AI score display |
-| SDoC Scheme B/C | Partial | Scheme selector present; auto-accept logic mocked |
-| Special Approval | Stub | Form exists; no multi-level approval chain |
-| Renewal | Implemented (mock) | Certificate selection and payment flow |
-| IMEI/SN registration | Implemented (mock) | Bulk upload UI; fee calculation displayed |
-| Modification | Not yet implemented | — |
-| Importation | Not yet implemented | — |
-| PMS (Audits) | Not yet implemented | — |
-| Post Monitoring (Complaints) | Not yet implemented | — |
-| Compliance Status Management | Not yet implemented | — |
-| Public Module / Public Search | Stub only | — |
-| Mobile Apps | Not in scope for prototype | — |
-| Payment (MCMC Pay) | Mocked | No real gateway integration |
-| AI features | Mocked score display | No real AI service |
-| Suppliers Management | Implemented (mock) | MCMC Admin/Officer — add/bulk/soft-delete |
-| Consultant Management | Implemented (mock) | Supplier Admin — link/unlink from directory |
-| Reports & Export | Partial stub | Table present; no real export |
-| Waiver codes | Not yet implemented | — |
-| Prohibited equipment workflow | Not yet implemented | — |
-| SA Letter draft/publish flow | Not yet implemented | — |
+Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
+
+| Module / Feature | Status | What's Done | What Remains |
+|---|---|---|---|
+| **Login & Auth** | ✅ Done | Demo login screen, 3 account cards, role-based landing | Keycloak SSO, real password validation, 2FA enrollment, forgot-password |
+| **Supplier Onboarding** | ✅ Done | 6-step wizard; SSM auto-fill mock; AI validation checklist | Real SSM BizConnect call; email verification delivery |
+| **Profile & Settings** | ✅ Done | 6 tabs: personal, org, team, security, notifications, API | Admin system-config panel; real API key generation |
+| **Switch Profile / Sign Out** | ✅ Done | Switch Profile modal (3 cards); sign out returns to login | — |
+| **SDoC Registration** | ✅ Done | 7-step wizard; all 3 schemes; AI score; payment step | Iteration reply flow (applicant side); reclassification modal |
+| **Special Approval** | ⚠️ Partial | 6-step wizard; prohibited equipment extra docs | Multi-level routing (OIC→Recommender→Verifier→Approver); SA Letter draft/download; waiver codes |
+| **Certificate Renewal** | ✅ Done | 5-step wizard; document reuse logic; AI re-validation; payment | Automated renewal reminder trigger |
+| **IMEI / SN Registration** | ✅ Done | 4-step wizard; manual + CSV; format validation; receipt | Real uniqueness check against NCEF DB |
+| **Modification of Registration** | ❌ Not built | — | Request form, document re-upload, officer routing, approval/rejection |
+| **Importation Module** | ❌ Not built | — | Permit application form, Permit Type selector, RMCD MyOGA mock |
+| **Post-Market Surveillance (PMS)** | ❌ Not built | — | Audit case management, sampling plans, non-conformance reports |
+| **Post Monitoring / IntelliGenCE** | ❌ Not built | — | Knowledge base, complaint intake, AI web-crawl feed, blacklist mgmt |
+| **Compliance Status Management** | ❌ Not built | — | Status override controls, enforcement action logging, bulk updates |
+| **Public Search Portal** | ❌ Not built | — | Unauthenticated equipment/cert lookup by Brand/Model/IMEI/RCN |
+| **Mobile Apps (Android/iOS/HW)** | 🚫 Out of scope | — | Native Flutter apps — production deliverable only |
+| **Officer Queue** | ✅ Done | My / Team / Unassigned tabs; assign modal; SLA circles; KPI row | — |
+| **Active Review (Officer)** | ✅ Done | Split view: doc viewer + decision panel; audit trail; access guard; TL Reassign | Real document rendering (PDF/image viewer is placeholder) |
+| **Suppliers Management** | ✅ Done | Add / bulk CSV / soft-delete / restore; MCMC-added flag | — |
+| **Reports & Analytics** | ✅ Done | Monthly trend chart; top applicants; officer performance (TL only) | Real data export (CSV/PDF); live chart data |
+| **Audit Log** | ✅ Done | Searchable, role-filtered, expandable rows (TL only) | Real immutable server-side log |
+| **Certificates List** | ✅ Done | Filter by status; detail drawer; renew/IMEI shortcuts | — |
+| **Payments & Invoices** | ⚠️ Partial | Payment method selection embedded in wizards; transaction history table | Standalone payment portal; real MCMC Pay gateway; refund/offset flow; SIFS reconciliation |
+| **Consultant Management** | ✅ Done | Link/unlink from directory; scheme assignment; notes | — |
+| **AI Score Display** | ✅ Done | Gauge / bar / verdict visualisations; 8 sub-scores; threshold commentary | Real Qwen2.5-VL API call; auto-accept routing |
+| **MINA Chatbot** | ⚠️ Partial | FAB button; drawer; mock Q&A conversation | Real LLM backend; live document Q&A |
+| **Notification Centre** | ⚠️ Partial | Preferences matrix in Profile; dashboard widget | Dedicated notifications page; real email/SMS/push delivery; in-app bell |
+| **Integrations** (SSM, MyDigital ID, SIRIM, RMCD, MCMC Pay, ESB) | ❌ Not built | All mocked in JS | Real API adapters for each system |
+| **Admin System Config** | ❌ Not built | — | Fee table management, SLA thresholds, scheme parameters |
+| **Data Migration** | 🚫 Not applicable | Mock data represents migrated records | ETL pipeline — production go-live concern only |
+| **Waiver Code Redemption** | ❌ Not built | — | Input field in SA wizard; validation against issued codes |
+| **Prohibited SA Letter** | ❌ Not built | — | Officer draft, multi-sig approval, publish/download flow |
+| **Iteration Reply (Applicant)** | ❌ Not built | — | Applicant receives iteration request, uploads revised docs, resubmits |
 
 ### Key Mock Data (`data/mock.js`)
 
