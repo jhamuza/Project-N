@@ -120,6 +120,30 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
         <Col span={12}><Form.Item label="Product Category" required><Select placeholder="Select…" options={[{value:'mobile',label:'Mobile Phone / Smartphone'},{value:'wifi',label:'Wi-Fi / WLAN Device'},{value:'bt',label:'Bluetooth Device'},{value:'iot',label:'IoT / Connected Device'},{value:'network',label:'Network Equipment'}]} /></Form.Item></Col>
         <Col span={12}><Form.Item label="Country of Origin" required><Select placeholder="Select…" showSearch options={[{value:'vn',label:'Vietnam'},{value:'cn',label:'China'},{value:'kr',label:'Korea, Republic of'},{value:'th',label:'Thailand'}]} /></Form.Item></Col>
         <Col span={24}>
+          <Form.Item
+            label="Certifying Agency (CA)"
+            required
+            extra="Select all accredited labs whose test reports you are submitting. Multiple selections allowed."
+          >
+            <Select
+              mode="multiple"
+              placeholder="Select certifying agencies…"
+              maxTagCount="responsive"
+              options={[
+                { value: 'sirim', label: 'SIRIM QAS International Sdn Bhd' },
+                { value: 'tuv', label: 'TÜV Rheinland Malaysia' },
+                { value: 'sgs', label: 'SGS Malaysia Sdn Bhd' },
+                { value: 'bureau_veritas', label: 'Bureau Veritas (Malaysia)' },
+                { value: 'intertek', label: 'Intertek Testing Services (M) Sdn Bhd' },
+                { value: 'ul', label: 'UL International (Malaysia)' },
+                { value: 'fcc_lab', label: 'FCC-accredited foreign lab (attach accreditation letter)' },
+                { value: 'ce_lab', label: 'CE Notified Body (attach NB certificate)' },
+              ]}
+              defaultValue={['sirim']}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={24}>
           <Divider orientation="left" orientationMargin={0} style={{ fontSize: 14 }}>Technical Parameters</Divider>
         </Col>
         <Col span={8}><Form.Item label="Frequency Band (MHz)" required><Input placeholder="2400–2483.5" /></Form.Item></Col>
@@ -306,6 +330,40 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
 };
 
 // ============ SPECIAL APPROVAL ============
+function WaiverCodeInput() {
+  const [code, setCode] = React.useState('');
+  const [status, setStatus] = React.useState(null); // null | 'checking' | 'valid' | 'invalid'
+  const check = () => {
+    if (!code.trim()) return;
+    setStatus('checking');
+    setTimeout(() => {
+      setStatus(code.trim().toUpperCase() === 'MCMC-RD-2026' ? 'valid' : 'invalid');
+    }, 800);
+  };
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Input
+          placeholder="e.g. MCMC-RD-2026"
+          value={code}
+          onChange={e => { setCode(e.target.value); setStatus(null); }}
+          style={{ fontFamily: 'var(--font-mono)', flex: 1 }}
+          status={status === 'invalid' ? 'error' : status === 'valid' ? '' : ''}
+          onPressEnter={check}
+        />
+        <Button onClick={check} loading={status === 'checking'}>Apply</Button>
+      </div>
+      {status === 'valid' && (
+        <Alert type="success" showIcon message="Waiver applied — application fee waived" style={{ marginTop: 8 }} />
+      )}
+      {status === 'invalid' && (
+        <Alert type="error" showIcon message="Invalid waiver code. Please check with your MCMC contact." style={{ marginTop: 8 }} />
+      )}
+      {!status && <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 6 }}>Demo code: MCMC-RD-2026</div>}
+    </div>
+  );
+}
+
 SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
   const [step, setStep] = React.useState(0);
   const [purpose, setPurpose] = React.useState(null);
@@ -469,6 +527,11 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
               ))}
             </div>
             <Divider />
+            <div style={{ background: 'var(--color-bg-subtle)', borderRadius: 10, padding: 16, maxWidth: 480, marginBottom: 20, border: '1px solid var(--color-border)' }}>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Fee Waiver Code <Tag style={{ fontSize: 10 }}>Optional</Tag></div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 10 }}>If MCMC has issued a waiver code for this application (e.g. academic/R&D exemption), enter it here to bypass the standard SA application fee.</div>
+              <WaiverCodeInput />
+            </div>
             <Form.Item label="Digital signature (full name)" required style={{ maxWidth: 400 }}>
               <Input placeholder="Dr. Siti Hajar binti Mohd Nor" />
             </Form.Item>
@@ -733,9 +796,51 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
         </div>
       </div>
 
-      <Drawer title={activeDoc?.name} open={showDocViewer} onClose={() => setShowDocViewer(false)} width={720}>
-        <div style={{ background: 'var(--color-bg-subtle)', borderRadius: 8, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
-          [Preview placeholder — PDF/image viewer would render here]
+      <Drawer title={activeDoc?.name || 'Document Preview'} open={showDocViewer} onClose={() => setShowDocViewer(false)} width={760}>
+        {/* PDF viewer toolbar */}
+        <div style={{ background: '#3c3c3c', borderRadius: '6px 6px 0 0', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, color: '#ddd' }}>
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<LeftOutlined />} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<RightOutlined />} />
+          <span style={{ fontSize: 12, color: '#aaa', marginLeft: 4 }}>Page 1 / 3</span>
+          <div style={{ flex: 1 }} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<ZoomInOutlined />} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<ZoomOutOutlined />} />
+          <span style={{ fontSize: 12, color: '#aaa' }}>100%</span>
+          <div style={{ flex: 1 }} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<DownloadOutlined />}>Download</Button>
+        </div>
+        {/* PDF page mockup */}
+        <div style={{ background: '#525659', padding: 16, borderRadius: '0 0 6px 6px', minHeight: 420, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', width: '100%', maxWidth: 540, minHeight: 380, borderRadius: 2, boxShadow: '0 2px 12px rgba(0,0,0,0.4)', padding: 32, position: 'relative' }}>
+            <div style={{ position: 'absolute', top: 10, right: 14, fontSize: 10, color: '#bbb', fontFamily: 'monospace' }}>{activeDoc?.name || 'document.pdf'}</div>
+            {/* Simulated document content lines */}
+            <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ width: 36, height: 36, background: '#0B4F91', borderRadius: 4 }} />
+              <div>
+                <div style={{ height: 8, background: '#222', borderRadius: 2, width: 140, marginBottom: 4 }} />
+                <div style={{ height: 6, background: '#aaa', borderRadius: 2, width: 100 }} />
+              </div>
+            </div>
+            <div style={{ height: 1, background: '#e5e7eb', margin: '12px 0' }} />
+            {[[160,'#333'],[220,'#555'],[180,'#555'],[240,'#555'],[200,'#555']].map(([w,c],i) => (
+              <div key={i} style={{ height: 7, background: c, borderRadius: 2, width: w, marginBottom: 10 }} />
+            ))}
+            <div style={{ height: 1, background: '#e5e7eb', margin: '16px 0' }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {[['Manufacturer','Keysight Technologies'],['Model','SM-S928B'],['Freq Band','2400–2483.5 MHz'],['Max Power','26 dBm'],['Test Date','12 Jan 2026'],['Lab Ref','SIRIM #LM-15-004']].map(([k,v],i) => (
+                <div key={i} style={{ background: '#f8f9fa', borderRadius: 4, padding: '6px 10px' }}>
+                  <div style={{ fontSize: 9, color: '#888', textTransform: 'uppercase', letterSpacing: .4 }}>{k}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#222', marginTop: 2 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 18 }}>
+              {[[240,'#555'],[200,'#555'],[260,'#555'],[180,'#aaa']].map(([w,c],i) => (
+                <div key={i} style={{ height: 7, background: c, borderRadius: 2, width: w, marginBottom: 10 }} />
+              ))}
+            </div>
+            <div style={{ position: 'absolute', bottom: 12, right: 16, fontSize: 10, color: '#bbb' }}>1</div>
+          </div>
         </div>
         <Divider>OCR Extraction</Divider>
         <List

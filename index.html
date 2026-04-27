@@ -39,6 +39,7 @@
 <script type="text/babel" src="components/screens-i.jsx"></script>
 <script type="text/babel" src="components/screens-j.jsx"></script>
 <script type="text/babel" src="components/screens-k.jsx"></script>
+<script type="text/babel" src="components/screens-l.jsx"></script>
 
 <script type="text/babel">
 const { Layout, Menu, Button, Avatar, Dropdown, Badge, Space, Input, ConfigProvider, Drawer } = antd;
@@ -57,7 +58,7 @@ const {
   SendOutlined, PaperClipOutlined, ReloadOutlined, IdcardOutlined, ExclamationCircleOutlined,
   LeftOutlined, RightOutlined, PlusCircleOutlined, MoreOutlined, HistoryOutlined, KeyOutlined,
   ApartmentOutlined, ContainerOutlined, WalletOutlined, RiseOutlined,
-  SwapOutlined, CrownOutlined
+  SwapOutlined, CrownOutlined, ZoomInOutlined, ZoomOutOutlined
 } = icons;
 const FormOutlined       = icons.FormOutlined       || icons.EditOutlined;
 const ImportOutlined     = icons.ImportOutlined     || icons.ArrowRightOutlined;
@@ -87,6 +88,7 @@ const NAV_SUPPLIER = [
   { key: 'payments',        label: 'Payments',               icon: <WalletOutlined /> },
   { key: 'consultants',     label: 'Consultants',            icon: <ApartmentOutlined /> },
   { key: 'onboarding',      label: 'Supplier Onboarding',    icon: <IdcardOutlined /> },
+  { key: 'notifications',   label: 'Notifications',          icon: <BellOutlined /> },
   { key: 'profile',         label: 'Profile & Settings',     icon: <SettingOutlined /> },
 ];
 const NAV_TEAM_LEAD = [
@@ -751,6 +753,100 @@ function SwitchProfileModal({ open, currentRole, onClose, onSwitch }) {
   );
 }
 
+// ── MINA QA engine ──────────────────────────────────────────────────────────
+const MINA_QA = [
+  { keys: ['scheme a','scheme b','scheme c','which scheme','what scheme'], answer: 'Scheme A covers most consumer radio/telecom devices (fee RM 1,200, SLA 3 days). Scheme B is for non-standard devices needing deeper review (RM 2,500, 5 days). Scheme C is self-declaration for low-risk equipment (RM 600, 1 day). The AI recommends a scheme during wizard Step 1 based on your datasheet.' },
+  { keys: ['document','documents','required doc','what do i need','upload'], answer: 'For Scheme A/B you need: (1) SSM company registration, (2) Technical datasheet/brochure, (3) SIRIM or accredited lab test report, (4) Product photos (front/back/label), and (5) Declaration letter. CE/FCC certificates are optional supporting evidence. Scheme C additionally requires a manufacturer conformity declaration.' },
+  { keys: ['iteration','flag','flagged','respond to iteration','what is iteration'], answer: 'An iteration request means the officer found issues and needs more information. Your APP-0426-00083 (Apple Watch Series 9) was flagged for: (1) missing Wi-Fi 6E secondary frequency band in test report, and (2) two MTSFB TC G015:2022 clauses marked N/A without justification. Click "Respond" on the Applications list to upload revisions. Deadline: 4 Jun 2026.' },
+  { keys: ['auto accept','auto-accept','90','score 90','auto approve'], answer: 'Auto-accept is enabled for Scheme C when the AI confidence score reaches ≥90. Your Mi Band 9 Pro scored 94 and was auto-approved without officer review. Scheme A/B require officer sign-off regardless of score, but a score ≥90 fast-tracks to the priority queue.' },
+  { keys: ['ai score','confidence','scoring','qwen','how is score'], answer: 'MCMC\'s AI (Qwen2.5-VL) scores your submission 0–100 across 5 criteria: document completeness (30%), technical accuracy (25%), regulatory alignment (20%), OCR extraction quality (15%), and historical supplier patterns (10%). Scores ≥90 = auto-accept eligible; 70–89 = priority review; <70 = standard queue.' },
+  { keys: ['certificate','rcn','how long','valid','expires','renewal'], answer: 'NCEF certificates are valid for 3 years from issue date. You\'ll receive email reminders at 90, 60, and 30 days before expiry. Renew via Certificates → "Renew" to reuse most existing documents. Your RCN-0326-00449 expires 3 Jul 2026 — only 74 days away.' },
+  { keys: ['fee','how much','payment','cost','price'], answer: 'Scheme A: RM 1,200 | Scheme B: RM 2,500 | Scheme C: RM 600 | Special Approval: RM 1,200 | IMEI registration: RM 50/batch. All fees include 8% SST. Rejected applications receive a credit offset applied automatically to your next submission.' },
+  { keys: ['special approval','sa','prohibited','jammer','sdr'], answer: 'Special Approval (Scheme SA) covers R&D, demos, personal imports, and prohibited equipment (jammers/SDR). Fee is RM 1,200. Standard SA takes 3–5 working days. Prohibited equipment routes through 3-level approval (Officer → Head of Cert → DG MCMC) and takes 10–15 days. Use waiver code MCMC-RD-2026 if MCMC issued you a fee exemption.' },
+  { keys: ['imei','serial','register imei','imei registration'], answer: 'Register IMEIs/serial numbers against an active certificate before distributing devices. Go to Certificates → Register IMEI/SN. You can enter manually (one per line) or upload a CSV (up to 10,000 rows). Duplicates are detected and skipped automatically. Registration fee is RM 50 per batch.' },
+  { keys: ['modification','modify certificate','change certificate','amend'], answer: 'Modification requests (under §5.6) let you update an existing certificate. Minor changes (label updates, address) are processed in 2 days. Major changes (technical specs, new frequency bands) trigger a new SDoC review. Go to Certificates, click ⋯ on any active RCN, and select "Request Modification".' },
+  { keys: ['importation','import permit','customs','rmcd','jkdm'], answer: 'The Importation module (§5.7) handles import permits. Traders need an active Certificate of Approval (CoA). The 6-step wizard captures permit type, RCN/SA reference validation, trader & consignor RMCD/JKDM codes, consignee details, and HS tariff codes. Go to Importation in the left menu.' },
+  { keys: ['status','application status','where is','check status','under review'], answer: 'Your 5 active applications: APP-0426-00087 (Samsung Galaxy S24 Ultra, AI score 87) is under review. APP-0426-00083 (Apple Watch Series 9, score 62) needs your iteration response. APP-0426-00084 (Mi Band 9 Pro, score 94) is approved. APP-0426-00088 (Google Pixel 8, score 78) is under review. APP-0426-00089 is a draft.' },
+  { keys: ['forgot password','reset password','locked','account locked'], answer: 'To reset your password: on the Login screen click "Forgot password?" to start the 4-step recovery flow (email → OTP → new password → success). If your account is locked after 3 failed attempts, email itsupport@mcmc.gov.my or call +603-8688 8000.' },
+  { keys: ['2fa','two factor','authenticator','otp','security','mydigital'], answer: 'Enable 2FA under Profile → Security & Access → Two-Factor Authentication. Options: (1) Authenticator app (Google/Microsoft/Authy) via QR scan, (2) SMS OTP to your mobile, (3) MyDigital ID (Malaysia national e-ID, recommended for MCMC). You can enrol multiple methods and set a default.' },
+  { keys: ['renewal','renew','expiring','expire','how to renew'], answer: 'Renew a certificate from Certificates → click "Renew" next to any active/expiring RCN. The AI reuses 3 of 5 documents automatically; you only re-upload expired ones. If the renewal AI score reaches ≥90, the new certificate is issued without officer review. Your RCN-0326-00449 is expiring in 74 days — act soon!' },
+  { keys: ['supplier id','supp','who am i','my account'], answer: `You are ${currentUser?.name || 'Nurul Aisyah binti Ahmad'}, Supplier ID ${currentUser?.supplierId || 'SUP-0426-00142'}, Axiata Digital Sdn Bhd. Account active since Jan 2024. You have 5 applications and 3 active certificates.` },
+  { keys: ['sla','how long does it take','processing time','turnaround'], answer: 'Processing times after payment: Scheme A: 3 working days | Scheme B: 5 working days | Scheme C: 1 working day (or instant if AI auto-accepts at ≥90). Iteration response restarts the SLA clock. You can track progress in real-time on the Applications list.' },
+  { keys: ['contact','phone','email','mcmc','officer'], answer: 'MCMC NCEF Helpdesk: +603-8688 8000 · ncef@mcmc.gov.my · Operating hours: Mon–Fri 8:30am–5:30pm. For portal technical issues: itsupport@mcmc.gov.my. For PDPA enquiries: pdpa@mcmc.gov.my.' },
+  { keys: ['hello','hi','hey','help','what can you','good morning'], answer: `Hi ${currentUser?.name?.split(' ')[0] || 'there'}! I'm MINA, your NCEF assistant. I can help with schemes, document requirements, application status, fees, certificates, and more. What do you need today?` },
+];
+function minaRespond(input) {
+  const q = (input || '').toLowerCase();
+  for (const qa of MINA_QA) {
+    if (qa.keys.some(k => q.includes(k))) return qa.answer;
+  }
+  return "I'm not sure about that. Try asking about schemes, documents, fees, application status, or certificates. You can also reach our helpdesk at ncef@mcmc.gov.my.";
+}
+
+function MinaDrawer({ open, onClose, currentUser }) {
+  const initMsgs = [
+    { role: 'bot', t: `Hi ${currentUser?.name?.split(' ')[0] || 'there'}! I'm MINA, your NCEF AI assistant. Ask me about schemes, documents, application status, fees, or certificates.` },
+    { role: 'user', t: 'Why was my Apple Watch application flagged for iteration?' },
+    { role: 'bot', t: 'APP-0426-00083 scored 62. The officer noted: missing frequency band for Wi-Fi 6E secondary range, and two clauses in MCMC MTSFB TC G015:2022 marked N/A without justification. You have until 4 Jun to resubmit. Click "Respond" on the Applications list.' },
+  ];
+  const [msgs, setMsgs] = React.useState(initMsgs);
+  const [input, setInput] = React.useState('');
+  const [typing, setTyping] = React.useState(false);
+  const endRef = React.useRef(null);
+
+  React.useEffect(() => { if (open) endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, open]);
+
+  const send = (text) => {
+    const q = (text || input).trim();
+    if (!q) return;
+    setInput('');
+    setMsgs(m => [...m, { role: 'user', t: q }]);
+    setTyping(true);
+    setTimeout(() => {
+      setTyping(false);
+      const answer = minaRespond(q);
+      setMsgs(m => [...m, { role: 'bot', t: answer }]);
+    }, 600 + Math.random() * 400);
+  };
+
+  const quickPicks = ['What documents for Scheme B?', 'Check application status', 'How long is a certificate valid?', 'Fee breakdown'];
+
+  return (
+    <Drawer title={<Space><RobotOutlined style={{ color: 'var(--color-primary)' }} /><span>MINA · NCEF Assistant</span></Space>} placement="right" onClose={onClose} open={open} width={400} bodyStyle={{ display: 'flex', flexDirection: 'column', padding: 0, height: '100%' }}>
+      {/* Message list */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {msgs.map((m, i) => (
+          <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', padding: '10px 14px', borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '4px 14px 14px 14px', background: m.role === 'user' ? 'var(--color-primary)' : 'var(--color-bg-subtle)', color: m.role === 'user' ? '#fff' : 'inherit', fontSize: 13, lineHeight: 1.5 }}>{m.t}</div>
+        ))}
+        {typing && (
+          <div style={{ alignSelf: 'flex-start', padding: '10px 16px', borderRadius: '4px 14px 14px 14px', background: 'var(--color-bg-subtle)', display: 'flex', gap: 4 }}>
+            {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-text-muted)', animation: `pulse 1.2s ${i*0.2}s infinite` }} />)}
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+      {/* Quick picks */}
+      <div style={{ padding: '8px 16px', borderTop: '1px solid var(--color-divider)', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {quickPicks.map((q, i) => (
+          <antd.Tag key={i} style={{ cursor: 'pointer', fontSize: 11 }} onClick={() => send(q)}>{q}</antd.Tag>
+        ))}
+      </div>
+      {/* Input */}
+      <div style={{ padding: '12px 16px', borderTop: '1px solid var(--color-divider)' }}>
+        <Input.Search
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onSearch={() => send()}
+          onKeyDown={e => e.key === 'Enter' && send()}
+          enterButton={<SendOutlined />}
+          placeholder="Ask MINA…"
+          style={{ width: '100%' }}
+        />
+      </div>
+    </Drawer>
+  );
+}
+
 function App() {
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode] = React.useState(false);
@@ -762,6 +858,48 @@ function App() {
   const [minaOpen, setMinaOpen] = React.useState(false);
   const [loggedIn, setLoggedIn] = React.useState(() => sessionStorage.getItem('ncef.loggedIn') === '1');
   const [switchOpen, setSwitchOpen] = React.useState(false);
+  const [sessionWarning, setSessionWarning] = React.useState(false);
+  const [sessionCountdown, setSessionCountdown] = React.useState(60);
+  const sessionTimerRef = React.useRef(null);
+  const warningTimerRef = React.useRef(null);
+
+  const SESSION_IDLE_MS = 30 * 60 * 1000; // 30 min idle → warning
+  const SESSION_WARN_S  = 60;              // 60 s countdown before forced logout
+
+  const resetSessionTimer = React.useCallback(() => {
+    clearTimeout(sessionTimerRef.current);
+    clearInterval(warningTimerRef.current);
+    setSessionWarning(false);
+    setSessionCountdown(SESSION_WARN_S);
+    if (loggedIn) {
+      sessionTimerRef.current = setTimeout(() => {
+        setSessionWarning(true);
+        setSessionCountdown(SESSION_WARN_S);
+        let remaining = SESSION_WARN_S;
+        warningTimerRef.current = setInterval(() => {
+          remaining -= 1;
+          setSessionCountdown(remaining);
+          if (remaining <= 0) {
+            clearInterval(warningTimerRef.current);
+            setSessionWarning(false);
+            setLoggedIn(false);
+            setScreen('login');
+          }
+        }, 1000);
+      }, SESSION_IDLE_MS);
+    }
+  }, [loggedIn]);
+
+  React.useEffect(() => {
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(e => window.addEventListener(e, resetSessionTimer, { passive: true }));
+    resetSessionTimer();
+    return () => {
+      events.forEach(e => window.removeEventListener(e, resetSessionTimer));
+      clearTimeout(sessionTimerRef.current);
+      clearInterval(warningTimerRef.current);
+    };
+  }, [resetSessionTimer]);
 
   React.useEffect(() => { localStorage.setItem('ncef.screen', screen); }, [screen]);
   React.useEffect(() => { sessionStorage.setItem('ncef.loggedIn', loggedIn ? '1' : '0'); }, [loggedIn]);
@@ -903,7 +1041,29 @@ function App() {
               <Input placeholder="Search applications, certificates, IMEIs…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />} style={{ width: 360 }} />
             </Space>
             <Space size="middle">
-              <Badge count={3} size="small"><Button type="text" icon={<BellOutlined style={{ fontSize: 18 }} />} /></Badge>
+              <Dropdown placement="bottomRight" trigger={['click']} dropdownRender={() => (
+                <div style={{ width: 340, background: '#fff', borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', border: '1px solid var(--color-border)' }}>
+                  <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid var(--color-divider)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700, fontSize: 14 }}>Notifications</span>
+                    <Button type="link" size="small" onClick={() => setScreen('notifications')} style={{ padding: 0 }}>View all</Button>
+                  </div>
+                  {(MOCK.notifications || []).slice(0, 5).map(n => (
+                    <div key={n.id} style={{ padding: '10px 16px', borderBottom: '1px solid var(--color-divider)', display: 'flex', gap: 10, alignItems: 'flex-start', background: n.read ? '#fff' : 'var(--color-primary-soft)', cursor: 'pointer' }}
+                      onClick={() => setScreen('notifications')}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: n.read ? 'transparent' : 'var(--color-primary)', marginTop: 6, flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: n.read ? 400 : 600, lineHeight: 1.3 }}>{n.title}</div>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{n.time}</div>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ padding: '10px 16px', textAlign: 'center' }}>
+                    <Button type="link" size="small" onClick={() => setScreen('notifications')}>See all notifications →</Button>
+                  </div>
+                </div>
+              )}>
+                <Badge count={3} size="small"><Button type="text" icon={<BellOutlined style={{ fontSize: 18 }} />} /></Badge>
+              </Dropdown>
               <Dropdown menu={{ items: [{ key: 'en', label: 'English' }, { key: 'bm', label: 'Bahasa Melayu' }] }}>
                 <Button type="text" icon={<GlobalOutlined />}>EN</Button>
               </Dropdown>
@@ -951,29 +1111,26 @@ function App() {
         />
 
         {/* MINA assistant drawer */}
-        <Drawer title={<Space><RobotOutlined style={{ color: 'var(--color-primary)' }} /><span>MINA · NCEF Assistant</span></Space>} placement="right" onClose={() => setMinaOpen(false)} open={minaOpen} width={400}>
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[
-                { role: 'bot', t: 'Hi Nurul! I can help with schemes, document requirements, and your open applications.' },
-                { role: 'user', t: 'Why was my Apple Watch application flagged for iteration?' },
-                { role: 'bot', t: 'APP-0426-00083 scored 62. The officer noted: missing frequency band for Wi-Fi 6E secondary range, and two clauses in MCMC MTSFB TC G015:2022 marked N/A without justification. You have until 4 Jun to resubmit.' },
-                { role: 'user', t: 'Can AI auto-accept my Xiaomi submission?' },
-                { role: 'bot', t: 'Your Mi Band 9 Pro scored 94, which exceeds the 90 threshold for Scheme C auto-accept. It was approved without officer review.' },
-              ].map((m, i) => (
-                <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', padding: '10px 14px', borderRadius: 12, background: m.role === 'user' ? 'var(--color-primary)' : 'var(--color-bg-subtle)', color: m.role === 'user' ? '#fff' : 'inherit', fontSize: 13, lineHeight: 1.5 }}>{m.t}</div>
-              ))}
-            </div>
-            <div style={{ marginTop: 16 }}>
-              <Input.Search enterButton="Send" placeholder="Ask MINA…" />
-              <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                {['What documents do I need for Scheme B?', 'Check application status', 'How long is a certificate valid?'].map((q, i) => (
-                  <antd.Tag key={i} style={{ cursor: 'pointer' }}>{q}</antd.Tag>
-                ))}
-              </div>
-            </div>
+        <MinaDrawer open={minaOpen} onClose={() => setMinaOpen(false)} currentUser={currentUser} />
+
+        {/* Session timeout warning modal */}
+        <antd.Modal
+          open={sessionWarning}
+          closable={false}
+          maskClosable={false}
+          width={420}
+          footer={[
+            <Button key="logout" danger onClick={() => { setSessionWarning(false); setLoggedIn(false); setScreen('login'); }}>Sign out now</Button>,
+            <Button key="stay" type="primary" onClick={() => resetSessionTimer()}>Stay signed in</Button>,
+          ]}
+          title={<Space><antd.Typography.Text type="warning"><ClockCircleOutlined /></antd.Typography.Text> Session expiring soon</Space>}
+        >
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
+            <div style={{ fontSize: 56, fontWeight: 700, color: sessionCountdown <= 15 ? 'var(--color-danger)' : 'var(--color-warning)', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>{sessionCountdown}</div>
+            <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 10 }}>seconds until automatic sign-out</div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 6 }}>Your session has been idle for 30 minutes. Click <b>Stay signed in</b> to continue, or <b>Sign out now</b> to end your session securely.</div>
           </div>
-        </Drawer>
+        </antd.Modal>
 
         {/* Tweaks panel */}
         {editMode && (

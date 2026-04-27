@@ -278,6 +278,36 @@ SCREENS.payments = function Payments({ nav }) {
             </div>
             <antd.Button type="link" icon={<EditOutlined />} style={{ padding: 0, marginTop: 8 }}>Edit</antd.Button>
           </antd.Card>
+
+          <antd.Card title={<antd.Space><WalletOutlined /> Fee Offset &amp; Refunds</antd.Space>} bordered style={{ marginTop: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Fee offset balance */}
+              <div style={{ padding: 12, background: 'var(--color-primary-soft)', borderRadius: 8 }}>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Credit Balance (Fee Offset)</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-primary)', marginTop: 2 }}>RM 600.00</div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>From rejected application APP-0426-00079 · Applied automatically to next renewal</div>
+              </div>
+
+              {/* Pending refund */}
+              <div style={{ padding: 12, background: 'var(--color-warning-bg)', borderRadius: 8, border: '1px solid var(--color-warning)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>Refund Pending</div>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>APP-0426-00076 rejected · RM 1,200 · FPX</div>
+                    <div style={{ fontSize: 11, marginTop: 4 }}>Submitted 18 Apr 2026 · Expected within 5–7 business days</div>
+                  </div>
+                  <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Processing</antd.Tag>
+                </div>
+              </div>
+
+              {/* Offset policy note */}
+              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                <b>Offset policy:</b> Credit balances are applied automatically against your next renewal or new application fee. Remaining balance after application is refunded to original payment method within 7 business days.
+              </div>
+
+              <antd.Button block size="small" icon={<FileTextOutlined />}>Request manual refund</antd.Button>
+            </div>
+          </antd.Card>
         </antd.Col>
       </antd.Row>
     </div>
@@ -469,6 +499,27 @@ function TeamTab({ onInvite }) {
 }
 
 function SecurityTab() {
+  const [enrollOpen, setEnrollOpen] = React.useState(null); // null | 'totp' | 'sms' | 'mydigital'
+  const [totpStep, setTotpStep] = React.useState(0); // 0=show QR, 1=enter code, 2=success
+  const [smsStep, setSmsStep] = React.useState(0); // 0=enter phone, 1=enter OTP, 2=success
+  const [phone, setPhone] = React.useState('');
+  const [otp, setOtp] = React.useState('');
+  const [verifying, setVerifying] = React.useState(false);
+
+  const verifyTotp = (code) => {
+    setVerifying(true);
+    setTimeout(() => { setVerifying(false); if (code === '847291') setTotpStep(2); else antd.message.error('Incorrect code — try again'); }, 900);
+  };
+  const sendSmsOtp = () => {
+    setSmsStep(1);
+    setTimeout(() => setOtp(''), 10);
+  };
+  const verifySmsOtp = () => {
+    setVerifying(true);
+    setTimeout(() => { setVerifying(false); if (otp === '847291') setSmsStep(2); else antd.message.error('Incorrect OTP — try again'); }, 700);
+  };
+  const closeEnroll = () => { setEnrollOpen(null); setTotpStep(0); setSmsStep(0); setPhone(''); setOtp(''); setVerifying(false); };
+
   return (
     <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
       <antd.Card title={<antd.Space><LockOutlined /> Password</antd.Space>} bordered>
@@ -497,8 +548,111 @@ function SecurityTab() {
             </antd.List.Item>
           )}
         />
-        <antd.Button icon={<PlusOutlined />} style={{ marginTop: 8 }}>Add method</antd.Button>
+        <antd.Divider style={{ margin: '12px 0 16px' }}>Add another method</antd.Divider>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {[
+            { k: 'totp', icon: <QrcodeOutlined />, label: 'Authenticator App', sub: 'TOTP (Google/Microsoft/Authy)' },
+            { k: 'sms', icon: <PhoneOutlined />, label: 'SMS OTP', sub: 'One-time code via SMS' },
+            { k: 'mydigital', icon: <IdcardOutlined />, label: 'MyDigital ID', sub: 'Malaysia national e-ID' },
+          ].map(m => (
+            <div key={m.k} onClick={() => setEnrollOpen(m.k)} style={{ padding: '12px 16px', border: '1.5px solid var(--color-border)', borderRadius: 10, cursor: 'pointer', display: 'flex', gap: 10, alignItems: 'center', flex: '1 0 160px', background: '#fff', transition: 'border-color .15s' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor='var(--color-primary)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor='var(--color-border)'}>
+              <div style={{ fontSize: 22, color: 'var(--color-primary)' }}>{m.icon}</div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{m.label}</div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{m.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </antd.Card>
+
+      {/* ── TOTP Enrollment Modal ────────────────────────────── */}
+      <antd.Modal title="Set up Authenticator App" open={enrollOpen === 'totp'} onCancel={closeEnroll} footer={null} width={440}>
+        {totpStep === 0 && (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 16 }}>Open your authenticator app (Google Authenticator, Microsoft Authenticator, Authy) and scan the QR code below.</div>
+            {/* QR code mockup */}
+            <div style={{ display: 'inline-block', padding: 12, background: '#fff', border: '2px solid #222', borderRadius: 8, marginBottom: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,12px)', gap: 1 }}>
+                {Array.from({ length: 49 }, (_, i) => {
+                  const pattern = [0,0,0,0,0,0,0,0,1,1,0,1,0,0,0,1,0,0,1,0,0,1,1,0,1,1,0,0,1,0,0,0,0,0,1,0,1,0,0,0,1,0,0,1,1,0,1,1,0,0].includes(i);
+                  return <div key={i} style={{ width: 12, height: 12, background: (i%8===0||i%8===7||Math.floor(i/7)<1||Math.floor(i/7)>5||i%3===0) ? '#222' : '#fff', borderRadius: 1 }} />;
+                })}
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 16 }}>Or enter manually: <code style={{ background: '#f5f5f5', padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>NCEF-MCMC-2026-DEMO</code></div>
+            <antd.Button type="primary" block onClick={() => setTotpStep(1)}>I've scanned the QR code →</antd.Button>
+          </div>
+        )}
+        {totpStep === 1 && (
+          <div>
+            <antd.Alert message="Enter the 6-digit code shown in your authenticator app." type="info" showIcon style={{ marginBottom: 16 }} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <antd.Input maxLength={6} placeholder="e.g. 847291" style={{ fontFamily: 'var(--font-mono)', fontSize: 20, textAlign: 'center', letterSpacing: 6 }} onChange={e => { if (e.target.value.length === 6) verifyTotp(e.target.value); }} />
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 8, textAlign: 'center' }}>Demo code: 847291</div>
+            {verifying && <antd.Spin style={{ marginTop: 12, display: 'block', textAlign: 'center' }} />}
+          </div>
+        )}
+        {totpStep === 2 && (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ fontSize: 48 }}>✅</div>
+            <antd.Typography.Title level={4} style={{ marginTop: 12 }}>Authenticator App enrolled!</antd.Typography.Title>
+            <antd.Typography.Text type="secondary">Your account is now protected by TOTP 2FA.</antd.Typography.Text>
+            <div style={{ marginTop: 20 }}>
+              <antd.Button type="primary" onClick={closeEnroll}>Done</antd.Button>
+            </div>
+          </div>
+        )}
+      </antd.Modal>
+
+      {/* ── SMS OTP Enrollment Modal ─────────────────────────── */}
+      <antd.Modal title="Set up SMS OTP" open={enrollOpen === 'sms'} onCancel={closeEnroll} footer={null} width={420}>
+        {smsStep === 0 && (
+          <div>
+            <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 16 }}>We'll send a one-time code to your mobile number each time you sign in.</div>
+            <antd.Form layout="vertical">
+              <antd.Form.Item label="Mobile Number" required extra="Malaysian number (e.g. +60 12-345 6789)">
+                <antd.Input prefix="+60" placeholder="12-345 6789" value={phone} onChange={e => setPhone(e.target.value)} />
+              </antd.Form.Item>
+              <antd.Button type="primary" block onClick={sendSmsOtp} disabled={!phone}>Send verification code</antd.Button>
+            </antd.Form>
+          </div>
+        )}
+        {smsStep === 1 && (
+          <div>
+            <antd.Alert message={`A 6-digit code was sent to +60 ${phone}. It expires in 5 minutes.`} type="info" showIcon style={{ marginBottom: 16 }} />
+            <antd.Form layout="vertical">
+              <antd.Form.Item label="Enter OTP code" required>
+                <antd.Input maxLength={6} placeholder="e.g. 847291" value={otp} onChange={e => setOtp(e.target.value)} style={{ fontFamily: 'var(--font-mono)', fontSize: 20, textAlign: 'center', letterSpacing: 6 }} />
+              </antd.Form.Item>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 12, textAlign: 'center' }}>Demo code: 847291</div>
+              <antd.Button type="primary" block onClick={verifySmsOtp} loading={verifying} disabled={otp.length < 6}>Verify →</antd.Button>
+            </antd.Form>
+            <antd.Button type="link" onClick={() => setSmsStep(0)}>← Change number</antd.Button>
+          </div>
+        )}
+        {smsStep === 2 && (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ fontSize: 48 }}>✅</div>
+            <antd.Typography.Title level={4} style={{ marginTop: 12 }}>SMS OTP enrolled!</antd.Typography.Title>
+            <antd.Typography.Text type="secondary">Verification codes will be sent to +60 {phone}.</antd.Typography.Text>
+            <div style={{ marginTop: 20 }}><antd.Button type="primary" onClick={closeEnroll}>Done</antd.Button></div>
+          </div>
+        )}
+      </antd.Modal>
+
+      {/* ── MyDigital ID Enrollment Modal ────────────────────── */}
+      <antd.Modal title="Link MyDigital ID" open={enrollOpen === 'mydigital'} onCancel={closeEnroll} footer={[<antd.Button key="cancel" onClick={closeEnroll}>Cancel</antd.Button>, <antd.Button key="ok" type="primary" onClick={closeEnroll}>Open MyDigital ID →</antd.Button>]} width={440}>
+        <div style={{ textAlign: 'center', padding: '12px 0' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🪪</div>
+          <antd.Typography.Title level={4}>Link your national e-ID</antd.Typography.Title>
+          <antd.Typography.Text type="secondary" style={{ display: 'block', marginBottom: 20 }}>You will be redirected to the MyDigital ID portal (uat.mydigital.gov.my) to authorise NCEF access. Return here after approving the consent.</antd.Typography.Text>
+          <antd.Alert type="info" showIcon message="This is the recommended 2FA method for government portals. No phone number needed." style={{ textAlign: 'left' }} />
+        </div>
+      </antd.Modal>
 
       <antd.Card title={<antd.Space><HistoryOutlined /> Active Sessions</antd.Space>} bordered>
         <antd.List

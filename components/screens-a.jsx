@@ -11,13 +11,29 @@ SCREENS.login = function LoginScreen({ onLogin }) {
   const [email, setEmail] = React.useState(p.email);
   const [password, setPassword] = React.useState('••••••••');
   const [loading, setLoading] = React.useState(false);
+  const [loginError, setLoginError] = React.useState(null);
+  const [forgotMode, setForgotMode] = React.useState(false);
+  const [wrongAttempts, setWrongAttempts] = React.useState(0);
 
   React.useEffect(() => {
     setEmail(profiles[selected].email);
     setPassword('••••••••');
+    setLoginError(null);
   }, [selected]);
 
   const submit = () => {
+    // Mock: treat empty / short password as wrong credentials
+    if (password.length < 6 || (password !== '••••••••' && !password.startsWith('•'))) {
+      const attempts = wrongAttempts + 1;
+      setWrongAttempts(attempts);
+      if (attempts >= 3) {
+        setLoginError('account_locked');
+      } else {
+        setLoginError('wrong_credentials');
+      }
+      return;
+    }
+    setLoginError(null);
     setLoading(true);
     setTimeout(() => { setLoading(false); onLogin(selected); }, 700);
   };
@@ -27,6 +43,12 @@ SCREENS.login = function LoginScreen({ onLogin }) {
     'team-lead': '#7B3FA0',
     officer: 'var(--color-accent, #0F6ABF)',
   };
+
+  // ── Inline Forgot Password flow ──────────────────────────────────────────
+  if (forgotMode) {
+    const ForgotPw = window.SCREENS?.['forgot-password'];
+    if (ForgotPw) return <ForgotPw onBack={() => setForgotMode(false)} nav={() => {}} />;
+  }
 
   return (
     <div style={{
@@ -74,9 +96,30 @@ SCREENS.login = function LoginScreen({ onLogin }) {
             </antd.Form.Item>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <antd.Checkbox defaultChecked>Remember me</antd.Checkbox>
-              <antd.Typography.Link>Forgot password?</antd.Typography.Link>
+              <antd.Typography.Link onClick={() => setForgotMode(true)}>Forgot password?</antd.Typography.Link>
             </div>
-            <antd.Button type="primary" size="large" htmlType="submit" block loading={loading}>Sign in</antd.Button>
+            {loginError === 'wrong_credentials' && (
+              <antd.Alert
+                type="error"
+                showIcon
+                message="Invalid credentials"
+                description={`Incorrect email or password. ${3 - wrongAttempts} attempt(s) remaining before account lock.`}
+                style={{ marginBottom: 16 }}
+                closable
+                onClose={() => setLoginError(null)}
+              />
+            )}
+            {loginError === 'account_locked' && (
+              <antd.Alert
+                type="error"
+                showIcon
+                icon={<LockOutlined />}
+                message="Account temporarily locked"
+                description="Too many failed attempts. Please reset your password or contact MCMC IT Support at itsupport@mcmc.gov.my."
+                style={{ marginBottom: 16 }}
+              />
+            )}
+            <antd.Button type="primary" size="large" htmlType="submit" block loading={loading} disabled={loginError === 'account_locked'}>Sign in</antd.Button>
           </antd.Form>
 
           <antd.Divider style={{ margin: '24px 0 16px', fontSize: 11, color: 'var(--color-text-muted)' }}>DEMO ACCOUNTS</antd.Divider>
@@ -217,7 +260,16 @@ SCREENS.applications = function Applications({ nav }) {
     { title: 'AI Score', dataIndex: 'aiScore', render: (s) => s ? <Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600, margin: 0 }}>{s}</Tag> : <Text type="secondary">—</Text> },
     { title: 'Status', dataIndex: 'status', render: (s) => <StatusPill status={s} /> },
     { title: 'Updated', dataIndex: 'updated', render: (v) => <Text style={{ fontSize: 12 }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</Text> },
-    { title: '', render: (_, r) => <Button size="small" onClick={() => nav('officer-review')}>Open</Button> },
+    { title: '', render: (_, r) => (
+      <antd.Space size={4}>
+        {r.status === 'iteration_required' && (
+          <Button size="small" type="primary" icon={<ReloadOutlined />} onClick={() => nav('iteration-reply')} style={{ background: 'var(--color-warning)', borderColor: 'var(--color-warning)' }}>
+            Respond
+          </Button>
+        )}
+        <Button size="small" onClick={() => nav('officer-review')}>Open</Button>
+      </antd.Space>
+    ) },
   ];
   return (
     <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
@@ -284,7 +336,33 @@ SCREENS.onboarding = function Onboarding({ nav }) {
             <Form.Item label="Email Address" required><Input placeholder="nurul@axiatadigital.com.my" /></Form.Item>
             <Form.Item label="Phone Number" required><Input placeholder="+60 12-345 6789" /></Form.Item>
             <Form.Item label="Password" required extra="Min 12 chars with upper, lower, digit, symbol"><Input.Password placeholder="••••••••••••" /></Form.Item>
-            <Form.Item><Checkbox>I accept the <a>Terms & Conditions</a> and <a>PDPA 2010</a> notice</Checkbox></Form.Item>
+            <Divider orientation="left" orientationMargin={0} style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>SECURITY QUESTIONS</Divider>
+            <Alert message="Security questions are used to verify your identity during password recovery." type="info" showIcon style={{ marginBottom: 16, fontSize: 12 }} />
+            {[
+              { label: 'Security Question 1', options: ["What is the name of your first pet?", "What city were you born in?", "What is your mother's maiden name?", "What was the name of your primary school?"] },
+              { label: 'Security Question 2', options: ["What was the make of your first car?", "What is your oldest sibling's middle name?", "What street did you grow up on?", "What was the name of your childhood best friend?"] },
+              { label: 'Security Question 3', options: ["What is the name of the town where your nearest sibling lives?", "What was your childhood nickname?", "In what city did your parents meet?", "What was the name of your first employer?"] },
+            ].map((q, qi) => (
+              <Row gutter={10} key={qi}>
+                <Col span={14}>
+                  <Form.Item label={q.label} required>
+                    <Select placeholder="Select a question…" options={q.options.map(o => ({ value: o, label: o }))} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+                <Col span={10}>
+                  <Form.Item label="Your Answer" required>
+                    <Input placeholder="Answer…" />
+                  </Form.Item>
+                </Col>
+              </Row>
+            ))}
+            <Divider orientation="left" orientationMargin={0} style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>CONSENT & PDPA</Divider>
+            <div style={{ background: 'var(--color-bg-subtle)', borderRadius: 8, padding: 12, fontSize: 12, color: 'var(--color-text-secondary)', maxHeight: 80, overflowY: 'auto', marginBottom: 12, border: '1px solid var(--color-border)' }}>
+              <b>Personal Data Protection Act 2010 (PDPA 2010) Notice</b> — MCMC collects your personal data (name, IC/Passport, company details, contact information) solely for NCEF certification administration. Data is retained for 7 years after the last active certificate expires. You may request access, correction, or erasure of your data via <a>pdpa@mcmc.gov.my</a>. Data is not shared with third parties except as required by Malaysian law.
+            </div>
+            <Form.Item style={{ marginBottom: 8 }}><Checkbox required>I have read and accept the <a>Terms &amp; Conditions</a></Checkbox></Form.Item>
+            <Form.Item style={{ marginBottom: 8 }}><Checkbox required>I consent to MCMC processing my personal data under PDPA 2010 for NCEF certification purposes</Checkbox></Form.Item>
+            <Form.Item><Checkbox>I consent to receive updates and announcements via email / SMS (optional)</Checkbox></Form.Item>
           </Form>
         )}
         {step === 1 && (
