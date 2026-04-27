@@ -31,6 +31,14 @@
 <script type="text/babel" src="components/screens-a.jsx"></script>
 <script type="text/babel" src="components/screens-b.jsx"></script>
 <script type="text/babel" src="components/screens-c.jsx"></script>
+<script type="text/babel" src="components/screens-d.jsx"></script>
+<script type="text/babel" src="components/screens-e.jsx"></script>
+<script type="text/babel" src="components/screens-f.jsx"></script>
+<script type="text/babel" src="components/screens-g.jsx"></script>
+<script type="text/babel" src="components/screens-h.jsx"></script>
+<script type="text/babel" src="components/screens-i.jsx"></script>
+<script type="text/babel" src="components/screens-j.jsx"></script>
+<script type="text/babel" src="components/screens-k.jsx"></script>
 
 <script type="text/babel">
 const { Layout, Menu, Button, Avatar, Dropdown, Badge, Space, Input, ConfigProvider, Drawer } = antd;
@@ -51,44 +59,85 @@ const {
   ApartmentOutlined, ContainerOutlined, WalletOutlined, RiseOutlined,
   SwapOutlined, CrownOutlined
 } = icons;
+const FormOutlined       = icons.FormOutlined       || icons.EditOutlined;
+const ImportOutlined     = icons.ImportOutlined     || icons.ArrowRightOutlined;
+const AlertOutlined      = icons.AlertOutlined      || icons.WarningOutlined;
+const AimOutlined        = icons.AimOutlined        || icons.ThunderboltOutlined;
+const BranchesOutlined   = icons.BranchesOutlined   || icons.ApartmentOutlined;
+const ThunderboltOutlined= icons.ThunderboltOutlined|| icons.StarOutlined;
+const SafetyOutlined     = icons.SafetyOutlined     || icons.SafetyCertificateOutlined;
 Object.assign(window, { icons, AntIcons: icons });
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "aiViz": "bar",
   "wizardPattern": "horizontal",
-  "role": "officer",
+  "role": "approver",
   "denseTables": true
 }/*EDITMODE-END*/;
 
 const NAV_SUPPLIER = [
-  { key: 'dashboard', label: 'Dashboard', icon: <DashboardOutlined /> },
-  { key: 'applications', label: 'My Applications', icon: <UnorderedListOutlined /> },
-  { key: 'sdoc-wizard', label: 'New SDoC', icon: <PlusCircleOutlined /> },
-  { key: 'special-approval', label: 'Special Approval', icon: <StarOutlined /> },
-  { key: 'certificates', label: 'Certificates', icon: <SafetyCertificateOutlined /> },
-  { key: 'imei-register', label: 'Register IMEI / SN', icon: <QrcodeOutlined /> },
-  { key: 'payments', label: 'Payments', icon: <WalletOutlined /> },
-  { key: 'consultants', label: 'Consultants', icon: <ApartmentOutlined /> },
-  { key: 'onboarding', label: 'Supplier Onboarding', icon: <IdcardOutlined /> },
-  { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
+  { key: 'dashboard',       label: 'Dashboard',              icon: <DashboardOutlined /> },
+  { key: 'applications',    label: 'My Applications',        icon: <UnorderedListOutlined /> },
+  { key: 'sdoc-wizard',     label: 'New SDoC',               icon: <PlusCircleOutlined /> },
+  { key: 'special-approval',label: 'Special Approval',       icon: <StarOutlined /> },
+  { key: 'modification',    label: 'Modification Request',   icon: <FormOutlined /> },
+  { key: 'importation',     label: 'Importation',            icon: <ImportOutlined /> },
+  { key: 'certificates',    label: 'Certificates',           icon: <SafetyCertificateOutlined /> },
+  { key: 'imei-register',   label: 'Register IMEI / SN',     icon: <QrcodeOutlined /> },
+  { key: 'payments',        label: 'Payments',               icon: <WalletOutlined /> },
+  { key: 'consultants',     label: 'Consultants',            icon: <ApartmentOutlined /> },
+  { key: 'onboarding',      label: 'Supplier Onboarding',    icon: <IdcardOutlined /> },
+  { key: 'profile',         label: 'Profile & Settings',     icon: <SettingOutlined /> },
 ];
 const NAV_TEAM_LEAD = [
-  { key: 'officer-queue', label: 'Review Queue', icon: <FlagOutlined /> },
-  { key: 'officer-review', label: 'Active Review', icon: <EyeOutlined /> },
-  { key: 'applications', label: 'All Applications', icon: <FileSearchOutlined /> },
-  { key: 'suppliers-mgmt', label: 'Suppliers', icon: <ShopOutlined /> },
-  { key: 'reports', label: 'Reports & Analytics', icon: <BarChartOutlined /> },
-  { key: 'audit', label: 'Audit Log', icon: <AuditOutlined /> },
-  { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
+  { key: 'officer-queue',     label: 'Review Queue',              icon: <FlagOutlined /> },
+  { key: 'officer-review',    label: 'Active Review',             icon: <EyeOutlined /> },
+  { key: 'applications',      label: 'All Applications',          icon: <FileSearchOutlined /> },
+  { key: 'modification',      label: 'Modification Review',       icon: <FormOutlined /> },
+  { key: 'suppliers-mgmt',    label: 'Suppliers',                 icon: <ShopOutlined /> },
+  { key: 'pms',               label: 'Post-Market Surveillance',  icon: <AimOutlined /> },
+  { key: 'post-monitoring',   label: 'Post Monitoring',           icon: <AlertOutlined /> },
+  { key: 'compliance-status', label: 'Compliance Status',         icon: <SafetyOutlined /> },
+  { key: 'sa-letter',         label: 'SA Letter',                 icon: <FileTextOutlined /> },
+  { key: 'public-portal',     label: 'Public Portal',             icon: <GlobalOutlined /> },
+  { key: 'integrations',      label: 'Integrations',              icon: <ApartmentOutlined /> },
+  { key: 'admin-config',      label: 'Configuration',             icon: <SettingOutlined /> },
+  { key: 'reports',           label: 'Reports & Analytics',       icon: <BarChartOutlined /> },
+  { key: 'audit',             label: 'Audit Log',                 icon: <AuditOutlined /> },
+  { key: 'profile',           label: 'Profile & Settings',        icon: <SettingOutlined /> },
 ];
 const NAV_OFFICER = [
-  { key: 'officer-queue', label: 'My Queue', icon: <FlagOutlined /> },
-  { key: 'officer-review', label: 'Active Review', icon: <EyeOutlined /> },
-  { key: 'suppliers-mgmt', label: 'Suppliers', icon: <ShopOutlined /> },
-  { key: 'profile', label: 'Profile & Settings', icon: <SettingOutlined /> },
+  { key: 'officer-queue',     label: 'My Queue',                  icon: <FlagOutlined /> },
+  { key: 'officer-review',    label: 'Active Review',             icon: <EyeOutlined /> },
+  { key: 'modification',      label: 'Modification Review',       icon: <FormOutlined /> },
+  { key: 'suppliers-mgmt',    label: 'Suppliers',                 icon: <ShopOutlined /> },
+  { key: 'pms',               label: 'Post-Market Surveillance',  icon: <AimOutlined /> },
+  { key: 'post-monitoring',   label: 'Post Monitoring',           icon: <AlertOutlined /> },
+  { key: 'compliance-status', label: 'Compliance Status',         icon: <SafetyOutlined /> },
+  { key: 'integrations',      label: 'Integrations',              icon: <ApartmentOutlined /> },
+  { key: 'profile',           label: 'Profile & Settings',        icon: <SettingOutlined /> },
 ];
-const NAV_BY_ROLE = { supplier: NAV_SUPPLIER, 'team-lead': NAV_TEAM_LEAD, officer: NAV_OFFICER };
-const DEFAULT_SCREEN_BY_ROLE = { supplier: 'dashboard', 'team-lead': 'officer-queue', officer: 'officer-queue' };
+const NAV_RECOMMENDER = [
+  { key: 'officer-queue',  label: 'My Queue',           icon: <FlagOutlined /> },
+  { key: 'officer-review', label: 'Active Review',      icon: <EyeOutlined /> },
+  { key: 'sa-letter',      label: 'SA Letter',          icon: <FileTextOutlined /> },
+  { key: 'profile',        label: 'Profile & Settings', icon: <SettingOutlined /> },
+];
+const NAV_VERIFIER = [
+  { key: 'officer-queue',  label: 'My Queue',           icon: <FlagOutlined /> },
+  { key: 'officer-review', label: 'Active Review',      icon: <EyeOutlined /> },
+  { key: 'sa-letter',      label: 'SA Letter',          icon: <FileTextOutlined /> },
+  { key: 'profile',        label: 'Profile & Settings', icon: <SettingOutlined /> },
+];
+const NAV_APPROVER = [
+  { key: 'officer-queue',  label: 'Review Queue',        icon: <FlagOutlined /> },
+  { key: 'officer-review', label: 'Active Review',       icon: <EyeOutlined /> },
+  { key: 'sa-letter',      label: 'SA Letter',           icon: <FileTextOutlined /> },
+  { key: 'reports',        label: 'Reports & Analytics', icon: <BarChartOutlined /> },
+  { key: 'profile',        label: 'Profile & Settings',  icon: <SettingOutlined /> },
+];
+const NAV_BY_ROLE = { supplier: NAV_SUPPLIER, 'team-lead': NAV_TEAM_LEAD, officer: NAV_OFFICER, recommender: NAV_RECOMMENDER, verifier: NAV_VERIFIER, approver: NAV_APPROVER };
+const DEFAULT_SCREEN_BY_ROLE = { supplier: 'dashboard', 'team-lead': 'officer-queue', officer: 'officer-queue', recommender: 'officer-queue', verifier: 'officer-queue', approver: 'officer-queue' };
 
 // Shared officer-roster picker used by both Assign (TL) on unassigned rows
 // and Reassign (TL) on Active Review.
@@ -629,18 +678,32 @@ SCREENS.audit = function AuditLog({ nav, currentUser }) {
 // ============ SWITCH PROFILE MODAL ============
 function SwitchProfileModal({ open, currentRole, onClose, onSwitch }) {
   const profiles = MOCK.profiles;
-  const order = ['supplier', 'team-lead', 'officer'];
+  const order = ['supplier', 'team-lead', 'officer', 'recommender', 'verifier', 'approver'];
   const [pick, setPick] = React.useState(currentRole);
   React.useEffect(() => { if (open) setPick(currentRole); }, [open, currentRole]);
-  const roleAccent = { supplier: 'var(--color-primary)', 'team-lead': '#7B3FA0', officer: '#0F6ABF' };
-  const roleLabel = { supplier: 'Supplier', 'team-lead': 'MCMC Admin', officer: 'MCMC Officer' };
+  const roleAccent = {
+    supplier: 'var(--color-primary)',
+    'team-lead': '#7B3FA0',
+    officer: '#0F6ABF',
+    recommender: '#2E7D32',
+    verifier: '#E65100',
+    approver: '#B71C1C',
+  };
+  const roleLabel = {
+    supplier: 'Supplier',
+    'team-lead': 'MCMC Admin',
+    officer: 'MCMC Officer',
+    recommender: 'Recommender (P5/P6)',
+    verifier: 'Verifier (P7)',
+    approver: 'Approver (P8)',
+  };
 
   return (
     <antd.Modal
       open={open}
       onCancel={onClose}
       title={<Space><SwapOutlined /> Switch Profile</Space>}
-      width={480}
+      width={520}
       okText="Switch"
       okButtonProps={{ disabled: pick === currentRole }}
       onOk={() => { onSwitch(pick); onClose(); }}
@@ -648,37 +711,38 @@ function SwitchProfileModal({ open, currentRole, onClose, onSwitch }) {
       <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--color-text-secondary)' }}>
         Demo mode — switch between profiles to review the flow for each role.
       </div>
-      <div style={{ display: 'grid', gap: 10 }}>
-        {order.map(key => {
+      <div style={{ display: 'grid', gap: 8 }}>
+        {order.filter(key => profiles[key]).map(key => {
           const p = profiles[key];
           const isCurrent = key === currentRole;
           const isPicked = pick === key;
+          const isOfficerGroup = ['team-lead','officer','recommender','verifier','approver'].includes(key);
           return (
             <div
               key={key}
               onClick={() => !isCurrent && setPick(key)}
               style={{
-                padding: 14,
+                padding: 12,
                 border: `1.5px solid ${isPicked ? roleAccent[key] : 'var(--color-border, #E5E7EB)'}`,
                 borderRadius: 10,
                 cursor: isCurrent ? 'not-allowed' : 'pointer',
-                background: isCurrent ? 'rgba(0,0,0,0.02)' : (isPicked ? 'rgba(11,79,145,0.04)' : '#fff'),
+                background: isCurrent ? 'rgba(0,0,0,0.02)' : isPicked ? `${roleAccent[key]}08` : '#fff',
                 opacity: isCurrent ? 0.7 : 1,
-                display: 'flex', alignItems: 'center', gap: 14,
+                display: 'flex', alignItems: 'center', gap: 12,
               }}
             >
-              <antd.Avatar size={44} style={{ background: roleAccent[key], fontWeight: 600 }}>{p.initials}</antd.Avatar>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <antd.Avatar size={40} style={{ background: roleAccent[key], fontWeight: 600, flexShrink: 0 }}>{p.initials}</antd.Avatar>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   {p.name}
-                  {isCurrent && <antd.Tag color="default">Current</antd.Tag>}
+                  {isCurrent && <antd.Tag color="default" style={{ margin: 0 }}>Current</antd.Tag>}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
-                  <antd.Tag color={key === 'team-lead' ? 'purple' : key === 'officer' ? 'blue' : 'geekblue'}>{roleLabel[key]}</antd.Tag>
-                  {p.title}{p.company ? ` · ${p.company}` : ''}
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>
+                  <antd.Tag color={key === 'team-lead' ? 'purple' : key === 'supplier' ? 'geekblue' : key === 'approver' ? 'red' : key === 'recommender' ? 'green' : key === 'verifier' ? 'orange' : 'blue'} style={{ margin: 0, fontSize: 10 }}>{roleLabel[key]}</antd.Tag>
+                  {' '}{p.title}{isOfficerGroup && p.team ? ` · ${p.team}` : ''}{p.company ? ` · ${p.company}` : ''}
                 </div>
               </div>
-              {isPicked && !isCurrent && <CheckCircleOutlined style={{ color: roleAccent[key], fontSize: 20 }} />}
+              {isPicked && !isCurrent && <CheckCircleOutlined style={{ color: roleAccent[key], fontSize: 18 }} />}
             </div>
           );
         })}
@@ -761,7 +825,7 @@ function App() {
 
   // Per amended URS: ADMIN and OFFICER cannot create registrations on a vendor's behalf.
   // These supplier-only screens are gated even if a user navigates here via direct URL or stale localStorage.
-  const SUPPLIER_ONLY = new Set(['dashboard', 'sdoc-wizard', 'special-approval', 'certificates', 'imei-register', 'cert-renewal', 'payments', 'consultants', 'onboarding']);
+  const SUPPLIER_ONLY = new Set(['dashboard', 'sdoc-wizard', 'special-approval', 'modification', 'importation', 'certificates', 'imei-register', 'cert-renewal', 'payments', 'consultants', 'onboarding']);
   const isRestricted = SUPPLIER_ONLY.has(screen) && !isSupplier;
   const RestrictedScreen = () => (
     <div style={{ padding: 32 }}>
@@ -851,7 +915,7 @@ function App() {
                 { key: 'logout', icon: <LogoutOutlined />, label: 'Sign out', danger: true, onClick: handleLogout },
               ] }}>
                 <Space style={{ cursor: 'pointer' }}>
-                  <Avatar style={{ background: tweaks.role === 'team-lead' ? '#7B3FA0' : tweaks.role === 'officer' ? '#0F6ABF' : 'var(--color-primary)' }}>
+                  <Avatar style={{ background: tweaks.role === 'team-lead' ? '#7B3FA0' : tweaks.role === 'officer' ? '#0F6ABF' : tweaks.role === 'recommender' ? '#2E7D32' : tweaks.role === 'verifier' ? '#E65100' : tweaks.role === 'approver' ? '#B71C1C' : 'var(--color-primary)' }}>
                     {currentUser.initials}
                   </Avatar>
                   <div style={{ textAlign: 'left', display: window.innerWidth > 640 ? 'block' : 'none' }}>
