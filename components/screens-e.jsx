@@ -6,7 +6,8 @@ const {
   CheckCircleOutlined, WarningOutlined, CloseCircleOutlined, ReloadOutlined,
   FileTextOutlined, LockOutlined, GlobalOutlined, ThunderboltOutlined,
   UserOutlined, CrownOutlined, TeamOutlined, InfoCircleOutlined,
-  SwapOutlined, HistoryOutlined, ExclamationCircleOutlined, CheckOutlined
+  SwapOutlined, HistoryOutlined, ExclamationCircleOutlined, CheckOutlined,
+  TagOutlined, UsergroupAddOutlined, BarChartOutlined, EyeOutlined, CloseOutlined
 } = window.icons;
 
 const FormOutlined_e   = window.icons.FormOutlined   || window.icons.EditOutlined;
@@ -193,54 +194,198 @@ SCREENS['admin-config'] = function AdminConfig({ nav, currentUser }) {
 
   // ── WORKFLOW CONFIG ─────────────────────────────────────────────────────────
   const WorkflowTab = () => {
-    const [chain, setChain] = React.useState(MOCK.workflowChainConfig);
-    const [dirty, setDirty] = React.useState(false);
-    const roleOpts = [
-      { value: 'officer',     label: 'OIC / CPPG Officer' },
-      { value: 'recommender', label: 'Recommender (P5/P6)' },
-      { value: 'verifier',    label: 'Verifier (P7)' },
-      { value: 'approver',    label: 'Approver (P8)' },
-    ];
-    const roleColor = { officer: 'blue', recommender: 'green', verifier: 'orange', approver: 'red' };
+    const [members, setMembers]       = React.useState(MOCK.mcmcTeamMembers.map(m => ({ ...m, roles: [...m.roles] })));
+    const [roleDefs]                   = React.useState(MOCK.roleDefinitions);
+    const [activeRole, setActiveRole]  = React.useState('officer');
+    const [perfOpen, setPerfOpen]      = React.useState(null);  // member id
+    const [addMemberOpen, setAddMemberOpen] = React.useState(false);
+    const [addRoleTarget, setAddRoleTarget] = React.useState(null); // member id for role assignment
+    const [newMemberForm, setNewMemberForm] = React.useState({ name: '', grade: '', email: '', department: 'CPQ', roles: [] });
+
+    const roleColor = { officer: 'blue', recommender: 'green', verifier: 'orange', approver: 'red', 'team-lead': 'purple' };
+
+    const roleDef = roleDefs.find(r => r.key === activeRole);
+    const roleMembers = members.filter(m => m.roles.includes(activeRole));
+    const lead = roleMembers.find(m => m.roles.includes('team-lead') || m.grade === 'N54' || m.grade === 'JUSA C') || roleMembers[0];
+
+    const removeFromRole = (memberId) => {
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, roles: m.roles.filter(r => r !== activeRole) } : m));
+      antd.message.success('Role removed. Changes will apply to new assignments only.');
+    };
+
+    const addRoleToMember = (memberId, role) => {
+      setMembers(prev => prev.map(m => m.id === memberId && !m.roles.includes(role) ? { ...m, roles: [...m.roles, role] } : m));
+      setAddRoleTarget(null);
+      antd.message.success(`Role assigned.`);
+    };
+
+    const addNewMember = () => {
+      if (!newMemberForm.name || !newMemberForm.email) { antd.message.error('Name and email are required.'); return; }
+      const id = `OFF-${String(members.length + 11).padStart(3, '0')}`;
+      setMembers(prev => [...prev, { id, initials: newMemberForm.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase(), ...newMemberForm, division: 'CPPG', reportsTo: lead?.id || null, phone: '' }]);
+      setAddMemberOpen(false);
+      setNewMemberForm({ name: '', grade: '', email: '', department: 'CPQ', roles: [] });
+      antd.message.success('Team member added.');
+    };
+
+    const perfMember = perfOpen ? members.find(m => m.id === perfOpen) : null;
+    const perfStats = MOCK.officerPerformance?.find(p => p.id === perfOpen) || { approved: 0, rejected: 0, avgTurnaround: 0, slaCompliance: 0, aiOverrides: 0 };
 
     return (
       <div>
-        <antd.Alert type="info" showIcon style={{ marginBottom: 20 }} message="Multi-level approval chain — Prohibited Equipment" description="This configures the sequential approval chain for Special Approval (Prohibited Equipment) applications. Each step must complete before the next is activated. Only the Approver (P8) may reject an application." />
-        <div style={{ display: 'flex', gap: 16, marginBottom: 20, overflowX: 'auto', paddingBottom: 8 }}>
-          {chain.map((step, i) => (
-            <div key={step.id} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ border: '1.5px solid var(--color-border)', borderRadius: 12, padding: 16, minWidth: 200, background: '#fff', boxShadow: 'var(--elevation-1)' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 4 }}>Step {step.step}</div>
-                <antd.Select
-                  value={step.roleKey}
-                  style={{ width: '100%', marginBottom: 10 }}
-                  options={roleOpts}
-                  onChange={v => { setChain(prev => prev.map(s => s.id === step.id ? { ...s, roleKey: v, roleLabel: roleOpts.find(o => o.value === v)?.label } : s)); setDirty(true); }}
-                />
-                <antd.Tag color={roleColor[step.roleKey]} style={{ marginBottom: 8 }}>{step.roleLabel}</antd.Tag>
-                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 6 }}>Actions:</div>
-                <antd.Space size={[4, 4]} wrap>
-                  {step.actions.map((a, j) => (
-                    <antd.Tag key={j} closable={a !== 'Escalate' && a !== 'Accept' && !step.mandatory} style={{ fontSize: 11 }}>{a}</antd.Tag>
-                  ))}
-                </antd.Space>
-                {step.canReject && <div style={{ marginTop: 8 }}><antd.Tag color="red" style={{ fontSize: 10 }}>Can reject application</antd.Tag></div>}
+        {/* Role selector */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+          {roleDefs.map(r => (
+            <div key={r.key} onClick={() => setActiveRole(r.key)}
+              style={{ padding: '10px 18px', border: `2px solid ${activeRole === r.key ? `var(--color-${r.color === 'blue' ? 'primary' : 'text-secondary'}, #555)` : 'var(--color-border)'}`, borderColor: activeRole === r.key ? (r.key === 'officer' ? 'var(--color-primary)' : r.key === 'recommender' ? '#389e0d' : r.key === 'verifier' ? '#d46b08' : r.key === 'approver' ? '#cf1322' : '#531dab') : 'var(--color-border)', borderRadius: 10, cursor: 'pointer', background: activeRole === r.key ? '#fafafa' : '#fff', minWidth: 160 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <antd.Tag color={r.color} style={{ margin: 0, fontSize: 11, fontWeight: 600 }}>{r.label}</antd.Tag>
+                <antd.Badge count={members.filter(m => m.roles.includes(r.key)).length} style={{ background: 'var(--color-primary)' }} />
               </div>
-              {i < chain.length - 1 && <span style={{ fontSize: 20, color: 'var(--color-text-muted)', flexShrink: 0 }}>→</span>}
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.3 }}>{r.description.slice(0, 60)}…</div>
             </div>
           ))}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 20, color: 'var(--color-text-muted)' }}>→</span>
-            <div style={{ border: '1.5px dashed var(--color-border)', borderRadius: 12, padding: 16, minWidth: 140, textAlign: 'center', color: 'var(--color-text-muted)', cursor: 'pointer', background: 'var(--color-bg-subtle)' }} onClick={() => antd.message.info('Custom steps are configurable in production. This demo is limited to the 4 standard NCEF roles.')}>
-              <PlusOutlined style={{ fontSize: 20, marginBottom: 4 }} />
-              <div style={{ fontSize: 12 }}>Add step</div>
+        </div>
+
+        {/* Role detail header */}
+        <antd.Card bordered style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <antd.Space>
+                <antd.Tag color={roleDef?.color} style={{ fontWeight: 700, fontSize: 13 }}>{roleDef?.label}</antd.Tag>
+                <antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>{roleDef?.description}</antd.Typography.Text>
+              </antd.Space>
+              {lead && (
+                <div style={{ marginTop: 8, fontSize: 12 }}>
+                  <antd.Typography.Text type="secondary">Role Lead: </antd.Typography.Text>
+                  <antd.Tag icon={<CrownOutlined />} color="gold" style={{ fontSize: 11 }}>{lead.name} · {lead.grade}</antd.Tag>
+                </div>
+              )}
             </div>
+            <antd.Space>
+              <antd.Button icon={<UsergroupAddOutlined />} onClick={() => setAddRoleTarget('new')}>Add existing member</antd.Button>
+              <antd.Button type="primary" icon={<PlusOutlined />} onClick={() => setAddMemberOpen(true)}>New team member</antd.Button>
+            </antd.Space>
           </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>Changes apply to new applications only. In-flight applications retain their original chain configuration.</antd.Typography.Text>
-          <antd.Button type="primary" disabled={!dirty} onClick={() => { setDirty(false); antd.message.success('Workflow chain saved.'); }}>Save Workflow</antd.Button>
-        </div>
+        </antd.Card>
+
+        {/* Members list for this role */}
+        <antd.Table
+          rowKey="id"
+          dataSource={roleMembers}
+          pagination={false}
+          size="middle"
+          locale={{ emptyText: 'No members assigned to this role yet.' }}
+          columns={[
+            { title: 'Officer', render: (_, m) => (
+              <antd.Space>
+                <antd.Avatar style={{ background: 'var(--color-primary)', fontSize: 12, fontWeight: 700 }}>{m.initials}</antd.Avatar>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{m.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{m.email}</div>
+                </div>
+              </antd.Space>
+            )},
+            { title: 'Grade', dataIndex: 'grade', render: v => <antd.Tag>{v}</antd.Tag> },
+            { title: 'Department', dataIndex: 'department', render: v => <antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
+            { title: 'All Roles', dataIndex: 'roles', render: (roles, m) => (
+              <antd.Space size={4} wrap>
+                {roles.map(r => <antd.Tag key={r} color={roleColor[r]} style={{ fontSize: 10 }}>{roleDefs.find(d => d.key === r)?.label || r}</antd.Tag>)}
+                <antd.Tooltip title="Assign additional role">
+                  <antd.Tag style={{ cursor: 'pointer', border: '1px dashed var(--color-border)', fontSize: 10 }} onClick={() => setAddRoleTarget(m.id)}><PlusOutlined /> role</antd.Tag>
+                </antd.Tooltip>
+              </antd.Space>
+            )},
+            { title: '', render: (_, m) => (
+              <antd.Space>
+                <antd.Button size="small" icon={<BarChartOutlined />} onClick={() => setPerfOpen(m.id)}>Performance</antd.Button>
+                <antd.Popconfirm title={`Remove ${m.name} from ${roleDef?.label}?`} okText="Remove" okButtonProps={{ danger: true }} onConfirm={() => removeFromRole(m.id)}>
+                  <antd.Button size="small" danger icon={<CloseOutlined />} />
+                </antd.Popconfirm>
+              </antd.Space>
+            )},
+          ]}
+        />
+
+        {/* Assign role to existing member modal */}
+        <antd.Modal title={`Assign ${roleDef?.label} role to…`} open={!!addRoleTarget && addRoleTarget !== 'new'} onCancel={() => setAddRoleTarget(null)} footer={null} width={480}>
+          <antd.List
+            dataSource={members.filter(m => !m.roles.includes(activeRole))}
+            renderItem={m => (
+              <antd.List.Item actions={[<antd.Button size="small" type="primary" onClick={() => addRoleToMember(m.id, activeRole)}>Assign</antd.Button>]}>
+                <antd.List.Item.Meta
+                  avatar={<antd.Avatar style={{ background: 'var(--color-primary)' }}>{m.initials}</antd.Avatar>}
+                  title={<antd.Space>{m.name} <antd.Tag>{m.grade}</antd.Tag></antd.Space>}
+                  description={<antd.Space size={4} wrap>{m.roles.map(r => <antd.Tag key={r} color={roleColor[r]} style={{ fontSize: 10 }}>{r}</antd.Tag>)}</antd.Space>}
+                />
+              </antd.List.Item>
+            )}
+            locale={{ emptyText: 'All team members already have this role.' }}
+          />
+        </antd.Modal>
+
+        {/* Also handle addRoleTarget='new' by opening add member modal */}
+        {addRoleTarget === 'new' && !addMemberOpen && (() => { setAddRoleTarget(null); setAddMemberOpen(true); return null; })()}
+
+        {/* Add new member modal */}
+        <antd.Modal title="Add New MCMC Team Member" open={addMemberOpen} onCancel={() => setAddMemberOpen(false)} onOk={addNewMember} okText="Add Member" width={520}>
+          <antd.Form layout="vertical" style={{ marginTop: 8 }}>
+            <antd.Row gutter={16}>
+              <antd.Col span={14}><antd.Form.Item label="Full Name" required><antd.Input value={newMemberForm.name} onChange={e => setNewMemberForm(f => ({ ...f, name: e.target.value }))} placeholder="En. Ahmad bin Hassan" /></antd.Form.Item></antd.Col>
+              <antd.Col span={10}><antd.Form.Item label="Grade" required><antd.Select value={newMemberForm.grade} onChange={v => setNewMemberForm(f => ({ ...f, grade: v }))} placeholder="Select…" options={['N41','N44','N48','N52','N54','JUSA C'].map(g => ({ value: g, label: g }))} style={{ width: '100%' }} /></antd.Form.Item></antd.Col>
+              <antd.Col span={24}><antd.Form.Item label="Email" required><antd.Input value={newMemberForm.email} onChange={e => setNewMemberForm(f => ({ ...f, email: e.target.value }))} placeholder="ahmad@mcmc.gov.my" /></antd.Form.Item></antd.Col>
+              <antd.Col span={12}><antd.Form.Item label="Department"><antd.Select value={newMemberForm.department} onChange={v => setNewMemberForm(f => ({ ...f, department: v }))} options={['CPQ','SAU','Directorate','IT & Systems'].map(d => ({ value: d, label: d }))} style={{ width: '100%' }} /></antd.Form.Item></antd.Col>
+              <antd.Col span={12}><antd.Form.Item label="Assign Roles"><antd.Select mode="multiple" value={newMemberForm.roles} onChange={v => setNewMemberForm(f => ({ ...f, roles: v }))} options={roleDefs.map(r => ({ value: r.key, label: r.label }))} style={{ width: '100%' }} /></antd.Form.Item></antd.Col>
+            </antd.Row>
+          </antd.Form>
+        </antd.Modal>
+
+        {/* Performance drawer */}
+        <antd.Drawer title={<antd.Space><BarChartOutlined />{perfMember?.name} — Performance</antd.Space>} open={!!perfOpen} onClose={() => setPerfOpen(null)} width={500}>
+          {perfMember && (
+            <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
+              <antd.Card bordered size="small">
+                <antd.Descriptions column={2} size="small">
+                  <antd.Descriptions.Item label="Grade">{perfMember.grade}</antd.Descriptions.Item>
+                  <antd.Descriptions.Item label="Department">{perfMember.department}</antd.Descriptions.Item>
+                  <antd.Descriptions.Item label="Email"><a>{perfMember.email}</a></antd.Descriptions.Item>
+                  <antd.Descriptions.Item label="Phone">{perfMember.phone || '—'}</antd.Descriptions.Item>
+                  <antd.Descriptions.Item label="Roles" span={2}><antd.Space>{perfMember.roles.map(r => <antd.Tag key={r} color={roleColor[r]} style={{ fontSize: 11 }}>{roleDefs.find(d => d.key === r)?.label || r}</antd.Tag>)}</antd.Space></antd.Descriptions.Item>
+                </antd.Descriptions>
+              </antd.Card>
+              <antd.Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: .4 }}>This Month · Individual Performance</antd.Typography.Text>
+              <antd.Row gutter={[12, 12]}>
+                {[
+                  { label: 'Approved', value: perfStats.approved || 12, color: 'var(--color-success)' },
+                  { label: 'Rejected', value: perfStats.rejected || 2, color: 'var(--color-danger, #cf1322)' },
+                  { label: 'Avg Turnaround', value: `${perfStats.avgTurnaround || 4.1}d`, color: 'var(--color-primary)' },
+                  { label: 'SLA Compliance', value: `${perfStats.slaCompliance || 94}%`, color: perfStats.slaCompliance >= 90 ? 'var(--color-success)' : 'var(--color-warning)' },
+                  { label: 'AI Overrides', value: perfStats.aiOverrides || 3, color: 'var(--color-text-secondary)' },
+                  { label: 'In Queue Now', value: 2, color: 'var(--color-warning)' },
+                ].map((s, i) => (
+                  <antd.Col span={8} key={i}>
+                    <div style={{ padding: '10px 14px', border: '1px solid var(--color-border)', borderRadius: 8, textAlign: 'center' }}>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
+                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{s.label}</div>
+                    </div>
+                  </antd.Col>
+                ))}
+              </antd.Row>
+              <antd.Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: .4 }}>Team Performance · {perfMember.division} / {perfMember.department}</antd.Typography.Text>
+              <antd.Table
+                rowKey="id"
+                size="small"
+                pagination={false}
+                dataSource={members.filter(m => m.department === perfMember.department)}
+                columns={[
+                  { title: 'Officer', render: (_, m) => <antd.Space><antd.Avatar size={24} style={{ background: 'var(--color-primary)', fontSize: 10 }}>{m.initials}</antd.Avatar><span style={{ fontSize: 12 }}>{m.name.split(' ').slice(-1)[0]}</span></antd.Space> },
+                  { title: 'Approved', render: (_, m) => { const p = MOCK.officerPerformance?.find(p => p.id === m.id); return p?.approved ?? '—'; }},
+                  { title: 'SLA', render: (_, m) => { const p = MOCK.officerPerformance?.find(p => p.id === m.id); return p ? <antd.Tag color={p.slaCompliance >= 90 ? 'green' : 'orange'}>{p.slaCompliance}%</antd.Tag> : '—'; }},
+                ]}
+              />
+            </antd.Space>
+          )}
+        </antd.Drawer>
       </div>
     );
   };

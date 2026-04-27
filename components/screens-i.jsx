@@ -84,11 +84,9 @@ SCREENS['post-monitoring'] = function PostMonitoring({ nav, currentUser }) {
   const [intakeOpen, setIntakeOpen] = React.useState(false);
   const [q, setQ]               = React.useState('');
   const [kbQ, setKbQ]           = React.useState('');
-  const [crawlFilter, setCrawlFilter] = React.useState('all');
 
   const recs = MOCK.intelligenceRecords;
   const filtered = recs.filter(r => !q || (r.id + r.equipment + r.brand + r.source + r.description).toLowerCase().includes(q.toLowerCase()));
-  const crawl = MOCK.webCrawlFeed.filter(w => crawlFilter === 'all' || w.status === crawlFilter);
   const kb = MOCK.knowledgeBase.filter(k => !kbQ || (k.brand + k.model + k.category + (k.rcn||'')).toLowerCase().includes(kbQ.toLowerCase()));
 
   const open  = recs.filter(r => r.status === 'open').length;
@@ -182,52 +180,6 @@ SCREENS['post-monitoring'] = function PostMonitoring({ nav, currentUser }) {
     </antd.Row>
   );
 
-  // ── AI WEB CRAWL TAB ────────────────────────────────────────────────────────
-  const CrawlTab = () => (
-    <div>
-      <antd.Alert type="info" showIcon icon={<RobotOutlined />} style={{ marginBottom: 16 }}
-        message="AI Web Crawl Engine — IntelliGenCE"
-        description="The AI continuously scans e-commerce platforms, social media marketplaces, and online classifieds for unregistered or illegal communications equipment. Results are scored by confidence and auto-escalated based on severity."
-      />
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', justifyContent: 'space-between' }}>
-        <antd.Segmented value={crawlFilter} onChange={setCrawlFilter} options={[
-          { label: `All (${MOCK.webCrawlFeed.length})`, value: 'all' },
-          { label: `Flagged (${MOCK.webCrawlFeed.filter(w => w.status === 'flagged').length})`, value: 'flagged' },
-          { label: `Escalated (${MOCK.webCrawlFeed.filter(w => w.status === 'escalated').length})`, value: 'escalated' },
-          { label: `Dismissed (${MOCK.webCrawlFeed.filter(w => w.status === 'dismissed').length})`, value: 'dismissed' },
-        ]} />
-        <antd.Button icon={<RobotOutlined />} onClick={() => antd.message.success('AI crawl refreshed — 847 pages scanned in 2.4 seconds')}>Refresh Crawl</antd.Button>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {crawl.map(w => (
-          <antd.Card key={w.id} bordered size="small" style={{ borderLeft: `4px solid ${SEV_COLOR[w.severity]}` }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 240 }}>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
-                  <antd.Tag color={SEV_TAG[w.severity]}>{w.severity}</antd.Tag>
-                  <antd.Tag color={STAT_TAG[w.status]}>{w.status}</antd.Tag>
-                  <antd.Tag icon={<GlobalOutlined />}>{w.platform}</antd.Tag>
-                  <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>{new Date(w.ts).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</antd.Typography.Text>
-                </div>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{w.title}</div>
-                <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 4, lineHeight: 1.5 }}>{w.reason}</div>
-              </div>
-              <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>AI Confidence</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: w.confidence >= 85 ? 'var(--color-danger)' : w.confidence >= 60 ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>{w.confidence}%</div>
-              </div>
-              <antd.Space direction="vertical" size="small" style={{ flexShrink: 0 }}>
-                {w.status === 'flagged' && <antd.Button size="small" type="primary" onClick={() => antd.message.success(`Complaint created from ${w.id}`)}>Create Complaint</antd.Button>}
-                {w.status === 'flagged' && <antd.Button size="small" danger type="text" onClick={() => antd.message.info(`${w.id} dismissed`)}>Dismiss</antd.Button>}
-                {w.status !== 'flagged' && <antd.Tag color={STAT_TAG[w.status]}>{w.status}</antd.Tag>}
-              </antd.Space>
-            </div>
-          </antd.Card>
-        ))}
-      </div>
-    </div>
-  );
-
   // ── KNOWLEDGE BASE TAB ──────────────────────────────────────────────────────
   const KnowledgeBaseTab = () => {
     const kbStatusColor = { unregistered: 'orange', under_review: 'blue', illegal: 'red', registered: 'green' };
@@ -236,7 +188,7 @@ SCREENS['post-monitoring'] = function PostMonitoring({ nav, currentUser }) {
       <div>
         <antd.Alert type="info" showIcon style={{ marginBottom: 16 }}
           message="IntelliGenCE Equipment Directory"
-          description="Central knowledge base of communications equipment identified in the Malaysian market through complaints, AI web crawl, and officer intelligence. Updated by officers via the MCMC IntelliGenCE programme."
+          description="Central knowledge base of communications equipment identified in the Malaysian market through complaints and officer intelligence. Updated by officers via the MCMC IntelliGenCE programme."
         />
         <antd.Input placeholder="Search by brand, model, category, RCN…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />} value={kbQ} onChange={e => setKbQ(e.target.value)} style={{ maxWidth: 380, marginBottom: 16 }} />
         <antd.Table rowKey="id" dataSource={kb} pagination={false} columns={[
@@ -273,7 +225,6 @@ SCREENS['post-monitoring'] = function PostMonitoring({ nav, currentUser }) {
               <antd.Select options={[
                 { value: 'IntelliGenCE', label: 'IntelliGenCE Programme' },
                 { value: 'Public complaint', label: 'Public Complaint (Portal)' },
-                { value: 'AI web crawl', label: 'AI Web Crawl' },
                 { value: 'Officer field visit', label: 'Officer Field Visit' },
                 { value: 'Tip-off', label: 'Tip-off / Anonymous' },
               ]} />
@@ -304,7 +255,7 @@ SCREENS['post-monitoring'] = function PostMonitoring({ nav, currentUser }) {
         <div>
           <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>MCMC · IntelliGenCE Programme</div>
           <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Post Monitoring</antd.Typography.Title>
-          <antd.Typography.Text type="secondary">Equipment complaints · AI web-crawl findings · IntelliGenCE knowledge base</antd.Typography.Text>
+          <antd.Typography.Text type="secondary">Equipment complaints · IntelliGenCE knowledge base</antd.Typography.Text>
         </div>
       </div>
 
@@ -324,7 +275,7 @@ SCREENS['post-monitoring'] = function PostMonitoring({ nav, currentUser }) {
       <antd.Card bordered bodyStyle={{ padding: 0 }}>
         <antd.Tabs activeKey={tab} onChange={setTab} style={{ padding: '0 20px' }} items={[
           { key: 'complaints',    label: <antd.Space><AlertOut_i />Complaints ({recs.length})</antd.Space>,    children: <div style={{ padding: '4px 0 20px' }}><ComplaintsTab /></div> },
-          { key: 'crawl',        label: <antd.Space><RobotOutlined />AI Web Crawl ({MOCK.webCrawlFeed.length})</antd.Space>, children: <div style={{ padding: '4px 0 20px' }}><CrawlTab /></div> },
+
           { key: 'knowledge',    label: <antd.Space><FileTextOutlined />Knowledge Base ({MOCK.knowledgeBase.length})</antd.Space>, children: <div style={{ padding: '4px 0 20px' }}><KnowledgeBaseTab /></div> },
         ]} />
       </antd.Card>

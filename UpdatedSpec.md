@@ -220,7 +220,7 @@ Primary database: **PostgreSQL** (structured data). Unstructured documents: **Mi
 
 ### 5.1 User Management Module
 
-> **PROTOTYPE STATUS: ⚠️ PARTIAL** — Login screen, demo account selector, supplier onboarding wizard (6 steps), profile & settings, consultant management, and team members UI are implemented. Keycloak SSO, 2FA enrollment, Approver/Verifier/Recommender role split, password reset, and waiver code redemption are not yet built.
+> **PROTOTYPE STATUS: ⚠️ PARTIAL** — Login screen (with error states and account-lock after 3 failures), demo account selector (6 profiles), supplier onboarding wizard with Security Q&A and expanded PDPA consent, profile & settings with 2FA enrollment modals (TOTP/SMS/MyDigital ID), forgot-password flow (4-step), Recommender/Verifier/Approver roles with full MCMC org info (division, department, grade, phone), switch-profile modal, and Notifications Centre are all implemented. Keycloak SSO, real 2FA OTP delivery, and real session management remain mock.
 
 #### Purpose
 Foundation of NCEF security. Handles the entire lifecycle of user accounts — registration, authentication, authorization, and profile management — for all internal (MCMC) and external (Applicant) users via **Keycloak**.
@@ -717,7 +717,7 @@ Supports MCMC in monitoring ongoing compliance of registered equipment and suppl
 
 ### 5.9 Post Monitoring Module
 
-> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No screen exists. To build: IntelliGenCE knowledge base, equipment complaint intake, AI web-crawling feed, market intelligence reports, complaint-to-case workflow, and equipment blacklist management. Reference spec §5.9 for full requirements.
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED (AI Web Crawl removed by design)** — Post Monitoring / IntelliGenCE screen (`screens-i.jsx`) is implemented with: Complaints list (severity triage, detail panel with investigation timeline, Add Update), complaint intake wizard, Knowledge Base (searchable equipment directory with registration status). AI Web Crawl feature has been **intentionally removed** — not in scope for the prototype.
 
 > Previously referred to as "Complaint & Surveillance". URS v1.7 names it **Post Monitoring Module**.
 
@@ -1076,7 +1076,7 @@ Manages all data exchanges between NCEF and other enterprise systems using an **
 
 ### 5.18 Configuration & Settings
 
-> **PROTOTYPE STATUS: ⚠️ PARTIAL** — Supplier-facing Profile & Settings (personal info, organization, team members, security, notifications, API keys) is implemented. Admin-facing system config panel (fee table management, SLA thresholds, scheme parameters, user role assignments) is not yet built.
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — Admin Config screen (`screens-e.jsx`) is complete: Fee Structure (inline editing, SST flag), Iteration & SLA sliders, Workflow Config (role-tagging system — assign multiple roles per MCMC team member, designate a role lead, add/remove members per role, per-member and team-level performance drawers), AI Thresholds (Scheme C auto-accept / priority review band sliders), and Announcements (publish/retract). Supplier-facing Profile & Settings also fully implemented (personal info, organisation, team members, 2FA, notifications, API keys).
 
 #### Purpose
 Administrative interface for **System Administrators** to manage and configure operational parameters without code deployments.
@@ -1639,38 +1639,39 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 
 | Module / Feature | Status | What's Done | What Remains |
 |---|---|---|---|
-| **Login & Auth** | ✅ Done | Demo login screen, 3 account cards, role-based landing | Keycloak SSO, real password validation, 2FA enrollment, forgot-password |
-| **Supplier Onboarding** | ✅ Done | 6-step wizard; SSM auto-fill mock; AI validation checklist | Real SSM BizConnect call; email verification delivery |
-| **Profile & Settings** | ✅ Done | 6 tabs: personal, org, team, security, notifications, API | Admin system-config panel; real API key generation |
-| **Switch Profile / Sign Out** | ✅ Done | Switch Profile modal (3 cards); sign out returns to login | — |
-| **SDoC Registration** | ✅ Done | 7-step wizard; all 3 schemes; AI score; payment step | Iteration reply flow (applicant side); reclassification modal |
-| **Special Approval** | ⚠️ Partial | 6-step wizard; prohibited equipment extra docs | Multi-level routing (OIC→Recommender→Verifier→Approver); SA Letter draft/download; waiver codes |
+| **Login & Auth** | ✅ Done | Login screen with error states (wrong creds / account lock); 6 demo profiles; role-based landing; forgot-password 4-step flow | Keycloak SSO, real password validation |
+| **Supplier Onboarding** | ✅ Done | 6-step wizard; SSM auto-fill mock; Security Q&A (3 questions); expanded PDPA consent checkboxes; AI validation checklist | Real SSM BizConnect call; email verification delivery |
+| **Profile & Settings** | ✅ Done | 6 tabs: personal, org, team, security (with 2FA enrollment modals for TOTP/SMS/MyDigital ID), notifications, API | Real API key generation |
+| **Switch Profile / Sign Out** | ✅ Done | Switch Profile modal (6 role cards with MCMC org info); sign out → login | — |
+| **SDoC Registration** | ✅ Done | 7-step wizard; all 3 schemes; CA multi-select (8 agencies); AI score; payment step | Reclassification modal for prohibited; real payment gateway |
+| **Special Approval** | ✅ Done | 6-step wizard; prohibited equipment extra docs; waiver code input (WaiverCodeInput with mock validation); SA Letter multi-level approval chain | Real waiver code backend; real SA PDF |
 | **Certificate Renewal** | ✅ Done | 5-step wizard; document reuse logic; AI re-validation; payment | Automated renewal reminder trigger |
 | **IMEI / SN Registration** | ✅ Done | 4-step wizard; manual + CSV; format validation; receipt | Real uniqueness check against NCEF DB |
-| **Modification of Registration** | ❌ Not built | — | Request form, document re-upload, officer routing, approval/rejection |
-| **Importation Module** | ❌ Not built | — | Permit application form, Permit Type selector, RMCD MyOGA mock |
-| **Post-Market Surveillance (PMS)** | ❌ Not built | — | Audit case management, sampling plans, non-conformance reports |
-| **Post Monitoring / IntelliGenCE** | ❌ Not built | — | Knowledge base, complaint intake, AI web-crawl feed, blacklist mgmt |
-| **Compliance Status Management** | ❌ Not built | — | Status override controls, enforcement action logging, bulk updates |
-| **Public Search Portal** | ❌ Not built | — | Unauthenticated equipment/cert lookup by Brand/Model/IMEI/RCN |
+| **Modification of Registration** | ✅ Done | Request list; version history drawer; 4-step wizard (find cert → type → docs → review); officer split-panel with Accept/Not Accept (`screens-f.jsx`) | — |
+| **Importation Module** | ✅ Done | Import permit list; 6-step wizard (type → validate → trader/consignor → consignee/agent → logistics → review); CoA status; detail drawer (`screens-g.jsx`) | Real RMCD MyOGA call |
+| **Post-Market Surveillance (PMS)** | ✅ Done | AI audit cards with risk breakdown; sampling proposals; AI weights modal; notify-supplier modal; findings checklist with Pass/Fail/N/A; non-conformance records (`screens-h.jsx`) | Real PMS sampling triggers |
+| **Post Monitoring / IntelliGenCE** | ✅ Done (AI Crawl removed) | Complaints list with severity triage; detail panel with timeline; intake wizard; Knowledge Base (`screens-i.jsx`). AI Web Crawl intentionally removed. | — |
+| **Compliance Status Management** | ✅ Done | Suppliers tab with bulk-select; compliance timeline drawer; Change Status modal; Certificates tab; Enforcement Actions tab (`screens-j.jsx`) | Real status propagation to ESB |
+| **Public Search Portal** | ✅ Done | Bilingual hero; Advanced Search; certificate detail with QR; How-to-Register guide; Documents tab; FAQ; Contact tab; MINA public chatbot (`screens-k.jsx`) | — |
 | **Mobile Apps (Android/iOS/HW)** | 🚫 Out of scope | — | Native Flutter apps — production deliverable only |
 | **Officer Queue** | ✅ Done | My / Team / Unassigned tabs; assign modal; SLA circles; KPI row | — |
-| **Active Review (Officer)** | ✅ Done | Split view: doc viewer + decision panel; audit trail; access guard; TL Reassign | Real document rendering (PDF/image viewer is placeholder) |
+| **Active Review (Officer)** | ✅ Done | Split view: styled PDF viewer mockup (dark toolbar + page frame) + decision panel; audit trail; access guard; TL Reassign | Real PDF rendering |
 | **Suppliers Management** | ✅ Done | Add / bulk CSV / soft-delete / restore; MCMC-added flag | — |
 | **Reports & Analytics** | ✅ Done | Monthly trend chart; top applicants; officer performance (TL only) | Real data export (CSV/PDF); live chart data |
 | **Audit Log** | ✅ Done | Searchable, role-filtered, expandable rows (TL only) | Real immutable server-side log |
 | **Certificates List** | ✅ Done | Filter by status; detail drawer; renew/IMEI shortcuts | — |
-| **Payments & Invoices** | ⚠️ Partial | Payment method selection embedded in wizards; transaction history table | Standalone payment portal; real MCMC Pay gateway; refund/offset flow; SIFS reconciliation |
+| **Payments & Invoices** | ✅ Done | Transaction history; payment methods; Fee Offset & Refunds card (credit balance, pending refund, offset policy) | Standalone payment portal; real MCMC Pay gateway; SIFS reconciliation |
 | **Consultant Management** | ✅ Done | Link/unlink from directory; scheme assignment; notes | — |
 | **AI Score Display** | ✅ Done | Gauge / bar / verdict visualisations; 8 sub-scores; threshold commentary | Real Qwen2.5-VL API call; auto-accept routing |
-| **MINA Chatbot** | ⚠️ Partial | FAB button; drawer; mock Q&A conversation | Real LLM backend; live document Q&A |
-| **Notification Centre** | ⚠️ Partial | Preferences matrix in Profile; dashboard widget | Dedicated notifications page; real email/SMS/push delivery; in-app bell |
-| **Integrations** (SSM, MyDigital ID, SIRIM, RMCD, MCMC Pay, ESB) | ❌ Not built | All mocked in JS | Real API adapters for each system |
-| **Admin System Config** | ❌ Not built | — | Fee table management, SLA thresholds, scheme parameters |
+| **MINA Chatbot** | ✅ Done | Interactive drawer; 19-pair QA engine; typing indicator; quick-pick tags; live input with Enter-to-send | Real LLM backend |
+| **Notification Centre** | ✅ Done | Dedicated Notifications page with 4 tabs (All/Unread/Action/System); in-app bell dropdown (5 items); session timeout modal with 60-s countdown | Real email/SMS/push delivery |
+| **Workflow Config / Role Tagging** | ✅ Done | Role-based member management — assign multiple roles per MCMC officer; designate role lead; add/remove members per role; per-member performance drawer; team-level stats | — |
+| **MCMC Officer Profiles** | ✅ Done | All 5 MCMC profiles have division, department, grade, phone; 10-member roster in `mcmcTeamMembers`; `roleDefinitions` for Workflow Config | — |
+| **Integrations Health** | ✅ Done | Real-time health dashboard for 7 systems; latency, uptime %, status badge; architecture diagram (`screens-e.jsx`) | Real API adapter calls |
+| **Admin System Config** | ✅ Done | Fee Structure; Iteration & SLA sliders; Workflow Config (role tagging); AI Thresholds; Announcements (`screens-e.jsx`) | — |
 | **Data Migration** | 🚫 Not applicable | Mock data represents migrated records | ETL pipeline — production go-live concern only |
-| **Waiver Code Redemption** | ❌ Not built | — | Input field in SA wizard; validation against issued codes |
-| **Prohibited SA Letter** | ❌ Not built | — | Officer draft, multi-sig approval, publish/download flow |
-| **Iteration Reply (Applicant)** | ❌ Not built | — | Applicant receives iteration request, uploads revised docs, resubmits |
+| **Iteration Reply (Applicant)** | ✅ Done | 3-step wizard: review officer feedback → upload revisions → confirm/resubmit; "Respond" CTA on Applications list (`screens-l.jsx`) | — |
+| **Forgot Password** | ✅ Done | 4-step: email → OTP (auto-fill after 2.5s) → new password with strength bar → success; inline from Login screen (`screens-l.jsx`) | Real email OTP delivery |
 
 ### Key Mock Data (`data/mock.js`)
 
