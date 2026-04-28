@@ -1602,7 +1602,7 @@ AI scoring is applied to:
 
 > **Last updated: 28 Apr 2026**  
 > Deployment: `jhamuza.github.io/Project-N` — GitHub Pages, branch `main`.  
-> Recent changes: Full App shell restored in `index.html` (AssignOfficerModal, OfficerQueue, Reports, Audit, SwitchProfileModal, interactive MINA QA engine, notification bell dropdown, session timeout, MCMC logo sidebar, full header). GitHub Pages path fix (`<base href="/Project-N/">` + `.nojekyll`). MCMC user profile data corrected in Profile & Payments screens.
+> Recent changes: Full App shell restored in `index.html` (AssignOfficerModal, OfficerQueue, Reports, Audit, SwitchProfileModal, interactive MINA QA engine, notification bell dropdown, session timeout, MCMC logo sidebar, full header). GitHub Pages path fix (`<base href="/Project-N/">` + `.nojekyll`). MCMC user profile data corrected in Profile & Payments screens. **Plotly.js integration** (`plotly-2.35.2.min.js` CDN): replaced all SVG chart stubs in `SCREENS.reports` with 4 interactive Plotly charts — (1) grouped bar + overlay line for 12-month volume trend with forecast shading and Apr/May separator, (2) donut for scheme distribution with centre count, (3) horizontal bar for processing time vs target per scheme, (4) horizontal bar for officer SLA compliance with 95% target line. Mock data expanded: `monthlyTrend` extended to 12 months with `forecast` flag; new `schemeDistribution` and `processingTime` arrays; `officerPerformance` grown to 5 officers; `topApplicants` to 7 entries.
 
 This section maps the specification to the current prototype (`jhamuza/Project-N`).
 
