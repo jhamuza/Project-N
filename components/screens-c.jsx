@@ -181,7 +181,8 @@ function CertificateDetail({ cert, nav }) {
 }
 
 // ============ PAYMENTS ============
-SCREENS.payments = function Payments({ nav }) {
+SCREENS.payments = function Payments({ nav, currentUser }) {
+  const cu = currentUser || MOCK.profiles.supplier;
   const pays = MOCK.payments;
   const totalPaid = pays.filter(p => p.status === 'paid').reduce((a, b) => a + b.amount, 0);
   const pending = pays.filter(p => p.status === 'pending').reduce((a, b) => a + b.amount, 0);
@@ -270,11 +271,23 @@ SCREENS.payments = function Payments({ nav }) {
           </antd.Card>
           <antd.Card title="Billing Information" bordered style={{ marginTop: 16 }}>
             <div style={{ fontSize: 13, lineHeight: 1.6 }}>
-              <div style={{ fontWeight: 600 }}>Axiata Digital Sdn Bhd</div>
-              <div style={{ color: 'var(--color-text-secondary)' }}>Level 21, Axiata Tower<br />No. 9 Jalan Stesen Sentral 5<br />KL Sentral, 50470 Kuala Lumpur</div>
-              <antd.Divider style={{ margin: '12px 0' }} />
-              <div><antd.Typography.Text type="secondary">SST Number</antd.Typography.Text> W10-1808-32000123</div>
-              <div><antd.Typography.Text type="secondary">Billing Email</antd.Typography.Text> finance@axiatadigital.com.my</div>
+              {cu.role === 'supplier' ? (
+                <>
+                  <div style={{ fontWeight: 600 }}>Axiata Digital Sdn Bhd</div>
+                  <div style={{ color: 'var(--color-text-secondary)' }}>Level 21, Axiata Tower<br />No. 9 Jalan Stesen Sentral 5<br />KL Sentral, 50470 Kuala Lumpur</div>
+                  <antd.Divider style={{ margin: '12px 0' }} />
+                  <div><antd.Typography.Text type="secondary">SST Number </antd.Typography.Text>W10-1808-32000123</div>
+                  <div><antd.Typography.Text type="secondary">Billing Email </antd.Typography.Text>finance@axiatadigital.com.my</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontWeight: 600 }}>Malaysian Communications and Multimedia Commission (MCMC)</div>
+                  <div style={{ color: 'var(--color-text-secondary)' }}>MCMC Tower 1, Jalan Impact, Cyber 6<br />63000 Cyberjaya, Selangor</div>
+                  <antd.Divider style={{ margin: '12px 0' }} />
+                  <div><antd.Typography.Text type="secondary">Cost Centre </antd.Typography.Text>CPPG-CPQ-2026</div>
+                  <div><antd.Typography.Text type="secondary">Finance Email </antd.Typography.Text>finance@mcmc.gov.my</div>
+                </>
+              )}
             </div>
             <antd.Button type="link" icon={<EditOutlined />} style={{ padding: 0, marginTop: 8 }}>Edit</antd.Button>
           </antd.Card>
@@ -315,16 +328,18 @@ SCREENS.payments = function Payments({ nav }) {
 };
 
 // ============ PROFILE & SETTINGS ============
-SCREENS.profile = function Profile({ nav }) {
+SCREENS.profile = function Profile({ nav, currentUser }) {
+  const cu = currentUser || MOCK.profiles.supplier;
+  const isSupplier = cu.role === 'supplier';
   const [tab, setTab] = React.useState('profile');
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const tabs = [
-    { k: 'profile', t: 'My Profile', icon: <UserOutlined /> },
-    { k: 'organization', t: 'Organisation', icon: <ShopOutlined /> },
-    { k: 'team', t: 'Team Members', icon: <TeamOutlined /> },
-    { k: 'security', t: 'Security & Access', icon: <SafetyOutlined /> },
-    { k: 'notifications', t: 'Notifications', icon: <BellOutlined /> },
-    { k: 'api', t: 'API & Integrations', icon: <ApartmentOutlined /> },
+    { k: 'profile',      t: 'My Profile',       icon: <UserOutlined /> },
+    { k: 'organization', t: isSupplier ? 'Organisation' : 'MCMC Department', icon: <ShopOutlined /> },
+    ...(isSupplier ? [{ k: 'team', t: 'Team Members', icon: <TeamOutlined /> }] : []),
+    { k: 'security',      t: 'Security & Access',  icon: <SafetyOutlined /> },
+    { k: 'notifications', t: 'Notifications',       icon: <BellOutlined /> },
+    ...(isSupplier ? [{ k: 'api', t: 'API & Integrations', icon: <ApartmentOutlined /> }] : []),
   ];
 
   return (
@@ -347,12 +362,12 @@ SCREENS.profile = function Profile({ nav }) {
           </antd.Card>
         </antd.Col>
         <antd.Col xs={24} md={18}>
-          {tab === 'profile' && <ProfileTab />}
-          {tab === 'organization' && <OrgTab />}
-          {tab === 'team' && <TeamTab onInvite={() => setInviteOpen(true)} />}
+          {tab === 'profile' && <ProfileTab cu={cu} />}
+          {tab === 'organization' && <OrgTab cu={cu} />}
+          {tab === 'team' && isSupplier && <TeamTab onInvite={() => setInviteOpen(true)} />}
           {tab === 'security' && <SecurityTab />}
           {tab === 'notifications' && <NotifTab />}
-          {tab === 'api' && <ApiTab />}
+          {tab === 'api' && isSupplier && <ApiTab />}
         </antd.Col>
       </antd.Row>
 
@@ -361,38 +376,108 @@ SCREENS.profile = function Profile({ nav }) {
   );
 };
 
-function ProfileTab() {
+function ProfileTab({ cu }) {
+  const isSupplier = cu.role === 'supplier';
+  const roleAccentColor = { supplier: 'var(--color-primary)', 'team-lead': '#7B3FA0', officer: '#0F6ABF', recommender: '#2E7D32', verifier: '#E65100', approver: '#B71C1C' };
+  const accentColor = roleAccentColor[cu.role] || 'var(--color-primary)';
+  const roleTagColor = { supplier: 'blue', 'team-lead': 'purple', officer: 'blue', recommender: 'green', verifier: 'orange', approver: 'red' };
+
+  const supplierDescItems = [
+    { key: '1', label: 'Full Name', children: cu.name },
+    { key: '2', label: 'Email', children: <span><MailOutlined style={{ marginRight: 6 }} />{cu.email}</span> },
+    { key: '3', label: 'Phone', children: <span><PhoneOutlined style={{ marginRight: 6 }} />+60 12-345 6789</span> },
+    { key: '4', label: 'NRIC', children: '880512-14-5678' },
+    { key: '5', label: 'Position', children: 'Head of Regulatory Compliance' },
+    { key: '6', label: 'Department', children: 'Product Certification' },
+    { key: '7', label: 'Language', children: 'English (primary) · Bahasa Malaysia' },
+    { key: '8', label: 'Time Zone', children: 'Asia/Kuala_Lumpur (GMT+8)' },
+  ];
+  const mcmcDescItems = [
+    { key: '1', label: 'Full Name', children: cu.name },
+    { key: '2', label: 'Email', children: <span><MailOutlined style={{ marginRight: 6 }} />{cu.email}</span> },
+    { key: '3', label: 'Phone', children: <span><PhoneOutlined style={{ marginRight: 6 }} />{cu.phone || '+603-8688 8000'}</span> },
+    { key: '4', label: 'Officer ID', children: <antd.Typography.Text code>{cu.id}</antd.Typography.Text> },
+    { key: '5', label: 'Grade', children: cu.grade || '—' },
+    { key: '6', label: 'Division', children: cu.division || 'Consumer & Product Permit Group (CPPG)' },
+    { key: '7', label: 'Department', children: cu.department || '—' },
+    { key: '8', label: 'Organisation', children: 'Malaysian Communications and Multimedia Commission (MCMC)' },
+    { key: '9', label: 'Language', children: 'Bahasa Malaysia (primary) · English' },
+    { key: '10', label: 'Time Zone', children: 'Asia/Kuala_Lumpur (GMT+8)' },
+  ];
+
   return (
     <antd.Card title="My Profile" bordered extra={<antd.Button icon={<EditOutlined />}>Edit</antd.Button>}>
       <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 24 }}>
-        <antd.Avatar size={72} style={{ background: 'var(--color-primary)', fontSize: 28 }}>NA</antd.Avatar>
+        <antd.Avatar size={72} style={{ background: accentColor, fontSize: 28, fontWeight: 700 }}>{cu.initials}</antd.Avatar>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 600 }}>Nurul Aisyah binti Ahmad</div>
+          <div style={{ fontSize: 20, fontWeight: 600 }}>{cu.name}</div>
           <antd.Space size={8} style={{ marginTop: 4 }}>
-            <antd.Tag color="blue" icon={<SafetyOutlined />}>Administrator</antd.Tag>
+            <antd.Tag color={roleTagColor[cu.role] || 'blue'} icon={<SafetyOutlined />}>{cu.title}</antd.Tag>
             <antd.Tag icon={<CheckCircleOutlined />} color="green">Verified</antd.Tag>
           </antd.Space>
-          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 6 }}>Member since 15 Jan 2024 · Last login 2 hours ago from Kuala Lumpur</div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 6 }}>
+            {isSupplier ? 'Member since 15 Jan 2024' : `${cu.org || 'MCMC'}`} · Last login 2 hours ago from Kuala Lumpur
+          </div>
         </div>
         <div style={{ marginLeft: 'auto' }}>
           <antd.Button icon={<UploadOutlined />}>Change avatar</antd.Button>
         </div>
       </div>
-      <antd.Descriptions bordered column={2} size="middle" items={[
-        { key: '1', label: 'Full Name', children: 'Nurul Aisyah binti Ahmad' },
-        { key: '2', label: 'Email', children: <span><MailOutlined style={{ marginRight: 6 }} />nurul.aisyah@axiatadigital.com.my</span> },
-        { key: '3', label: 'Phone', children: <span><PhoneOutlined style={{ marginRight: 6 }} />+60 12-345 6789</span> },
-        { key: '4', label: 'NRIC', children: '880512-14-5678' },
-        { key: '5', label: 'Position', children: 'Head of Regulatory Compliance' },
-        { key: '6', label: 'Department', children: 'Product Certification' },
-        { key: '7', label: 'Language', children: 'English (primary) · Bahasa Malaysia' },
-        { key: '8', label: 'Time Zone', children: 'Asia/Kuala_Lumpur (GMT+8)' },
-      ]} />
+      <antd.Descriptions bordered column={2} size="middle" items={isSupplier ? supplierDescItems : mcmcDescItems} />
     </antd.Card>
   );
 }
 
-function OrgTab() {
+function OrgTab({ cu }) {
+  const isSupplier = cu.role === 'supplier';
+
+  if (!isSupplier) {
+    // MCMC officer — show department/division card
+    return (
+      <antd.Card title="MCMC Department" bordered>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '12px 0 20px', borderBottom: '1px solid var(--color-divider)', marginBottom: 20 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 12, background: '#E3F2FD', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', fontWeight: 700, fontSize: 18, textAlign: 'center', lineHeight: 1.2 }}>MCMC</div>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 600 }}>Malaysian Communications and Multimedia Commission</div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Suruhanjaya Komunikasi dan Multimedia Malaysia</div>
+            <antd.Space style={{ marginTop: 6 }}>
+              <antd.Tag color="blue">{cu.division || 'Consumer & Product Permit Group (CPPG)'}</antd.Tag>
+              <antd.Tag icon={<CheckCircleOutlined />} color="green">Government Agency</antd.Tag>
+            </antd.Space>
+          </div>
+        </div>
+        <antd.Descriptions bordered column={2} size="middle" items={[
+          { key: '1', label: 'Organisation',     children: 'Malaysian Communications and Multimedia Commission (MCMC)' },
+          { key: '2', label: 'Division',          children: cu.division || 'Consumer & Product Permit Group (CPPG)' },
+          { key: '3', label: 'Department',        children: cu.department || '—' },
+          { key: '4', label: 'Officer Grade',     children: cu.grade || '—' },
+          { key: '5', label: 'Team',              children: cu.team || '—' },
+          { key: '6', label: 'Direct Line',       children: cu.phone || '+603-8688 8000' },
+          { key: '7', label: 'HQ Address', span: 2, children: 'MCMC Tower 1, Jalan Impact, Cyber 6, 63000 Cyberjaya, Selangor' },
+          { key: '8', label: 'General Email',     children: 'ncef@mcmc.gov.my' },
+          { key: '9', label: 'Website',           children: <a href="#" target="_blank">www.mcmc.gov.my</a> },
+        ]} />
+        <antd.Divider orientation="left" orientationMargin={0}>Official References</antd.Divider>
+        <antd.List
+          size="small"
+          dataSource={[
+            { f: 'NCEF_Officer_Appointment_Letter.pdf', t: 'Appointment Letter', s: '0.6 MB', v: true },
+            { f: 'MCMC_Authority_Card.pdf',             t: 'Authority Card (Kad Kuasa)', s: '0.3 MB', v: true },
+          ]}
+          renderItem={d => (
+            <antd.List.Item actions={[<antd.Button size="small" icon={<DownloadOutlined />} />]}>
+              <antd.List.Item.Meta
+                avatar={<FilePdfOutlined style={{ fontSize: 20, color: 'var(--color-danger)' }} />}
+                title={<antd.Space>{d.t}{d.v && <antd.Tag color="green" style={{ fontSize: 10 }}>Verified</antd.Tag>}</antd.Space>}
+                description={<antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>{d.f} · {d.s}</antd.Typography.Text>}
+              />
+            </antd.List.Item>
+          )}
+        />
+      </antd.Card>
+    );
+  }
+
   return (
     <antd.Card title="Organisation" bordered extra={<antd.Button icon={<EditOutlined />}>Edit</antd.Button>}>
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '12px 0 20px', borderBottom: '1px solid var(--color-divider)', marginBottom: 20 }}>
