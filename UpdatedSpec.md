@@ -1600,6 +1600,10 @@ AI scoring is applied to:
 
 ## 11. Prototype Mapping
 
+> **Last updated: 28 Apr 2026**  
+> Deployment: `jhamuza.github.io/Project-N` — GitHub Pages, branch `main`.  
+> Recent changes: Full App shell restored in `index.html` (AssignOfficerModal, OfficerQueue, Reports, Audit, SwitchProfileModal, interactive MINA QA engine, notification bell dropdown, session timeout, MCMC logo sidebar, full header). GitHub Pages path fix (`<base href="/Project-N/">` + `.nojekyll`). MCMC user profile data corrected in Profile & Payments screens.
+
 This section maps the specification to the current prototype (`jhamuza/Project-N`).
 
 ### Role Mapping
@@ -1677,7 +1681,7 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 
 | Key | Description |
 |---|---|
-| `MOCK.profiles` | Three demo profiles (`supplier`, `team-lead`, `officer`) |
+| `MOCK.profiles` | Six demo profiles (`supplier`, `team-lead`, `officer`, `recommender`, `verifier`, `approver`) |
 | `MOCK.officerQueue` | Applications in queue; `assignedTo` uses real officer IDs (`OFF-001`, `OFF-002`, `null`) |
 | `MOCK.supplierDirectory` | Registered suppliers with `addedBy`, `verifiedAt`, `deletedAt` (soft-delete) |
 | `MOCK.consultantDirectory` | Category D consultants available for linking |
