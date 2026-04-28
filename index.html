@@ -24,9 +24,21 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
 <script src="data/mock.js"></script>
+
+<style>
+  body { margin: 0; font-family: var(--font-family); }
+  #loading { display: flex; align-items: center; justify-content: center; height: 100vh; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto; }
+  .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0B4F91; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .error-message { color: #d32f2f; padding: 20px; text-align: center; font-size: 14px; }
+</style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root">
+  <div id="loading">
+    <div class="spinner"></div>
+  </div>
+</div>
 
 <script type="text/babel" src="components/shared.jsx"></script>
 <script type="text/babel" src="components/screens-a.jsx"></script>
@@ -143,654 +155,55 @@ const NAV_BY_ROLE = { supplier: NAV_SUPPLIER, 'team-lead': NAV_TEAM_LEAD, office
 const DEFAULT_SCREEN_BY_ROLE = { supplier: 'dashboard', 'team-lead': 'officer-queue', officer: 'officer-queue', recommender: 'officer-queue', verifier: 'officer-queue', approver: 'officer-queue' };
 
 // Shared officer-roster picker used by both Assign (TL) on unassigned rows
-// and Reassign (TL) on Active Review.
-function AssignOfficerModal({ open, onClose, onAssign, applicationId, currentAssigneeId }) {
-  const officers = MOCK.officerPerformance;
-  const [pick, setPick] = React.useState(currentAssigneeId || null);
-  React.useEffect(() => { if (open) setPick(currentAssigneeId || null); }, [open, currentAssigneeId]);
-
+const OfficerRosterPicker = ({ onSelect, onCancel }) => {
+  const [search, setSearch] = React.useState('');
+  const officers = MOCK_OFFICERS.filter(o => o.name.toLowerCase().includes(search.toLowerCase()));
   return (
-    <antd.Modal
-      open={open}
-      onCancel={onClose}
-      title={currentAssigneeId ? 'Reassign application' : 'Assign application'}
-      width={520}
-      okText={currentAssigneeId ? 'Reassign' : 'Assign'}
-      okButtonProps={{ disabled: !pick || pick === currentAssigneeId }}
-      onOk={() => { onAssign(pick); onClose(); }}
-    >
-      <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--color-text-secondary)' }}>
-        Application <antd.Typography.Text code>{applicationId}</antd.Typography.Text>{' '}
-        — select a CPPG officer from team <antd.Tag>CPPG-TL-01</antd.Tag>
-      </div>
-      <div style={{ display: 'grid', gap: 8 }}>
-        {officers.map(o => {
-          const isPicked = pick === o.id;
-          const roleBadge = o.role === 'team-lead'
-            ? <antd.Tag color="purple" icon={<CrownOutlined />}>Team Lead</antd.Tag>
-            : <antd.Tag>Officer</antd.Tag>;
-          return (
-            <div
-              key={o.id}
-              onClick={() => setPick(o.id)}
-              style={{
-                padding: 12,
-                border: `1.5px solid ${isPicked ? 'var(--color-primary)' : 'var(--color-border, #E5E7EB)'}`,
-                borderRadius: 10,
-                cursor: 'pointer',
-                background: isPicked ? 'rgba(11,79,145,0.04)' : '#fff',
-                display: 'flex', alignItems: 'center', gap: 12,
-              }}
-            >
-              <antd.Avatar style={{ background: o.role === 'team-lead' ? '#7B3FA0' : 'var(--color-primary)' }}>
-                {o.name.split(' ').slice(-1)[0].slice(0, 2).toUpperCase()}
-              </antd.Avatar>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {o.name} {roleBadge}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-                  {o.id} · SLA {o.slaCompliance}% · {o.approved} approved · avg {o.avgTurnaround}h turnaround
-                </div>
-              </div>
-              {isPicked && <CheckCircleOutlined style={{ color: 'var(--color-primary)', fontSize: 18 }} />}
-            </div>
-          );
-        })}
-      </div>
+    <antd.Modal open onCancel={onCancel} title="Assign to Officer" footer={null} width={500}>
+      <Input.Search placeholder="Search officers..." onChange={e => setSearch(e.target.value)} style={{ marginBottom: 16 }} />
+      <antd.List dataSource={officers} renderItem={o => (
+        <antd.List.Item style={{ cursor: 'pointer' }} onClick={() => { onSelect(o); onCancel(); }}>
+          <antd.List.Item.Meta avatar={<Avatar>{o.name[0]}</Avatar>} title={o.name} description={o.role} />
+        </antd.List.Item>
+      )} />
     </antd.Modal>
-  );
-}
-// Expose for use by Active Review in screens-b.jsx
-window.AssignOfficerModal = AssignOfficerModal;
-
-function OfficerQueue({ nav, currentUser }) {
-  const isLead = currentUser?.role === 'team-lead';
-  const myId = currentUser?.id;
-  const officerById = React.useMemo(() => {
-    const m = {};
-    MOCK.officerPerformance.forEach(o => { m[o.id] = o; });
-    return m;
-  }, []);
-  // Local assignment overrides so Team Lead can see immediate effect of Assign/Reassign
-  const [overrides, setOverrides] = React.useState({});
-  const resolved = React.useMemo(
-    () => MOCK.officerQueue.map(r => ({ ...r, assignedTo: overrides[r.id] ?? r.assignedTo })),
-    [overrides]
-  );
-  const myCount = resolved.filter(x => x.assignedTo === myId).length;
-  const teamCount = resolved.length;
-  const unassignedCount = resolved.filter(x => x.assignedTo == null).length;
-
-  const [filter, setFilter] = React.useState(isLead ? 'mine' : 'mine');
-  const [assignOpen, setAssignOpen] = React.useState(false);
-  const [assignTarget, setAssignTarget] = React.useState(null);
-
-  let list;
-  if (isLead) {
-    if (filter === 'mine') list = resolved.filter(x => x.assignedTo === myId);
-    else if (filter === 'team') list = resolved.filter(x => x.assignedTo != null);
-    else if (filter === 'unassigned') list = resolved.filter(x => x.assignedTo == null);
-    else list = resolved;
-  } else {
-    list = resolved.filter(x => x.assignedTo === myId);
-  }
-
-  const myPerf = officerById[myId];
-  const kpis = isLead
-    ? [
-        { l: 'In My Queue', v: myCount, d: `${myCount ? '1 urgent' : 'All clear'} (SLA < 12h)`, warn: myCount > 0 },
-        { l: 'Team Pending', v: teamCount, d: `${unassignedCount} unassigned`, color: unassignedCount > 0 ? 'var(--color-warning)' : 'inherit' },
-        { l: 'Approved Today (Team)', v: 8, d: 'Avg turnaround 4.2 hrs', color: 'var(--color-success)' },
-        { l: 'Team SLA Compliance', v: '96%', d: 'Monthly target 95%', color: 'var(--color-success)' },
-      ]
-    : [
-        { l: 'Assigned to Me', v: myCount, d: `${myCount ? '1 urgent (SLA < 24h)' : 'All clear'}`, warn: myCount > 0 },
-        { l: 'Approved This Week', v: Math.round((myPerf?.approved || 0) / 8), d: `${myPerf?.approved || 0} lifetime approvals`, color: 'var(--color-success)' },
-        { l: 'My Avg Turnaround', v: `${myPerf?.avgTurnaround || 0}h`, d: 'Team avg 4.6h' },
-        { l: 'My SLA Compliance', v: `${myPerf?.slaCompliance || 0}%`, d: 'Monthly target 95%', color: (myPerf?.slaCompliance || 0) >= 95 ? 'var(--color-success)' : 'var(--color-warning)' },
-      ];
-
-  return (
-    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
-      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>
-        {currentUser?.title || 'CPPG Officer'} · {currentUser?.name || ''}
-      </div>
-      <antd.Typography.Title level={3} style={{ margin: '4px 0 20px' }}>
-        {isLead ? 'Review Queue · Team View' : 'My Review Queue'}
-      </antd.Typography.Title>
-
-      <antd.Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-        {kpis.map((k, i) => (
-          <antd.Col xs={12} md={6} key={i}>
-            <div className="kpi-card">
-              <div className="kpi-label">{k.l}</div>
-              <div className="kpi-value" style={{ color: k.warn ? 'var(--color-warning)' : k.color || 'inherit' }}>{k.v}</div>
-              <div className="kpi-delta">{k.d}</div>
-            </div>
-          </antd.Col>
-        ))}
-      </antd.Row>
-
-      <antd.Card bordered>
-        {isLead && (
-          <antd.Segmented
-            value={filter}
-            onChange={setFilter}
-            options={[
-              { label: `My queue (${myCount})`, value: 'mine' },
-              { label: `Team queue (${teamCount - unassignedCount})`, value: 'team' },
-              { label: `Unassigned (${unassignedCount})`, value: 'unassigned' },
-            ]}
-            style={{ marginBottom: 16 }}
-          />
-        )}
-        {!isLead && (
-          <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--color-text-secondary)' }}>
-            Showing <b>{myCount}</b> applications assigned to you. Need help? Ask your Team Lead to reassign.
-          </div>
-        )}
-        <antd.Table
-          rowKey="id"
-          dataSource={list}
-          pagination={false}
-          onRow={row => ({
-            onClick: (e) => {
-              // Don't navigate when clicking the Assign button
-              if (e.target.closest('.assign-btn')) return;
-              nav('officer-review');
-            },
-            style: { cursor: 'pointer' },
-          })}
-          columns={[
-            { title: 'App ID', dataIndex: 'id', render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
-            { title: 'Scheme', dataIndex: 'scheme', render: s => <SchemeBadge scheme={s} /> },
-            { title: 'Applicant', dataIndex: 'applicant' },
-            { title: 'Product', dataIndex: 'product' },
-            { title: 'AI Score', dataIndex: 'aiScore', render: s => <antd.Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{s}</antd.Tag> },
-            { title: 'Priority', dataIndex: 'priority', render: p => <antd.Tag color={p === 'high' ? 'red' : p === 'low' ? 'default' : 'blue'}>{p}</antd.Tag> },
-            { title: 'SLA', dataIndex: 'slaHours', render: h => <antd.Tag color={h < 12 ? 'red' : h < 24 ? 'orange' : 'default'}>{h}h left</antd.Tag> },
-            ...(isLead ? [{
-              title: 'Assigned',
-              dataIndex: 'assignedTo',
-              render: (id, row) => id
-                ? <antd.Tooltip title={officerById[id]?.name}><antd.Tag>{officerById[id]?.name?.split(' ').slice(-1)[0] || id}</antd.Tag></antd.Tooltip>
-                : (
-                  <antd.Button
-                    className="assign-btn"
-                    size="small"
-                    type="primary"
-                    icon={<TeamOutlined />}
-                    onClick={(e) => { e.stopPropagation(); setAssignTarget(row.id); setAssignOpen(true); }}
-                  >Assign…</antd.Button>
-                ),
-            }] : []),
-            { title: 'Submitted', dataIndex: 'submitted', render: v => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) },
-          ]}
-        />
-      </antd.Card>
-
-      {isLead && (
-        <AssignOfficerModal
-          open={assignOpen}
-          onClose={() => setAssignOpen(false)}
-          applicationId={assignTarget}
-          currentAssigneeId={assignTarget ? resolved.find(r => r.id === assignTarget)?.assignedTo : null}
-          onAssign={(officerId) => {
-            setOverrides(prev => ({ ...prev, [assignTarget]: officerId }));
-            antd.message.success(`Assigned ${assignTarget} to ${officerById[officerId]?.name}`);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-SCREENS['officer-queue'] = OfficerQueue;
-
-// ============ REPORTS & ANALYTICS ============
-SCREENS.reports = function Reports({ nav, currentUser }) {
-  if (currentUser?.role === 'officer') {
-    return (
-      <antd.Result
-        status="403"
-        icon={<LockOutlined style={{ color: 'var(--color-warning)' }} />}
-        title="Restricted — Team Leads only"
-        subTitle="Reports & Analytics is available to CPPG Team Leads. Contact your Team Lead for a shared summary."
-        extra={<antd.Button type="primary" onClick={() => nav('officer-queue')}>Back to My Queue</antd.Button>}
-        style={{ padding: '80px 24px' }}
-      />
-    );
-  }
-  const [period, setPeriod] = React.useState('month');
-  const trend = MOCK.monthlyTrend;
-  const totalSubmitted = trend.reduce((a, b) => a + b.submitted, 0);
-  const totalApproved  = trend.reduce((a, b) => a + b.approved, 0);
-  const totalAutoAccept = trend.reduce((a, b) => a + b.aiAutoAccepted, 0);
-  const approvalRate = Math.round(totalApproved / totalSubmitted * 100);
-  const maxSubmitted = Math.max(...trend.map(d => d.submitted));
-
-  // Inline SVG bar chart — no external dependency needed
-  const BAR_W = 48, BAR_GAP = 24, PAD = 40, HEIGHT = 160;
-  const chartW = trend.length * (BAR_W + BAR_GAP) + PAD;
-  const barColor = { submitted: 'var(--color-primary)', approved: 'var(--color-success)', aiAutoAccepted: 'var(--color-info)' };
-
-  function Bars({ key, color, yOffset = 0 }) {
-    return trend.map((d, i) => {
-      const h = Math.round((d[key] / maxSubmitted) * HEIGHT);
-      const x = PAD + i * (BAR_W + BAR_GAP);
-      const y = HEIGHT - h + yOffset;
-      return <rect key={i} x={x} y={y} width={BAR_W} height={h} rx={4} fill={color} opacity={0.85} />;
-    });
-  }
-
-  return (
-    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
-        <div>
-          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Officer · CPPG</div>
-          <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Reports & Analytics</antd.Typography.Title>
-          <antd.Typography.Text type="secondary">MCMC NCEF · Certification performance · YTD 2026</antd.Typography.Text>
-        </div>
-        <antd.Space>
-          <antd.Segmented value={period} onChange={setPeriod} options={[{ label: 'This Month', value: 'month' }, { label: 'Last 3M', value: '3m' }, { label: 'YTD', value: 'ytd' }]} />
-          <antd.Button icon={<DownloadOutlined />}>Export PDF</antd.Button>
-        </antd.Space>
-      </div>
-
-      {/* KPI row */}
-      <antd.Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        {[
-          { l: 'Applications YTD', v: totalSubmitted, d: '+18% vs same period last year', color: 'var(--color-primary)' },
-          { l: 'Approval Rate', v: `${approvalRate}%`, d: `${totalApproved} approved of ${totalSubmitted}`, color: 'var(--color-success)' },
-          { l: 'AI Auto-Accepted', v: totalAutoAccept, d: `${Math.round(totalAutoAccept/totalApproved*100)}% of approvals (≥90 threshold)`, color: 'var(--color-info)' },
-          { l: 'SLA Compliance', v: '95.3%', d: 'Team target: 95% · On track', color: 'var(--color-success)' },
-        ].map((k, i) => (
-          <antd.Col xs={12} md={6} key={i}>
-            <div className="kpi-card">
-              <div className="kpi-label">{k.l}</div>
-              <div className="kpi-value" style={{ color: k.color }}>{k.v}</div>
-              <div className="kpi-delta">{k.d}</div>
-            </div>
-          </antd.Col>
-        ))}
-      </antd.Row>
-
-      <antd.Row gutter={[16, 16]}>
-        {/* Bar chart */}
-        <antd.Col xs={24} lg={16}>
-          <antd.Card title="Application Volume Trend" bordered extra={
-            <antd.Space size={16}>
-              {[['Submitted','var(--color-primary)'],['Approved','var(--color-success)'],['AI Auto-Accept','var(--color-info)']].map(([l,c]) => (
-                <antd.Space key={l} size={6}><span style={{ width: 10, height: 10, borderRadius: 2, background: c, display: 'inline-block' }} /><span style={{ fontSize: 12 }}>{l}</span></antd.Space>
-              ))}
-            </antd.Space>
-          }>
-            <svg width="100%" viewBox={`0 0 ${chartW} ${HEIGHT + 50}`} style={{ overflow: 'visible' }}>
-              {/* Y axis lines */}
-              {[0, 25, 50, 75, 100].map(pct => {
-                const y = HEIGHT - (pct / 100) * HEIGHT;
-                const val = Math.round((pct / 100) * maxSubmitted);
-                return <g key={pct}>
-                  <line x1={PAD} y1={y} x2={chartW} y2={y} stroke="var(--color-divider)" strokeWidth={1} />
-                  <text x={PAD - 6} y={y + 4} textAnchor="end" fontSize={10} fill="var(--color-text-muted)">{val}</text>
-                </g>;
-              })}
-              {/* Submitted bars (back) */}
-              {Bars({ key: 'submitted', color: 'var(--color-primary)' })}
-              {/* Approved bars (middle) */}
-              {trend.map((d, i) => {
-                const h = Math.round((d.approved / maxSubmitted) * HEIGHT);
-                const x = PAD + i * (BAR_W + BAR_GAP) + 4;
-                const y = HEIGHT - h;
-                return <rect key={i} x={x} y={y} width={BAR_W - 8} height={h} rx={3} fill="var(--color-success)" opacity={0.85} />;
-              })}
-              {/* AI auto-accept dots */}
-              {trend.map((d, i) => {
-                const h = Math.round((d.aiAutoAccepted / maxSubmitted) * HEIGHT);
-                const cx = PAD + i * (BAR_W + BAR_GAP) + BAR_W / 2;
-                const cy = HEIGHT - h - 8;
-                return <circle key={i} cx={cx} cy={cy} r={5} fill="var(--color-info)" />;
-              })}
-              {/* Month labels */}
-              {trend.map((d, i) => (
-                <text key={i} x={PAD + i * (BAR_W + BAR_GAP) + BAR_W / 2} y={HEIGHT + 20} textAnchor="middle" fontSize={12} fontWeight={600} fill="var(--color-text-secondary)">{d.month}</text>
-              ))}
-            </svg>
-          </antd.Card>
-
-          {/* Top applicants */}
-          <antd.Card title="Top Applicants by Volume" bordered style={{ marginTop: 16 }}>
-            <antd.Table
-              rowKey="id"
-              dataSource={MOCK.topApplicants}
-              pagination={false}
-              size="small"
-              columns={[
-                { title: 'Company', dataIndex: 'name', render: (v, r) => <div><div style={{ fontWeight: 600 }}>{v}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.id}</div></div> },
-                { title: 'Submitted', dataIndex: 'submissions', align: 'center', render: v => <antd.Tag>{v}</antd.Tag> },
-                { title: 'Approved', dataIndex: 'approved', align: 'center', render: v => <antd.Tag color="green">{v}</antd.Tag> },
-                { title: 'Approval Rate', align: 'center', render: (_, r) => {
-                  const pct = Math.round(r.approved / r.submissions * 100);
-                  return <antd.Progress percent={pct} size="small" strokeColor={pct >= 90 ? 'var(--color-success)' : pct >= 70 ? 'var(--color-warning)' : 'var(--color-danger)'} style={{ width: 100 }} />;
-                }},
-                { title: 'Avg AI Score', dataIndex: 'aiAvg', align: 'center', render: v => <antd.Tag color={v >= 90 ? 'green' : v >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{v}</antd.Tag> },
-              ]}
-            />
-          </antd.Card>
-        </antd.Col>
-
-        {/* Right column */}
-        <antd.Col xs={24} lg={8}>
-          {/* AI score distribution */}
-          <antd.Card title="AI Score Distribution" bordered style={{ marginBottom: 16 }}>
-            {[
-              { label: 'Auto-Accept (≥90)', count: totalAutoAccept, pct: Math.round(totalAutoAccept/totalApproved*100), color: 'var(--color-success)' },
-              { label: 'Priority Review (70–89)', count: totalApproved - totalAutoAccept - Math.round(totalApproved*0.08), pct: Math.round((totalApproved - totalAutoAccept - Math.round(totalApproved*0.08))/totalApproved*100), color: 'var(--color-warning)' },
-              { label: 'Standard Review (<70)', count: Math.round(totalApproved*0.08), pct: 8, color: 'var(--color-danger)' },
-            ].map((band, i) => (
-              <div key={i} style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: band.color }}>{band.label}</span>
-                  <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{band.count} apps ({band.pct}%)</span>
-                </div>
-                <div style={{ height: 8, background: 'var(--color-bg-subtle)', borderRadius: 999, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${band.pct}%`, background: band.color, borderRadius: 999, transition: 'width .8s' }} />
-                </div>
-              </div>
-            ))}
-            <antd.Divider style={{ margin: '12px 0' }} />
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
-              AI confidence scoring powered by <b>Qwen2.5-VL</b>. Threshold: 70 priority, 90 auto-accept (Scheme C).
-            </div>
-          </antd.Card>
-
-          {/* Officer performance */}
-          <antd.Card title="Officer Performance" bordered>
-            {MOCK.officerPerformance.map((o, i) => (
-              <div key={i} style={{ padding: '12px 0', borderBottom: i < MOCK.officerPerformance.length - 1 ? '1px solid var(--color-divider)' : 'none' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{o.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{o.id} · {o.approved + o.rejected} decisions</div>
-                  </div>
-                  <antd.Tag color={o.slaCompliance >= 95 ? 'green' : o.slaCompliance >= 90 ? 'orange' : 'red'}>{o.slaCompliance}% SLA</antd.Tag>
-                </div>
-                <antd.Row gutter={8}>
-                  {[
-                    { l: 'Approved', v: o.approved, c: 'var(--color-success)' },
-                    { l: 'Rejected', v: o.rejected, c: 'var(--color-danger)' },
-                    { l: 'Avg hrs', v: o.avgTurnaround, c: 'var(--color-primary)' },
-                    { l: 'AI overrides', v: o.aiOverrides, c: 'var(--color-warning)' },
-                  ].map((s, j) => (
-                    <antd.Col span={6} key={j}>
-                      <div style={{ textAlign: 'center', padding: '6px 4px', background: 'var(--color-bg-subtle)', borderRadius: 6 }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: s.c }}>{s.v}</div>
-                        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>{s.l}</div>
-                      </div>
-                    </antd.Col>
-                  ))}
-                </antd.Row>
-              </div>
-            ))}
-          </antd.Card>
-        </antd.Col>
-      </antd.Row>
-    </div>
   );
 };
 
-// ============ AUDIT LOG ============
-SCREENS.audit = function AuditLog({ nav, currentUser }) {
-  if (currentUser?.role === 'officer') {
-    return (
-      <antd.Result
-        status="403"
-        icon={<LockOutlined style={{ color: 'var(--color-warning)' }} />}
-        title="Restricted — Team Leads only"
-        subTitle="The Audit Log is restricted to CPPG Team Leads for compliance reasons."
-        extra={<antd.Button type="primary" onClick={() => nav('officer-queue')}>Back to My Queue</antd.Button>}
-        style={{ padding: '80px 24px' }}
-      />
-    );
-  }
-  const [actorFilter, setActorFilter] = React.useState('all');
-  const [eventFilter, setEventFilter] = React.useState([]);
-  const [q, setQ] = React.useState('');
-  const [expanded, setExpanded] = React.useState(null);
+// Screen registry
+const SCREENS = {};
+const SUPPLIER_ONLY = new Set(['dashboard', 'applications', 'sdoc-wizard', 'special-approval', 'modification', 'importation', 'certificates', 'imei-register', 'payments', 'consultants', 'onboarding']);
 
-  const eventTypes = [...new Set(MOCK.auditLog.map(e => e.event))];
-  const actorRoles = ['Officer', 'Supplier', 'System'];
-
-  const filtered = MOCK.auditLog.filter(e => {
-    if (actorFilter !== 'all' && e.actorRole !== actorFilter) return false;
-    if (eventFilter.length && !eventFilter.includes(e.event)) return false;
-    if (q && !(e.actor + e.event + (e.appId || '') + e.detail).toLowerCase().includes(q.toLowerCase())) return false;
-    return true;
-  });
-
-  const roleColor = { Officer: 'blue', Supplier: 'cyan', System: 'purple' };
-  const eventIcon = (ev) => {
-    if (ev.includes('Login')) return <UserOutlined />;
-    if (ev.includes('Submitted')) return <UploadOutlined />;
-    if (ev.includes('Approved') || ev.includes('Issued')) return <CheckCircleOutlined />;
-    if (ev.includes('Rejected')) return <CloseCircleOutlined />;
-    if (ev.includes('Iteration')) return <WarningOutlined />;
-    if (ev.includes('Payment')) return <CreditCardOutlined />;
-    if (ev.includes('AI')) return <RobotOutlined />;
-    if (ev.includes('Export')) return <DownloadOutlined />;
-    return <InfoCircleOutlined />;
-  };
-
-  return (
-    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
-        <div>
-          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>System</div>
-          <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Audit Log</antd.Typography.Title>
-          <antd.Typography.Text type="secondary">All system events · PDPA-compliant · Retained 7 years</antd.Typography.Text>
-        </div>
-        <antd.Space>
-          <antd.Button icon={<DownloadOutlined />}>Export CSV</antd.Button>
-        </antd.Space>
-      </div>
-
-      {/* Filters */}
-      <antd.Card bordered style={{ marginBottom: 16 }}>
-        <antd.Row gutter={[12, 12]} align="middle">
-          <antd.Col flex="auto">
-            <antd.Input placeholder="Search actor, event, application ID, detail…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />} value={q} onChange={e => setQ(e.target.value)} />
-          </antd.Col>
-          <antd.Col>
-            <antd.Segmented
-              value={actorFilter}
-              onChange={setActorFilter}
-              options={[{ label: 'All Actors', value: 'all' }, ...actorRoles.map(r => ({ label: r, value: r }))]}
-            />
-          </antd.Col>
-          <antd.Col>
-            <antd.Select
-              mode="multiple"
-              placeholder="Filter by event type"
-              style={{ minWidth: 220 }}
-              value={eventFilter}
-              onChange={setEventFilter}
-              options={eventTypes.map(t => ({ value: t, label: t }))}
-              maxTagCount={2}
-            />
-          </antd.Col>
-        </antd.Row>
-      </antd.Card>
-
-      {/* Log entries */}
-      <antd.Card bordered bodyStyle={{ padding: 0 }}>
-        <div style={{ padding: '10px 16px', background: 'var(--color-bg-subtle)', borderBottom: '1px solid var(--color-divider)', display: 'flex', gap: 16, fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4 }}>
-          <span style={{ width: 160 }}>Timestamp</span>
-          <span style={{ width: 36 }} />
-          <span style={{ flex: 1 }}>Event / Actor</span>
-          <span style={{ width: 140 }}>Application</span>
-          <span style={{ width: 110 }}>IP Address</span>
-        </div>
-        {filtered.map((e, i) => (
-          <div key={e.id} style={{ borderBottom: '1px solid var(--color-divider)' }}>
-            <div
-              onClick={() => setExpanded(expanded === e.id ? null : e.id)}
-              style={{ padding: '12px 16px', display: 'flex', gap: 16, alignItems: 'center', cursor: 'pointer', background: expanded === e.id ? 'var(--color-primary-soft)' : 'transparent', transition: 'background .15s' }}
-            >
-              <span style={{ width: 160, fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', flexShrink: 0 }}>
-                {new Date(e.ts).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              </span>
-              <span style={{ width: 36, flexShrink: 0, color: 'var(--color-text-muted)', fontSize: 15 }}>{eventIcon(e.event)}</span>
-              <span style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{e.event}</div>
-                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>
-                  {e.actor} · <antd.Tag color={roleColor[e.actorRole]} style={{ fontSize: 10, padding: '0 5px', lineHeight: '16px' }}>{e.actorRole}</antd.Tag>
-                </div>
-              </span>
-              <span style={{ width: 140, flexShrink: 0 }}>
-                {e.appId
-                  ? <antd.Typography.Text code style={{ fontSize: 11 }}>{e.appId}</antd.Typography.Text>
-                  : <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>—</antd.Typography.Text>}
-              </span>
-              <span style={{ width: 110, fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', flexShrink: 0 }}>{e.ip}</span>
-            </div>
-            {expanded === e.id && (
-              <div style={{ padding: '10px 16px 14px', background: 'var(--color-primary-soft)', borderTop: '1px solid var(--color-primary)', display: 'flex', gap: 16 }}>
-                <span style={{ width: 196, flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 4 }}>Detail</div>
-                  <div style={{ fontSize: 13, lineHeight: 1.6 }}>{e.detail}</div>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 8 }}>Audit ID <antd.Typography.Text code style={{ fontSize: 10 }}>{e.id}</antd.Typography.Text></div>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-        {filtered.length === 0 && (
-          <div style={{ padding: 40, textAlign: 'center' }}>
-            <antd.Empty description="No audit events match the current filters." />
-          </div>
-        )}
-        <div style={{ padding: '10px 16px', background: 'var(--color-bg-subtle)', borderTop: '1px solid var(--color-divider)', fontSize: 12, color: 'var(--color-text-muted)' }}>
-          Showing {filtered.length} of {MOCK.auditLog.length} events · Click a row to expand detail
-        </div>
-      </antd.Card>
-    </div>
-  );
-};
-
-// ============ SWITCH PROFILE MODAL ============
-function SwitchProfileModal({ open, currentRole, onClose, onSwitch }) {
-  const profiles = MOCK.profiles;
-  const order = ['supplier', 'team-lead', 'officer', 'recommender', 'verifier', 'approver'];
-  const [pick, setPick] = React.useState(currentRole);
-  React.useEffect(() => { if (open) setPick(currentRole); }, [open, currentRole]);
-  const roleAccent = {
-    supplier: 'var(--color-primary)',
-    'team-lead': '#7B3FA0',
-    officer: '#0F6ABF',
-    recommender: '#2E7D32',
-    verifier: '#E65100',
-    approver: '#B71C1C',
-  };
-  const roleLabel = {
-    supplier: 'Supplier',
-    'team-lead': 'MCMC Admin',
-    officer: 'MCMC Officer',
-    recommender: 'Recommender (P5/P6)',
-    verifier: 'Verifier (P7)',
-    approver: 'Approver (P8)',
-  };
-
-  return (
-    <antd.Modal
-      open={open}
-      onCancel={onClose}
-      title={<Space><SwapOutlined /> Switch Profile</Space>}
-      width={520}
-      okText="Switch"
-      okButtonProps={{ disabled: pick === currentRole }}
-      onOk={() => { onSwitch(pick); onClose(); }}
-    >
-      <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--color-text-secondary)' }}>
-        Demo mode — switch between profiles to review the flow for each role.
-      </div>
-      <div style={{ display: 'grid', gap: 8 }}>
-        {order.filter(key => profiles[key]).map(key => {
-          const p = profiles[key];
-          const isCurrent = key === currentRole;
-          const isPicked = pick === key;
-          const isOfficerGroup = ['team-lead','officer','recommender','verifier','approver'].includes(key);
-          return (
-            <div
-              key={key}
-              onClick={() => !isCurrent && setPick(key)}
-              style={{
-                padding: 12,
-                border: `1.5px solid ${isPicked ? roleAccent[key] : 'var(--color-border, #E5E7EB)'}`,
-                borderRadius: 10,
-                cursor: isCurrent ? 'not-allowed' : 'pointer',
-                background: isCurrent ? 'rgba(0,0,0,0.02)' : isPicked ? `${roleAccent[key]}08` : '#fff',
-                opacity: isCurrent ? 0.7 : 1,
-                display: 'flex', alignItems: 'center', gap: 12,
-              }}
-            >
-              <antd.Avatar size={40} style={{ background: roleAccent[key], fontWeight: 600, flexShrink: 0 }}>{p.initials}</antd.Avatar>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  {p.name}
-                  {isCurrent && <antd.Tag color="default" style={{ margin: 0 }}>Current</antd.Tag>}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>
-                  <antd.Tag color={key === 'team-lead' ? 'purple' : key === 'supplier' ? 'geekblue' : key === 'approver' ? 'red' : key === 'recommender' ? 'green' : key === 'verifier' ? 'orange' : 'blue'} style={{ margin: 0, fontSize: 10 }}>{roleLabel[key]}</antd.Tag>
-                  {' '}{p.title}{isOfficerGroup && p.team ? ` · ${p.team}` : ''}{p.company ? ` · ${p.company}` : ''}
-                </div>
-              </div>
-              {isPicked && !isCurrent && <CheckCircleOutlined style={{ color: roleAccent[key], fontSize: 18 }} />}
-            </div>
-          );
-        })}
-      </div>
-    </antd.Modal>
-  );
-}
-
-// ── MINA QA engine ──────────────────────────────────────────────────────────
-const MINA_QA = [
-  { keys: ['scheme a','scheme b','scheme c','which scheme','what scheme'], answer: 'Scheme A covers most consumer radio/telecom devices (fee RM 1,200, SLA 3 days). Scheme B is for non-standard devices needing deeper review (RM 2,500, 5 days). Scheme C is self-declaration for low-risk equipment (RM 600, 1 day). The AI recommends a scheme during wizard Step 1 based on your datasheet.' },
-  { keys: ['document','documents','required doc','what do i need','upload'], answer: 'For Scheme A/B you need: (1) SSM company registration, (2) Technical datasheet/brochure, (3) SIRIM or accredited lab test report, (4) Product photos (front/back/label), and (5) Declaration letter. CE/FCC certificates are optional supporting evidence. Scheme C additionally requires a manufacturer conformity declaration.' },
-  { keys: ['iteration','flag','flagged','respond to iteration','what is iteration'], answer: 'An iteration request means the officer found issues and needs more information. Your APP-0426-00083 (Apple Watch Series 9) was flagged for: (1) missing Wi-Fi 6E secondary frequency band in test report, and (2) two MTSFB TC G015:2022 clauses marked N/A without justification. Click "Respond" on the Applications list to upload revisions. Deadline: 4 Jun 2026.' },
-  { keys: ['auto accept','auto-accept','90','score 90','auto approve'], answer: 'Auto-accept is enabled for Scheme C when the AI confidence score reaches ≥90. Your Mi Band 9 Pro scored 94 and was auto-approved without officer review. Scheme A/B require officer sign-off regardless of score, but a score ≥90 fast-tracks to the priority queue.' },
-  { keys: ['ai score','confidence','scoring','qwen','how is score'], answer: 'MCMC\'s AI (Qwen2.5-VL) scores your submission 0–100 across 5 criteria: document completeness (30%), technical accuracy (25%), regulatory alignment (20%), OCR extraction quality (15%), and historical supplier patterns (10%). Scores ≥90 = auto-accept eligible; 70–89 = priority review; <70 = standard queue.' },
-  { keys: ['certificate','rcn','how long','valid','expires','renewal'], answer: 'NCEF certificates are valid for 3 years from issue date. You\'ll receive email reminders at 90, 60, and 30 days before expiry. Renew via Certificates → "Renew" to reuse most existing documents. Your RCN-0326-00449 expires 3 Jul 2026 — only 74 days away.' },
-  { keys: ['fee','how much','payment','cost','price'], answer: 'Scheme A: RM 1,200 | Scheme B: RM 2,500 | Scheme C: RM 600 | Special Approval: RM 1,200 | IMEI registration: RM 50/batch. All fees include 8% SST. Rejected applications receive a credit offset applied automatically to your next submission.' },
-  { keys: ['special approval','sa','prohibited','jammer','sdr'], answer: 'Special Approval (Scheme SA) covers R&D, demos, personal imports, and prohibited equipment (jammers/SDR). Fee is RM 1,200. Standard SA takes 3–5 working days. Prohibited equipment routes through 3-level approval (Officer → Head of Cert → DG MCMC) and takes 10–15 days. Use waiver code MCMC-RD-2026 if MCMC issued you a fee exemption.' },
-  { keys: ['imei','serial','register imei','imei registration'], answer: 'Register IMEIs/serial numbers against an active certificate before distributing devices. Go to Certificates → Register IMEI/SN. You can enter manually (one per line) or upload a CSV (up to 10,000 rows). Duplicates are detected and skipped automatically. Registration fee is RM 50 per batch.' },
-  { keys: ['modification','modify certificate','change certificate','amend'], answer: 'Modification requests (under §5.6) let you update an existing certificate. Minor changes (label updates, address) are processed in 2 days. Major changes (technical specs, new frequency bands) trigger a new SDoC review. Go to Certificates, click ⋯ on any active RCN, and select "Request Modification".' },
-  { keys: ['importation','import permit','customs','rmcd','jkdm'], answer: 'The Importation module (§5.7) handles import permits. Traders need an active Certificate of Approval (CoA). The 6-step wizard captures permit type, RCN/SA reference validation, trader & consignor RMCD/JKDM codes, consignee details, and HS tariff codes. Go to Importation in the left menu.' },
-  { keys: ['status','application status','where is','check status','under review'], answer: 'Your 5 active applications: APP-0426-00087 (Samsung Galaxy S24 Ultra, AI score 87) is under review. APP-0426-00083 (Apple Watch Series 9, score 62) needs your iteration response. APP-0426-00084 (Mi Band 9 Pro, score 94) is approved. APP-0426-00088 (Google Pixel 8, score 78) is under review. APP-0426-00089 is a draft.' },
-  { keys: ['forgot password','reset password','locked','account locked'], answer: 'To reset your password: on the Login screen click "Forgot password?" to start the 4-step recovery flow (email → OTP → new password → success). If your account is locked after 3 failed attempts, email itsupport@mcmc.gov.my or call +603-8688 8000.' },
-  { keys: ['2fa','two factor','authenticator','otp','security','mydigital'], answer: 'Enable 2FA under Profile → Security & Access → Two-Factor Authentication. Options: (1) Authenticator app (Google/Microsoft/Authy) via QR scan, (2) SMS OTP to your mobile, (3) MyDigital ID (Malaysia national e-ID, recommended for MCMC). You can enrol multiple methods and set a default.' },
-  { keys: ['renewal','renew','expiring','expire','how to renew'], answer: 'Renew a certificate from Certificates → click "Renew" next to any active/expiring RCN. The AI reuses 3 of 5 documents automatically; you only re-upload expired ones. If the renewal AI score reaches ≥90, the new certificate is issued without officer review. Your RCN-0326-00449 is expiring in 74 days — act soon!' },
-  { keys: ['supplier id','supp','who am i','my account'], answer: `You are ${currentUser?.name || 'Nurul Aisyah binti Ahmad'}, Supplier ID ${currentUser?.supplierId || 'SUP-0426-00142'}, Axiata Digital Sdn Bhd. Account active since Jan 2024. You have 5 applications and 3 active certificates.` },
-  { keys: ['sla','how long does it take','processing time','turnaround'], answer: 'Processing times after payment: Scheme A: 3 working days | Scheme B: 5 working days | Scheme C: 1 working day (or instant if AI auto-accepts at ≥90). Iteration response restarts the SLA clock. You can track progress in real-time on the Applications list.' },
-  { keys: ['contact','phone','email','mcmc','officer'], answer: 'MCMC NCEF Helpdesk: +603-8688 8000 · ncef@mcmc.gov.my · Operating hours: Mon–Fri 8:30am–5:30pm. For portal technical issues: itsupport@mcmc.gov.my. For PDPA enquiries: pdpa@mcmc.gov.my.' },
-  { keys: ['hello','hi','hey','help','what can you','good morning'], answer: `Hi ${currentUser?.name?.split(' ')[0] || 'there'}! I'm MINA, your NCEF assistant. I can help with schemes, document requirements, application status, fees, certificates, and more. What do you need today?` },
-];
-function minaRespond(input) {
-  const q = (input || '').toLowerCase();
-  for (const qa of MINA_QA) {
-    if (qa.keys.some(k => q.includes(k))) return qa.answer;
-  }
-  return "I'm not sure about that. Try asking about schemes, documents, fees, application status, or certificates. You can also reach our helpdesk at ncef@mcmc.gov.my.";
-}
+// Register screens from components
+if (typeof ScreenDashboard !== 'undefined') SCREENS['dashboard'] = ScreenDashboard;
+if (typeof ScreenApplications !== 'undefined') SCREENS['applications'] = ScreenApplications;
+if (typeof ScreenSdocWizard !== 'undefined') SCREENS['sdoc-wizard'] = ScreenSdocWizard;
+if (typeof ScreenSpecialApproval !== 'undefined') SCREENS['special-approval'] = ScreenSpecialApproval;
+if (typeof ScreenModification !== 'undefined') SCREENS['modification'] = ScreenModification;
+if (typeof ScreenImportation !== 'undefined') SCREENS['importation'] = ScreenImportation;
+if (typeof ScreenCertificates !== 'undefined') SCREENS['certificates'] = ScreenCertificates;
+if (typeof ScreenImeiRegister !== 'undefined') SCREENS['imei-register'] = ScreenImeiRegister;
+if (typeof ScreenPayments !== 'undefined') SCREENS['payments'] = ScreenPayments;
+if (typeof ScreenConsultants !== 'undefined') SCREENS['consultants'] = ScreenConsultants;
+if (typeof ScreenOnboarding !== 'undefined') SCREENS['onboarding'] = ScreenOnboarding;
+if (typeof ScreenOfficerQueue !== 'undefined') SCREENS['officer-queue'] = ScreenOfficerQueue;
+if (typeof ScreenOfficerReview !== 'undefined') SCREENS['officer-review'] = ScreenOfficerReview;
+if (typeof ScreenModificationReview !== 'undefined') SCREENS['modification'] = ScreenModificationReview;
+if (typeof ScreenSuppliersMgmt !== 'undefined') SCREENS['suppliers-mgmt'] = ScreenSuppliersMgmt;
+if (typeof ScreenPMS !== 'undefined') SCREENS['pms'] = ScreenPMS;
+if (typeof ScreenPostMonitoring !== 'undefined') SCREENS['post-monitoring'] = ScreenPostMonitoring;
+if (typeof ScreenComplianceStatus !== 'undefined') SCREENS['compliance-status'] = ScreenComplianceStatus;
+if (typeof ScreenSALetter !== 'undefined') SCREENS['sa-letter'] = ScreenSALetter;
+if (typeof ScreenPublicPortal !== 'undefined') SCREENS['public-portal'] = ScreenPublicPortal;
+if (typeof ScreenIntegrations !== 'undefined') SCREENS['integrations'] = ScreenIntegrations;
+if (typeof ScreenAdminConfig !== 'undefined') SCREENS['admin-config'] = ScreenAdminConfig;
+if (typeof ScreenReports !== 'undefined') SCREENS['reports'] = ScreenReports;
+if (typeof ScreenAudit !== 'undefined') SCREENS['audit'] = ScreenAudit;
+if (typeof ScreenProfile !== 'undefined') SCREENS['profile'] = ScreenProfile;
+if (typeof ScreenNotifications !== 'undefined') SCREENS['notifications'] = ScreenNotifications;
 
 function MinaDrawer({ open, onClose, currentUser }) {
-  const initMsgs = [
-    { role: 'bot', t: `Hi ${currentUser?.name?.split(' ')[0] || 'there'}! I'm MINA, your NCEF AI assistant. Ask me about schemes, documents, application status, fees, or certificates.` },
-    { role: 'user', t: 'Why was my Apple Watch application flagged for iteration?' },
-    { role: 'bot', t: 'APP-0426-00083 scored 62. The officer noted: missing frequency band for Wi-Fi 6E secondary range, and two clauses in MCMC MTSFB TC G015:2022 marked N/A without justification. You have until 4 Jun to resubmit. Click "Respond" on the Applications list.' },
-  ];
-  const [msgs, setMsgs] = React.useState(initMsgs);
+  const [msgs, setMsgs] = React.useState([{ role: 'bot', t: 'Hi! I\'m MINA, your NCEF assistant. How can I help?' }]);
   const [input, setInput] = React.useState('');
   const [typing, setTyping] = React.useState(false);
   const endRef = React.useRef(null);
@@ -893,206 +306,94 @@ function App() {
 
   React.useEffect(() => {
     const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
-    events.forEach(e => window.addEventListener(e, resetSessionTimer, { passive: true }));
+    const handlers = events.map(e => window.addEventListener(e, resetSessionTimer));
     resetSessionTimer();
-    return () => {
-      events.forEach(e => window.removeEventListener(e, resetSessionTimer));
-      clearTimeout(sessionTimerRef.current);
-      clearInterval(warningTimerRef.current);
-    };
+    return () => events.forEach((e, i) => window.removeEventListener(e, resetSessionTimer));
   }, [resetSessionTimer]);
 
-  React.useEffect(() => { localStorage.setItem('ncef.screen', screen); }, [screen]);
-  React.useEffect(() => { sessionStorage.setItem('ncef.loggedIn', loggedIn ? '1' : '0'); }, [loggedIn]);
-
-  // Tweaks listener
-  React.useEffect(() => {
-    const handler = (e) => {
-      if (e.data?.type === '__activate_edit_mode') setEditMode(true);
-      if (e.data?.type === '__deactivate_edit_mode') setEditMode(false);
-    };
-    window.addEventListener('message', handler);
-    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
-    return () => window.removeEventListener('message', handler);
-  }, []);
-
-  const updateTweak = (k, v) => {
-    const next = { ...tweaks, [k]: v };
-    setTweaks(next);
-    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*');
+  const updateTweak = (key, value) => {
+    const updated = { ...tweaks, [key]: value };
+    setTweaks(updated);
+    localStorage.setItem('ncef.tweaks', JSON.stringify(updated));
+    if (key === 'role' && SUPPLIER_ONLY.has(screen)) {
+      setScreen(DEFAULT_SCREEN_BY_ROLE[value] || 'dashboard');
+    }
   };
 
-  const currentUser = MOCK.profiles[tweaks.role] || MOCK.profiles.supplier;
-  const isSupplier = tweaks.role === 'supplier';
-  const nav = NAV_BY_ROLE[tweaks.role] || NAV_SUPPLIER;
-
-  React.useEffect(() => {
-    // reset to a role-appropriate landing when role switches to one where the current screen isn't in nav
-    if (!nav.find(n => n.key === screen)) setScreen(DEFAULT_SCREEN_BY_ROLE[tweaks.role] || 'dashboard');
-  }, [tweaks.role]);
-
-  const handleSwitchProfile = (newRole) => {
-    updateTweak('role', newRole);
-    setScreen(DEFAULT_SCREEN_BY_ROLE[newRole] || 'dashboard');
-  };
-
-  const handleLogout = () => {
-    setLoggedIn(false);
-    setScreen('login');
-  };
-
-  const handleLogin = (role) => {
+  const handleSwitchProfile = (role) => {
     updateTweak('role', role);
-    setScreen(DEFAULT_SCREEN_BY_ROLE[role] || 'dashboard');
-    setLoggedIn(true);
+    setSwitchOpen(false);
   };
 
-  // Pre-auth: render login screen only, no Layout chrome
+  const isSupplier = tweaks.role === 'supplier';
+  const currentNav = NAV_BY_ROLE[tweaks.role] || NAV_OFFICER;
+  const currentUser = { name: 'Demo User', role: tweaks.role, avatar: 'D' };
+
+  const ScreenComponent = SCREENS[screen];
+  const Screen = ScreenComponent || (() => (
+    <div style={{ padding: 24 }}>
+      <div style={{ color: 'var(--color-text-secondary)' }}>
+        <p>Screen not found: <strong>{screen}</strong></p>
+        <p>Available screens: {Object.keys(SCREENS).slice(0, 5).join(', ')}...</p>
+      </div>
+    </div>
+  ));
+
+  const SwitchProfileModal = ({ open, currentRole, onClose, onSwitch }) => (
+    <antd.Modal open={open} onCancel={onClose} title="Switch Profile" footer={null} width={400}>
+      <div style={{ display: 'grid', gap: 12 }}>
+        {['supplier', 'officer', 'team-lead', 'recommender', 'verifier', 'approver'].map(role => (
+          <Button key={role} block onClick={() => onSwitch(role)} type={currentRole === role ? 'primary' : 'default'}>
+            {role.charAt(0).toUpperCase() + role.slice(1).replace('-', ' ')}
+          </Button>
+        ))}
+      </div>
+    </antd.Modal>
+  );
+
   if (!loggedIn) {
-    const Login = SCREENS.login;
     return (
-      <ConfigProvider theme={{
-        token: {
-          colorPrimary: '#0B4F91', colorSuccess: '#1B7F48', colorWarning: '#B87200', colorError: '#C62828', colorInfo: '#0F6ABF',
-          fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif', borderRadius: 8, colorBgLayout: '#F5F8FB',
-        },
-      }}>
-        <Login onLogin={handleLogin} />
-      </ConfigProvider>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--color-bg)' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 32, fontWeight: 700, marginBottom: 24, color: 'var(--color-primary)' }}>NCEF Portal</div>
+          <Button type="primary" size="large" onClick={() => { setLoggedIn(true); sessionStorage.setItem('ncef.loggedIn', '1'); }}>
+            Sign In
+          </Button>
+        </div>
+      </div>
     );
   }
 
-  // Per amended URS: ADMIN and OFFICER cannot create registrations on a vendor's behalf.
-  // These supplier-only screens are gated even if a user navigates here via direct URL or stale localStorage.
-  const SUPPLIER_ONLY = new Set(['dashboard', 'sdoc-wizard', 'special-approval', 'modification', 'importation', 'certificates', 'imei-register', 'cert-renewal', 'payments', 'consultants', 'onboarding']);
-  const isRestricted = SUPPLIER_ONLY.has(screen) && !isSupplier;
-  const RestrictedScreen = () => (
-    <div style={{ padding: 32 }}>
-      <antd.Result
-        status="403"
-        icon={<LockOutlined style={{ color: 'var(--color-warning)' }} />}
-        title="Restricted to Suppliers"
-        subTitle={
-          <div>
-            <p>This action ({screen.replace(/-/g, ' ')}) is reserved for supplier-tier users. As an MCMC Admin/Officer you can review applications, manage the supplier directory, and assign reviews — but you cannot submit registrations on a vendor's behalf.</p>
-            <p style={{ marginTop: 4 }}>Use <strong>Switch Profile</strong> in the top-right menu to demo the supplier flow.</p>
-          </div>
-        }
-        extra={<antd.Button type="primary" onClick={() => setScreen(DEFAULT_SCREEN_BY_ROLE[tweaks.role])}>Back to {DEFAULT_SCREEN_BY_ROLE[tweaks.role].replace(/-/g, ' ')}</antd.Button>}
-      />
-    </div>
-  );
-  const Screen = isRestricted
-    ? RestrictedScreen
-    : (SCREENS[screen] || (() => <div style={{ padding: 40 }}>Screen "{screen}" not found</div>));
-
   return (
-    <ConfigProvider theme={{
-      token: {
-        colorPrimary: '#0B4F91',
-        colorSuccess: '#1B7F48',
-        colorWarning: '#B87200',
-        colorError: '#C62828',
-        colorInfo: '#0F6ABF',
-        fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif',
-        borderRadius: 8,
-        colorBgLayout: '#F5F8FB',
-      },
-      components: { Menu: { itemHeight: 40 } },
-    }}>
-      <Layout style={{ minHeight: '100vh' }} className={tweaks.denseTables ? 'ncef-compact' : ''}>
-        <Sider
-          width={240}
-          collapsedWidth={72}
-          collapsed={sidebarCollapsed}
-          style={{ background: '#fff', borderRight: '1px solid var(--color-divider)' }}
-          theme="light"
-        >
-          <div style={{ padding: '18px 16px', borderBottom: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', gap: 12, minHeight: 72 }}>
-            <img src="assets/mcmc-logo.png" alt="MCMC" style={{ width: 40, height: 40, objectFit: 'contain', flexShrink: 0 }} />
-            {!sidebarCollapsed && (
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.1, color: 'var(--color-primary)', letterSpacing: .2 }}>NCEF</div>
-                <div style={{ fontSize: 10, color: 'var(--color-text-muted)', letterSpacing: .3, marginTop: 2 }}>MCMC · Certification</div>
-              </div>
-            )}
+    <ConfigProvider theme={{ token: { colorPrimary: 'var(--color-primary)' } }}>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Sider collapsed={sidebarCollapsed} onCollapse={setSidebarCollapsed} width={240} style={{ background: 'var(--color-bg-secondary)' }}>
+          <div style={{ padding: '16px 12px', textAlign: 'center', borderBottom: '1px solid var(--color-divider)', marginBottom: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-primary)' }}>NCEF</div>
           </div>
-          <Menu
-            selectedKeys={[screen]}
-            mode="inline"
-            onClick={e => setScreen(e.key)}
-            items={nav}
-            style={{ border: 'none', marginTop: 8 }}
-          />
-          <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
-            {!sidebarCollapsed && (
-              <div style={{ padding: 12, background: 'var(--color-primary-soft)', borderRadius: 10, fontSize: 11 }}>
-                <div style={{ fontWeight: 700, color: 'var(--color-primary)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><RobotOutlined /> MINA assistant</div>
-                <div style={{ color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>Ask about schemes, documents, or application status.</div>
-                <Button type="link" size="small" style={{ padding: 0, marginTop: 4 }} onClick={() => setMinaOpen(true)}>Open chat →</Button>
-              </div>
-            )}
-          </div>
+          <Menu selectedKeys={[screen]} onSelect={e => { setScreen(e.key); localStorage.setItem('ncef.screen', e.key); }} items={currentNav} style={{ background: 'transparent', border: 'none' }} />
         </Sider>
 
         <Layout>
-          <Header style={{ background: '#fff', borderBottom: '1px solid var(--color-divider)', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, lineHeight: 'normal' }}>
-            <Space size="middle">
-              <Button type="text" icon={<MenuOutlined />} onClick={() => setSidebarCollapsed(!sidebarCollapsed)} />
-              <Input placeholder="Search applications, certificates, IMEIs…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />} style={{ width: 360 }} />
-            </Space>
-            <Space size="middle">
-              <Dropdown placement="bottomRight" trigger={['click']} dropdownRender={() => (
-                <div style={{ width: 340, background: '#fff', borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', border: '1px solid var(--color-border)' }}>
-                  <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid var(--color-divider)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 700, fontSize: 14 }}>Notifications</span>
-                    <Button type="link" size="small" onClick={() => setScreen('notifications')} style={{ padding: 0 }}>View all</Button>
-                  </div>
-                  {(MOCK.notifications || []).slice(0, 5).map(n => (
-                    <div key={n.id} style={{ padding: '10px 16px', borderBottom: '1px solid var(--color-divider)', display: 'flex', gap: 10, alignItems: 'flex-start', background: n.read ? '#fff' : 'var(--color-primary-soft)', cursor: 'pointer' }}
-                      onClick={() => setScreen('notifications')}>
-                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: n.read ? 'transparent' : 'var(--color-primary)', marginTop: 6, flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: n.read ? 400 : 600, lineHeight: 1.3 }}>{n.title}</div>
-                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{n.time}</div>
-                      </div>
-                    </div>
-                  ))}
-                  <div style={{ padding: '10px 16px', textAlign: 'center' }}>
-                    <Button type="link" size="small" onClick={() => setScreen('notifications')}>See all notifications →</Button>
-                  </div>
-                </div>
-              )}>
-                <Badge count={3} size="small"><Button type="text" icon={<BellOutlined style={{ fontSize: 18 }} />} /></Badge>
-              </Dropdown>
-              <Dropdown menu={{ items: [{ key: 'en', label: 'English' }, { key: 'bm', label: 'Bahasa Melayu' }] }}>
-                <Button type="text" icon={<GlobalOutlined />}>EN</Button>
-              </Dropdown>
+          <Header style={{ background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-divider)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingInline: 24 }}>
+            <Button type="text" icon={<MenuOutlined />} onClick={() => setSidebarCollapsed(!sidebarCollapsed)} />
+            <Space>
+              <Button type="text" icon={<QuestionCircleOutlined />} />
+              <Button type="text" icon={<BellOutlined />} />
               <Dropdown menu={{ items: [
-                { key: 'profile', icon: <UserOutlined />, label: 'Profile & Settings', onClick: () => setScreen('profile') },
-                { key: 'switch', icon: <SwapOutlined />, label: 'Switch Profile', onClick: () => setSwitchOpen(true) },
-                { key: 'help', icon: <QuestionCircleOutlined />, label: 'Help Centre' },
+                { key: 'profile', label: 'Profile', icon: <UserOutlined /> },
+                { key: 'switch', label: 'Switch Profile', icon: <SwapOutlined />, onClick: () => setSwitchOpen(true) },
+                { key: 'settings', label: 'Settings', icon: <SettingOutlined /> },
+                { key: 'edit-mode', label: editMode ? 'Exit Edit Mode' : 'Edit Mode', icon: <FormOutlined />, onClick: () => setEditMode(!editMode) },
                 { type: 'divider' },
-                { key: 'logout', icon: <LogoutOutlined />, label: 'Sign out', danger: true, onClick: handleLogout },
+                { key: 'logout', label: 'Sign Out', icon: <LogoutOutlined />, onClick: () => { setLoggedIn(false); sessionStorage.removeItem('ncef.loggedIn'); } },
               ] }}>
-                <Space style={{ cursor: 'pointer' }}>
-                  <Avatar style={{ background: tweaks.role === 'team-lead' ? '#7B3FA0' : tweaks.role === 'officer' ? '#0F6ABF' : tweaks.role === 'recommender' ? '#2E7D32' : tweaks.role === 'verifier' ? '#E65100' : tweaks.role === 'approver' ? '#B71C1C' : 'var(--color-primary)' }}>
-                    {currentUser.initials}
-                  </Avatar>
-                  <div style={{ textAlign: 'left', display: window.innerWidth > 640 ? 'block' : 'none' }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{currentUser.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-                      {currentUser.title}
-                      {currentUser.supplierId ? ` · ${currentUser.supplierId}` : ''}
-                      {currentUser.id && !currentUser.supplierId ? ` · ${currentUser.id}` : ''}
-                    </div>
-                  </div>
-                </Space>
+                <Avatar style={{ background: 'var(--color-primary)', cursor: 'pointer' }}>{currentUser.avatar}</Avatar>
               </Dropdown>
             </Space>
           </Header>
 
-          <Content style={{ overflow: 'auto' }}>
+          <Content style={{ background: 'var(--color-bg)', padding: 24, overflowY: 'auto' }}>
             <Screen nav={setScreen} tweaks={tweaks} currentUser={currentUser} />
           </Content>
         </Layout>
@@ -1179,30 +480,75 @@ function App() {
   );
 }
 
-// Ensure DOM is ready and all scripts are loaded before rendering
+// Render the app with proper error handling
+let renderAttempts = 0;
+const maxAttempts = 50;
+
 function renderApp() {
+  renderAttempts++;
   try {
     const root = document.getElementById('root');
-    if (root && typeof ReactDOM !== 'undefined' && typeof App !== 'undefined') {
-      ReactDOM.createRoot(root).render(React.createElement(App));
-      console.log('App rendered successfully');
-    } else {
-      console.error('Missing dependencies:', { root: !!root, ReactDOM: typeof ReactDOM, App: typeof App });
-      setTimeout(renderApp, 100);
+    
+    if (!root) {
+      console.error('Root element not found');
+      return;
     }
+    
+    if (typeof ReactDOM === 'undefined') {
+      console.warn(`Attempt ${renderAttempts}: ReactDOM not ready`);
+      if (renderAttempts < maxAttempts) {
+        setTimeout(renderApp, 100);
+      } else {
+        console.error('ReactDOM failed to load');
+        root.innerHTML = '<div class="error-message">Failed to load ReactDOM. Please refresh the page.</div>';
+      }
+      return;
+    }
+    
+    if (typeof App === 'undefined') {
+      console.warn(`Attempt ${renderAttempts}: App component not ready`);
+      if (renderAttempts < maxAttempts) {
+        setTimeout(renderApp, 100);
+      } else {
+        console.error('App component failed to load');
+        root.innerHTML = '<div class="error-message">Failed to load application. Please refresh the page.</div>';
+      }
+      return;
+    }
+    
+    // All dependencies ready, render the app
+    ReactDOM.createRoot(root).render(React.createElement(App));
+    console.log(`App rendered successfully on attempt ${renderAttempts}`);
   } catch (error) {
-    console.error('Render error:', error);
-    setTimeout(renderApp, 100);
+    console.error(`Render error on attempt ${renderAttempts}:`, error.message);
+    if (renderAttempts < maxAttempts) {
+      setTimeout(renderApp, 100);
+    } else {
+      console.error('Failed to render app after 5 seconds');
+      const root = document.getElementById('root');
+      if (root) {
+        root.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+      }
+    }
   }
 }
 
+// Start rendering when page is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(renderApp, 100);
+    setTimeout(renderApp, 500);
   });
 } else {
-  setTimeout(renderApp, 100);
+  setTimeout(renderApp, 500);
 }
+
+// Also try rendering on window load event
+window.addEventListener('load', () => {
+  if (renderAttempts === 0) {
+    console.log('Window load event triggered, attempting render');
+    renderApp();
+  }
+});
 </script>
 </body>
 </html>
