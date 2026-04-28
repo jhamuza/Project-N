@@ -1179,7 +1179,18 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+// Ensure DOM is ready and all scripts are loaded before rendering
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    }, 100);
+  });
+} else {
+  setTimeout(() => {
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  }, 100);
+}
 </script>
 </body>
 </html>
