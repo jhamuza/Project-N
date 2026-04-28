@@ -211,26 +211,52 @@ window.MOCK = {
     { id: 'PAY-0126-00018', date: '2026-01-09', app: 'APP-0126-00018', method: 'DuitNow QR', amount: 1200, status: 'paid', invoice: 'INV-2026-0109-18' },
     { id: 'PAY-0426-00091', date: '2026-04-19', app: 'APP-0426-00091', method: 'Corporate Invoice', amount: 1800, status: 'pending', invoice: 'INV-2026-0419-91' },
   ],
-  // Monthly application trend data (Jan–Apr 2026)
+  // Monthly application trend (Jan–Dec 2026; May–Dec are projected/forecast)
   monthlyTrend: [
-    { month: 'Jan', submitted: 38, approved: 31, rejected: 3, aiAutoAccepted: 12 },
-    { month: 'Feb', submitted: 44, approved: 36, rejected: 4, aiAutoAccepted: 15 },
-    { month: 'Mar', submitted: 52, approved: 43, rejected: 5, aiAutoAccepted: 19 },
-    { month: 'Apr', submitted: 29, approved: 22, rejected: 1, aiAutoAccepted: 11 },
+    { month: 'Jan', submitted: 38, approved: 31, rejected: 3,  aiAutoAccepted: 12, forecast: false },
+    { month: 'Feb', submitted: 44, approved: 36, rejected: 4,  aiAutoAccepted: 15, forecast: false },
+    { month: 'Mar', submitted: 52, approved: 43, rejected: 5,  aiAutoAccepted: 19, forecast: false },
+    { month: 'Apr', submitted: 29, approved: 22, rejected: 1,  aiAutoAccepted: 11, forecast: false },
+    { month: 'May', submitted: 51, approved: 42, rejected: 4,  aiAutoAccepted: 18, forecast: true  },
+    { month: 'Jun', submitted: 48, approved: 39, rejected: 5,  aiAutoAccepted: 17, forecast: true  },
+    { month: 'Jul', submitted: 55, approved: 46, rejected: 6,  aiAutoAccepted: 21, forecast: true  },
+    { month: 'Aug', submitted: 42, approved: 35, rejected: 3,  aiAutoAccepted: 15, forecast: true  },
+    { month: 'Sep', submitted: 58, approved: 49, rejected: 7,  aiAutoAccepted: 23, forecast: true  },
+    { month: 'Oct', submitted: 61, approved: 52, rejected: 8,  aiAutoAccepted: 25, forecast: true  },
+    { month: 'Nov', submitted: 47, approved: 39, rejected: 4,  aiAutoAccepted: 17, forecast: true  },
+    { month: 'Dec', submitted: 35, approved: 28, rejected: 2,  aiAutoAccepted: 12, forecast: true  },
+  ],
+  // Scheme distribution (for donut chart)
+  schemeDistribution: [
+    { scheme: 'Scheme A — RF Equipment',         count: 234, color: '#0B4F91' },
+    { scheme: 'Scheme B — Wired / Low-risk',      count: 156, color: '#1B7F48' },
+    { scheme: 'Scheme C — Recognised Standard',   count:  89, color: '#0F6ABF' },
+    { scheme: 'Scheme D — Temporary Import',      count:  29, color: '#B87200' },
+  ],
+  // Processing time by scheme (for bar chart)
+  processingTime: [
+    { scheme: 'Scheme A', avgDays: 14.2, targetDays: 15, minDays: 7,  maxDays: 22 },
+    { scheme: 'Scheme B', avgDays:  9.6, targetDays: 10, minDays: 5,  maxDays: 15 },
+    { scheme: 'Scheme C', avgDays:  2.8, targetDays:  3, minDays: 1,  maxDays:  5 },
+    { scheme: 'Scheme D', avgDays: 38.4, targetDays: 45, minDays: 22, maxDays: 58 },
   ],
   // Officer performance
   officerPerformance: [
-    { name: 'En. Faisal Rahman', id: 'OFF-001', role: 'team-lead', team: 'CPPG-TL-01', approved: 48, rejected: 6, avgTurnaround: 4.2, slaCompliance: 96, aiOverrides: 3 },
-    { name: 'Pn. Rosnah Idris', id: 'OFF-002', role: 'officer', team: 'CPPG-TL-01', approved: 41, rejected: 4, avgTurnaround: 5.8, slaCompliance: 92, aiOverrides: 7 },
-    { name: 'En. Syahrul Azlan', id: 'OFF-003', role: 'officer', team: 'CPPG-TL-01', approved: 35, rejected: 8, avgTurnaround: 3.9, slaCompliance: 98, aiOverrides: 1 },
+    { name: 'En. Faisal Rahman',  id: 'OFF-001', role: 'team-lead', team: 'CPPG-TL-01', approved: 48, rejected: 6,  avgTurnaround: 4.2, slaCompliance: 96, aiOverrides: 3 },
+    { name: 'Pn. Rosnah Idris',   id: 'OFF-002', role: 'officer',   team: 'CPPG-TL-01', approved: 41, rejected: 4,  avgTurnaround: 5.8, slaCompliance: 92, aiOverrides: 7 },
+    { name: 'En. Syahrul Azlan',  id: 'OFF-003', role: 'officer',   team: 'CPPG-TL-01', approved: 35, rejected: 8,  avgTurnaround: 3.9, slaCompliance: 98, aiOverrides: 1 },
+    { name: 'En. Ahmad Rashid',   id: 'OFF-004', role: 'officer',   team: 'CPPG-TL-01', approved: 29, rejected: 5,  avgTurnaround: 6.1, slaCompliance: 89, aiOverrides: 9 },
+    { name: 'Pn. Halimah Yusof',  id: 'OFF-005', role: 'officer',   team: 'CPPG-TL-01', approved: 37, rejected: 3,  avgTurnaround: 4.7, slaCompliance: 94, aiOverrides: 2 },
   ],
   // Top applicants by volume (for Reports screen)
   topApplicants: [
-    { name: 'Axiata Digital Sdn Bhd', id: 'SUP-0126-00087', submissions: 23, approved: 19, aiAvg: 88 },
-    { name: 'Maxis Broadband Sdn Bhd', id: 'SUP-0420-00012', submissions: 18, approved: 15, aiAvg: 91 },
-    { name: 'Celcom Axiata Berhad', id: 'SUP-0322-00045', submissions: 14, approved: 12, aiAvg: 85 },
-    { name: 'TM Technology Services', id: 'SUP-0621-00091', submissions: 11, approved: 9, aiAvg: 79 },
-    { name: 'Digi Telecommunications', id: 'SUP-0823-00210', submissions: 8, approved: 7, aiAvg: 83 },
+    { name: 'Axiata Digital Sdn Bhd',      id: 'SUP-0126-00087', submissions: 23, approved: 19, aiAvg: 88 },
+    { name: 'Maxis Broadband Sdn Bhd',     id: 'SUP-0420-00012', submissions: 18, approved: 15, aiAvg: 91 },
+    { name: 'Celcom Axiata Berhad',        id: 'SUP-0322-00045', submissions: 14, approved: 12, aiAvg: 85 },
+    { name: 'TM Technology Services',      id: 'SUP-0621-00091', submissions: 11, approved:  9, aiAvg: 79 },
+    { name: 'Digi Telecommunications',     id: 'SUP-0823-00210', submissions:  8, approved:  7, aiAvg: 83 },
+    { name: 'U Mobile Sdn Bhd',            id: 'SUP-0919-00318', submissions:  7, approved:  6, aiAvg: 77 },
+    { name: 'Telekom Malaysia Berhad',     id: 'SUP-0217-00056', submissions:  6, approved:  5, aiAvg: 90 },
   ],
   // Audit log entries
   auditLog: [

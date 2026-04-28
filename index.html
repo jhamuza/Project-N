@@ -17,6 +17,7 @@
 <script src="https://unpkg.com/@ant-design/icons@5.3.7/dist/index.umd.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <script src="data/mock.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <style>
   body { margin: 0; font-family: var(--font-family, 'Inter', sans-serif); }
   #loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #F5F8FB; gap: 16px; }
@@ -295,6 +296,28 @@ function OfficerQueue({ nav, currentUser }) {
 }
 SCREENS['officer-queue'] = OfficerQueue;
 
+// ──── PLOTLY WRAPPER ─────────────────────────────────────────────────────────
+const PLOTLY_LAYOUT_BASE = {
+  paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+  margin: { l: 48, r: 16, t: 16, b: 40 },
+  font: { family: "Inter, -apple-system, 'Segoe UI', sans-serif", size: 12, color: '#6B7280' },
+  legend: { orientation: 'h', y: -0.18, x: 0, font: { size: 11 } },
+  hoverlabel: { bgcolor: '#1F2937', font: { color: '#fff', size: 12 }, bordercolor: 'transparent' },
+};
+function PlotlyChart({ data, layout, config, style }) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    if (!ref.current || typeof Plotly === 'undefined') return;
+    Plotly.react(ref.current, data, { ...PLOTLY_LAYOUT_BASE, ...layout }, {
+      responsive: true, displayModeBar: false, scrollZoom: false, ...config,
+    });
+  }, [JSON.stringify(data), JSON.stringify(layout)]);
+  React.useEffect(() => {
+    return () => { if (ref.current && typeof Plotly !== 'undefined') Plotly.purge(ref.current); };
+  }, []);
+  return <div ref={ref} style={{ width: '100%', ...style }} />;
+}
+
 // ──── REPORTS & ANALYTICS ─────────────────────────────────────────────────────
 SCREENS.reports = function Reports({ nav, currentUser }) {
   if (currentUser?.role === 'officer') return (
@@ -304,34 +327,144 @@ SCREENS.reports = function Reports({ nav, currentUser }) {
       extra={<Button type="primary" onClick={() => nav('officer-queue')}>Back to My Queue</Button>}
       style={{ padding: '80px 24px' }} />
   );
-  const [period, setPeriod] = React.useState('month');
-  const trend = MOCK.monthlyTrend || [];
-  const totalSubmitted  = trend.reduce((a, b) => a + b.submitted, 0);
-  const totalApproved   = trend.reduce((a, b) => a + b.approved, 0);
-  const totalAutoAccept = trend.reduce((a, b) => a + b.aiAutoAccepted, 0);
+
+  const [period, setPeriod] = React.useState('ytd');
+  const allTrend = MOCK.monthlyTrend || [];
+  const trend = period === 'month' ? allTrend.slice(-1)
+              : period === '3m'    ? allTrend.filter(d => !d.forecast).slice(-3)
+              : allTrend;
+
+  const actual = allTrend.filter(d => !d.forecast);
+  const totalSubmitted  = actual.reduce((a, b) => a + b.submitted,     0);
+  const totalApproved   = actual.reduce((a, b) => a + b.approved,      0);
+  const totalAutoAccept = actual.reduce((a, b) => a + b.aiAutoAccepted,0);
   const approvalRate    = totalSubmitted ? Math.round(totalApproved / totalSubmitted * 100) : 0;
-  const maxSubmitted    = Math.max(...trend.map(d => d.submitted), 1);
-  const BAR_W = 48, BAR_GAP = 24, PAD = 40, HEIGHT = 160;
-  const chartW = trend.length * (BAR_W + BAR_GAP) + PAD;
+
+  const officers = MOCK.officerPerformance || [];
+  const schemeDist = MOCK.schemeDistribution || [];
+  const procTime   = MOCK.processingTime    || [];
+
+  // ── Volume trend chart data ──────────────────────────────────────────────
+  const months     = trend.map(d => d.month);
+  const isFullYear = trend.length > 4;
+  const actualIdx  = trend.map(d => !d.forecast);
+  const trendData  = [
+    {
+      name: 'Submitted', type: 'bar', x: months,
+      y: trend.map(d => d.submitted),
+      marker: { color: trend.map(d => d.forecast ? 'rgba(11,79,145,0.35)' : '#0B4F91'), line: { width: 0 } },
+      hovertemplate: '<b>%{x}</b><br>Submitted: %{y}<extra></extra>',
+    },
+    {
+      name: 'Approved', type: 'bar', x: months,
+      y: trend.map(d => d.approved),
+      marker: { color: trend.map(d => d.forecast ? 'rgba(27,127,72,0.35)' : '#1B7F48'), line: { width: 0 } },
+      hovertemplate: '<b>%{x}</b><br>Approved: %{y}<extra></extra>',
+    },
+    {
+      name: 'AI Auto-Accepted', type: 'scatter', mode: 'lines+markers', x: months,
+      y: trend.map(d => d.aiAutoAccepted),
+      line: { color: '#0F6ABF', width: 2.5, dash: isFullYear ? trend.map((d,i) => d.forecast && i > 3 ? 'dot' : 'solid')[0] : 'solid' },
+      marker: { color: '#0F6ABF', size: 7, symbol: trend.map(d => d.forecast ? 'circle-open' : 'circle') },
+      hovertemplate: '<b>%{x}</b><br>AI Auto-Accepted: %{y}<extra></extra>',
+      yaxis: 'y',
+    },
+  ];
+  const trendLayout = {
+    barmode: 'group', bargap: 0.25, bargroupgap: 0.08,
+    xaxis: { showgrid: false, tickfont: { size: 11 } },
+    yaxis: { gridcolor: '#F3F4F6', zeroline: false, tickfont: { size: 11 } },
+    shapes: isFullYear ? [{
+      type: 'line', x0: 'Apr', x1: 'Apr', y0: 0, y1: 1, yref: 'paper',
+      line: { color: '#9CA3AF', width: 1.5, dash: 'dash' },
+    }] : [],
+    annotations: isFullYear ? [{
+      x: 'May', y: 1, yref: 'paper', text: 'Forecast →', showarrow: false,
+      font: { size: 10, color: '#9CA3AF' }, xanchor: 'left',
+    }] : [],
+    legend: { orientation: 'h', y: -0.22, x: 0, font: { size: 11 } },
+    margin: { l: 40, r: 16, t: 24, b: 48 },
+  };
+
+  // ── Scheme distribution donut ─────────────────────────────────────────────
+  const donutData = [{
+    type: 'pie', hole: 0.55,
+    labels: schemeDist.map(s => s.scheme),
+    values: schemeDist.map(s => s.count),
+    marker: { colors: schemeDist.map(s => s.color) },
+    textinfo: 'percent', textfont: { size: 11 },
+    hovertemplate: '<b>%{label}</b><br>%{value} applications (%{percent})<extra></extra>',
+    sort: false,
+  }];
+  const donutLayout = {
+    showlegend: true,
+    legend: { orientation: 'v', x: 0.5, y: 0.5, xanchor: 'center', yanchor: 'middle', font: { size: 10 } },
+    margin: { l: 0, r: 0, t: 8, b: 0 },
+    annotations: [{ text: `<b>${schemeDist.reduce((a,s)=>a+s.count,0)}</b><br>total`, x: 0.5, y: 0.5, showarrow: false, font: { size: 13, color: '#374151' }, xanchor: 'center', yanchor: 'middle' }],
+  };
+
+  // ── Processing time vs target bar ────────────────────────────────────────
+  const ptData = [
+    {
+      name: 'Avg Days', type: 'bar', orientation: 'h',
+      x: procTime.map(d => d.avgDays), y: procTime.map(d => d.scheme),
+      marker: { color: procTime.map(d => d.avgDays <= d.targetDays ? '#1B7F48' : '#C62828') },
+      text: procTime.map(d => `${d.avgDays}d`), textposition: 'outside',
+      hovertemplate: '<b>%{y}</b><br>Avg: %{x} days<extra></extra>',
+    },
+    {
+      name: 'Target', type: 'scatter', mode: 'markers',
+      x: procTime.map(d => d.targetDays), y: procTime.map(d => d.scheme),
+      marker: { color: '#B87200', size: 10, symbol: 'line-ns', line: { width: 2.5, color: '#B87200' } },
+      hovertemplate: '<b>%{y}</b><br>Target: %{x} days<extra></extra>',
+    },
+  ];
+  const ptLayout = {
+    barmode: 'overlay', xaxis: { title: 'Working days', gridcolor: '#F3F4F6', zeroline: false, range: [0, 55] },
+    yaxis: { autorange: 'reversed', tickfont: { size: 11 } },
+    legend: { orientation: 'h', y: -0.28, x: 0, font: { size: 11 } },
+    margin: { l: 110, r: 40, t: 12, b: 48 },
+  };
+
+  // ── Officer SLA compliance horizontal bar ─────────────────────────────────
+  const offNames = officers.map(o => o.name.split(' ').slice(0, 2).join(' '));
+  const slaData  = [{
+    type: 'bar', orientation: 'h',
+    x: officers.map(o => o.slaCompliance), y: offNames,
+    marker: { color: officers.map(o => o.slaCompliance >= 95 ? '#1B7F48' : o.slaCompliance >= 90 ? '#B87200' : '#C62828') },
+    text: officers.map(o => `${o.slaCompliance}%`), textposition: 'outside',
+    hovertemplate: '<b>%{y}</b><br>SLA: %{x}%<extra></extra>',
+  }];
+  const slaLayout = {
+    xaxis: { range: [80, 102], gridcolor: '#F3F4F6', zeroline: false, ticksuffix: '%', tickfont: { size: 11 } },
+    yaxis: { autorange: 'reversed', tickfont: { size: 11 } },
+    shapes: [{ type: 'line', x0: 95, x1: 95, y0: -0.5, y1: officers.length - 0.5, line: { color: '#9CA3AF', width: 1.5, dash: 'dash' } }],
+    annotations: [{ x: 95, y: -0.5, text: '95% target', showarrow: false, font: { size: 10, color: '#9CA3AF' }, xanchor: 'left', yanchor: 'top' }],
+    margin: { l: 110, r: 48, t: 8, b: 32 },
+  };
+
   return (
     <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
         <div>
-          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Officer · CPPG</div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>CPPG · MCMC</div>
           <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Reports & Analytics</antd.Typography.Title>
-          <antd.Typography.Text type="secondary">MCMC NCEF · Certification performance · YTD 2026</antd.Typography.Text>
+          <antd.Typography.Text type="secondary">NCEF Certification Performance · 2026</antd.Typography.Text>
         </div>
         <Space>
-          <antd.Segmented value={period} onChange={setPeriod} options={[{ label: 'This Month', value: 'month' }, { label: 'Last 3M', value: '3m' }, { label: 'YTD', value: 'ytd' }]} />
+          <antd.Segmented value={period} onChange={setPeriod} options={[{ label: 'This Month', value: 'month' }, { label: 'Last 3M', value: '3m' }, { label: 'Full Year', value: 'ytd' }]} />
           <Button icon={<DownloadOutlined />}>Export PDF</Button>
         </Space>
       </div>
-      <antd.Row gutter={[16,16]} style={{ marginBottom: 24 }}>
+
+      {/* KPI row */}
+      <antd.Row gutter={[16,16]} style={{ marginBottom: 20 }}>
         {[
-          { l: 'Applications YTD',  v: totalSubmitted,  d: '+18% vs same period last year', color: 'var(--color-primary)' },
-          { l: 'Approval Rate',     v: `${approvalRate}%`, d: `${totalApproved} approved of ${totalSubmitted}`, color: 'var(--color-success)' },
-          { l: 'AI Auto-Accepted',  v: totalAutoAccept, d: `${totalApproved ? Math.round(totalAutoAccept/totalApproved*100) : 0}% of approvals (≥90 threshold)`, color: 'var(--color-info)' },
-          { l: 'SLA Compliance',    v: '95.3%',         d: 'Team target: 95% · On track', color: 'var(--color-success)' },
+          { l: 'Applications YTD',  v: totalSubmitted,     d: '+18% vs same period last year',                                           color: 'var(--color-primary)' },
+          { l: 'Approval Rate',     v: `${approvalRate}%`, d: `${totalApproved} approved of ${totalSubmitted} submitted`,                color: 'var(--color-success)' },
+          { l: 'AI Auto-Accepted',  v: totalAutoAccept,    d: `${totalApproved ? Math.round(totalAutoAccept/totalApproved*100) : 0}% of approvals (≥90 score)`, color: 'var(--color-info)' },
+          { l: 'Team SLA',          v: '95.3%',            d: 'Team target 95% · On track',                                             color: 'var(--color-success)' },
         ].map((k, i) => (
           <antd.Col xs={12} md={6} key={i}>
             <div className="kpi-card">
@@ -342,92 +475,49 @@ SCREENS.reports = function Reports({ nav, currentUser }) {
           </antd.Col>
         ))}
       </antd.Row>
-      <antd.Row gutter={[16,16]}>
+
+      {/* Row 1: Volume trend + Scheme donut */}
+      <antd.Row gutter={[16,16]} style={{ marginBottom: 16 }}>
         <antd.Col xs={24} lg={16}>
-          <antd.Card title="Application Volume Trend" bordered extra={
-            <Space size={16}>
-              {[['Submitted','var(--color-primary)'],['Approved','var(--color-success)'],['AI Auto-Accept','var(--color-info)']].map(([l,c]) => (
-                <Space key={l} size={6}><span style={{ width:10, height:10, borderRadius:2, background:c, display:'inline-block' }} /><span style={{ fontSize:12 }}>{l}</span></Space>
-              ))}
-            </Space>
-          }>
-            <svg width="100%" viewBox={`0 0 ${chartW} ${HEIGHT+50}`} style={{ overflow:'visible' }}>
-              {[0,25,50,75,100].map(pct => {
-                const y = HEIGHT - (pct/100)*HEIGHT;
-                return <g key={pct}>
-                  <line x1={PAD} y1={y} x2={chartW} y2={y} stroke="var(--color-divider)" strokeWidth={1} />
-                  <text x={PAD-6} y={y+4} textAnchor="end" fontSize={10} fill="var(--color-text-muted)">{Math.round((pct/100)*maxSubmitted)}</text>
-                </g>;
-              })}
-              {trend.map((d, i) => {
-                const hS = Math.round((d.submitted/maxSubmitted)*HEIGHT);
-                const hA = Math.round((d.approved/maxSubmitted)*HEIGHT);
-                const hAI = Math.round((d.aiAutoAccepted/maxSubmitted)*HEIGHT);
-                const x = PAD + i*(BAR_W+BAR_GAP);
-                return <g key={i}>
-                  <rect x={x} y={HEIGHT-hS} width={BAR_W} height={hS} rx={4} fill="var(--color-primary)" opacity={0.85} />
-                  <rect x={x+4} y={HEIGHT-hA} width={BAR_W-8} height={hA} rx={3} fill="var(--color-success)" opacity={0.85} />
-                  <circle cx={x+BAR_W/2} cy={HEIGHT-hAI-8} r={5} fill="var(--color-info)" />
-                  <text x={x+BAR_W/2} y={HEIGHT+20} textAnchor="middle" fontSize={12} fontWeight={600} fill="var(--color-text-secondary)">{d.month}</text>
-                </g>;
-              })}
-            </svg>
-          </antd.Card>
-          <antd.Card title="Top Applicants by Volume" bordered style={{ marginTop:16 }}>
-            <antd.Table rowKey="id" dataSource={MOCK.topApplicants || []} pagination={false} size="small" columns={[
-              { title: 'Company',      dataIndex: 'name',        render: (v,r) => <div><div style={{ fontWeight:600 }}>{v}</div><div style={{ fontSize:11, color:'var(--color-text-muted)' }}>{r.id}</div></div> },
-              { title: 'Submitted',    dataIndex: 'submissions', align:'center', render: v => <antd.Tag>{v}</antd.Tag> },
-              { title: 'Approved',     dataIndex: 'approved',    align:'center', render: v => <antd.Tag color="green">{v}</antd.Tag> },
-              { title: 'Approval Rate',align:'center', render: (_,r) => { const pct = Math.round(r.approved/r.submissions*100); return <antd.Progress percent={pct} size="small" strokeColor={pct>=90?'var(--color-success)':pct>=70?'var(--color-warning)':'var(--color-danger)'} style={{ width:100 }} />; }},
-              { title: 'Avg AI Score', dataIndex: 'aiAvg',       align:'center', render: v => <antd.Tag color={v>=90?'green':v>=70?'orange':'red'} style={{ fontWeight:600 }}>{v}</antd.Tag> },
-            ]} />
+          <antd.Card title="Application Volume Trend" bordered
+            extra={<antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>Dashed bars = forecast · Open circles = forecast</antd.Typography.Text>}>
+            <PlotlyChart data={trendData} layout={trendLayout} style={{ height: 280 }} />
           </antd.Card>
         </antd.Col>
         <antd.Col xs={24} lg={8}>
-          <antd.Card title="AI Score Distribution" bordered style={{ marginBottom:16 }}>
-            {[
-              { label:'Auto-Accept (≥90)',       count:totalAutoAccept, pct: totalApproved ? Math.round(totalAutoAccept/totalApproved*100) : 0, color:'var(--color-success)' },
-              { label:'Priority Review (70–89)', count:totalApproved-totalAutoAccept-Math.round(totalApproved*0.08), pct: totalApproved ? Math.round((totalApproved-totalAutoAccept-Math.round(totalApproved*0.08))/totalApproved*100) : 0, color:'var(--color-warning)' },
-              { label:'Standard Review (<70)',   count:Math.round(totalApproved*0.08), pct:8, color:'var(--color-danger)' },
-            ].map((band, i) => (
-              <div key={i} style={{ marginBottom:16 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                  <span style={{ fontSize:12, fontWeight:600, color:band.color }}>{band.label}</span>
-                  <span style={{ fontSize:12, color:'var(--color-text-muted)' }}>{band.count} apps ({band.pct}%)</span>
-                </div>
-                <div style={{ height:8, background:'var(--color-bg-subtle)', borderRadius:999, overflow:'hidden' }}>
-                  <div style={{ height:'100%', width:`${band.pct}%`, background:band.color, borderRadius:999, transition:'width .8s' }} />
-                </div>
-              </div>
-            ))}
-            <antd.Divider style={{ margin:'12px 0' }} />
-            <div style={{ fontSize:12, color:'var(--color-text-muted)', lineHeight:1.6 }}>AI scoring powered by <b>Qwen2.5-VL</b>. Threshold: 70 priority, 90 auto-accept (Scheme C).</div>
-          </antd.Card>
-          <antd.Card title="Officer Performance" bordered>
-            {(MOCK.officerPerformance || []).map((o, i, arr) => (
-              <div key={i} style={{ padding:'12px 0', borderBottom: i < arr.length-1 ? '1px solid var(--color-divider)' : 'none' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
-                  <div>
-                    <div style={{ fontWeight:600, fontSize:13 }}>{o.name}</div>
-                    <div style={{ fontSize:11, color:'var(--color-text-muted)' }}>{o.id} · {o.approved+o.rejected} decisions</div>
-                  </div>
-                  <antd.Tag color={o.slaCompliance>=95?'green':o.slaCompliance>=90?'orange':'red'}>{o.slaCompliance}% SLA</antd.Tag>
-                </div>
-                <antd.Row gutter={8}>
-                  {[['Approved',o.approved,'var(--color-success)'],['Rejected',o.rejected,'var(--color-danger)'],['Avg hrs',o.avgTurnaround,'var(--color-primary)'],['AI overrides',o.aiOverrides,'var(--color-warning)']].map(([l,v,c],j) => (
-                    <antd.Col span={6} key={j}>
-                      <div style={{ textAlign:'center', padding:'6px 4px', background:'var(--color-bg-subtle)', borderRadius:6 }}>
-                        <div style={{ fontSize:15, fontWeight:700, color:c }}>{v}</div>
-                        <div style={{ fontSize:10, color:'var(--color-text-muted)', marginTop:1 }}>{l}</div>
-                      </div>
-                    </antd.Col>
-                  ))}
-                </antd.Row>
-              </div>
-            ))}
+          <antd.Card title="Scheme Distribution" bordered style={{ height: '100%' }}>
+            <PlotlyChart data={donutData} layout={donutLayout} style={{ height: 240 }} />
           </antd.Card>
         </antd.Col>
       </antd.Row>
+
+      {/* Row 2: Processing time + Officer SLA */}
+      <antd.Row gutter={[16,16]} style={{ marginBottom: 16 }}>
+        <antd.Col xs={24} lg={12}>
+          <antd.Card title="Avg Processing Time vs Target" bordered
+            extra={<Space size={12}><Space size={4}><span style={{ display:'inline-block', width:10, height:10, borderRadius:2, background:'#1B7F48' }} /><span style={{ fontSize:11 }}>Within target</span></Space><Space size={4}><span style={{ display:'inline-block', width:10, height:10, borderRadius:2, background:'#C62828' }} /><span style={{ fontSize:11 }}>Over target</span></Space></Space>}>
+            <PlotlyChart data={ptData} layout={ptLayout} style={{ height: 200 }} />
+          </antd.Card>
+        </antd.Col>
+        <antd.Col xs={24} lg={12}>
+          <antd.Card title="Officer SLA Compliance" bordered
+            extra={<antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>Target: 95% · Dashed line</antd.Typography.Text>}>
+            <PlotlyChart data={slaData} layout={slaLayout} style={{ height: 200 }} />
+          </antd.Card>
+        </antd.Col>
+      </antd.Row>
+
+      {/* Row 3: Top applicants table */}
+      <antd.Card title="Top Applicants by Volume" bordered>
+        <antd.Table rowKey="id" dataSource={MOCK.topApplicants || []} pagination={false} size="small" columns={[
+          { title: 'Company',       dataIndex: 'name',        render: (v,r) => <div><div style={{ fontWeight:600 }}>{v}</div><div style={{ fontSize:11, color:'var(--color-text-muted)' }}>{r.id}</div></div> },
+          { title: 'Submitted',     dataIndex: 'submissions', align:'center', render: v => <antd.Tag>{v}</antd.Tag> },
+          { title: 'Approved',      dataIndex: 'approved',    align:'center', render: v => <antd.Tag color="green">{v}</antd.Tag> },
+          { title: 'Approval Rate', align:'center',           render: (_,r) => { const pct = Math.round(r.approved/r.submissions*100); return <antd.Progress percent={pct} size="small" strokeColor={pct>=90?'#1B7F48':pct>=70?'#B87200':'#C62828'} style={{ width:100 }} />; }},
+          { title: 'Avg AI Score',  dataIndex: 'aiAvg',       align:'center', render: v => <antd.Tag color={v>=90?'green':v>=70?'orange':'red'} style={{ fontWeight:600 }}>{v}</antd.Tag> },
+        ]} />
+        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 12 }}>AI scoring powered by Qwen2.5-VL · Threshold: 70 priority review, 90 auto-accept (Scheme C)</div>
+      </antd.Card>
     </div>
   );
 };
