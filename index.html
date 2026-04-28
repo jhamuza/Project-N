@@ -164,36 +164,9 @@ const OfficerRosterPicker = ({ onSelect, onCancel }) => {
   );
 };
 
-const SCREENS = {};
+// SCREENS object is populated by the external component files
+// The component files define: SCREENS.dashboard, SCREENS.applications, etc.
 const SUPPLIER_ONLY = new Set(['dashboard', 'applications', 'sdoc-wizard', 'special-approval', 'modification', 'importation', 'certificates', 'imei-register', 'payments', 'consultants', 'onboarding']);
-
-// Register screens from components
-if (typeof ScreenDashboard !== 'undefined') SCREENS['dashboard'] = ScreenDashboard;
-if (typeof ScreenApplications !== 'undefined') SCREENS['applications'] = ScreenApplications;
-if (typeof ScreenSdocWizard !== 'undefined') SCREENS['sdoc-wizard'] = ScreenSdocWizard;
-if (typeof ScreenSpecialApproval !== 'undefined') SCREENS['special-approval'] = ScreenSpecialApproval;
-if (typeof ScreenModification !== 'undefined') SCREENS['modification'] = ScreenModification;
-if (typeof ScreenImportation !== 'undefined') SCREENS['importation'] = ScreenImportation;
-if (typeof ScreenCertificates !== 'undefined') SCREENS['certificates'] = ScreenCertificates;
-if (typeof ScreenImeiRegister !== 'undefined') SCREENS['imei-register'] = ScreenImeiRegister;
-if (typeof ScreenPayments !== 'undefined') SCREENS['payments'] = ScreenPayments;
-if (typeof ScreenConsultants !== 'undefined') SCREENS['consultants'] = ScreenConsultants;
-if (typeof ScreenOnboarding !== 'undefined') SCREENS['onboarding'] = ScreenOnboarding;
-if (typeof ScreenOfficerQueue !== 'undefined') SCREENS['officer-queue'] = ScreenOfficerQueue;
-if (typeof ScreenOfficerReview !== 'undefined') SCREENS['officer-review'] = ScreenOfficerReview;
-if (typeof ScreenModificationReview !== 'undefined') SCREENS['modification'] = ScreenModificationReview;
-if (typeof ScreenSuppliersMgmt !== 'undefined') SCREENS['suppliers-mgmt'] = ScreenSuppliersMgmt;
-if (typeof ScreenPMS !== 'undefined') SCREENS['pms'] = ScreenPMS;
-if (typeof ScreenPostMonitoring !== 'undefined') SCREENS['post-monitoring'] = ScreenPostMonitoring;
-if (typeof ScreenComplianceStatus !== 'undefined') SCREENS['compliance-status'] = ScreenComplianceStatus;
-if (typeof ScreenSALetter !== 'undefined') SCREENS['sa-letter'] = ScreenSALetter;
-if (typeof ScreenPublicPortal !== 'undefined') SCREENS['public-portal'] = ScreenPublicPortal;
-if (typeof ScreenIntegrations !== 'undefined') SCREENS['integrations'] = ScreenIntegrations;
-if (typeof ScreenAdminConfig !== 'undefined') SCREENS['admin-config'] = ScreenAdminConfig;
-if (typeof ScreenReports !== 'undefined') SCREENS['reports'] = ScreenReports;
-if (typeof ScreenAudit !== 'undefined') SCREENS['audit'] = ScreenAudit;
-if (typeof ScreenProfile !== 'undefined') SCREENS['profile'] = ScreenProfile;
-if (typeof ScreenNotifications !== 'undefined') SCREENS['notifications'] = ScreenNotifications;
 
 function MinaDrawer({ open, onClose, currentUser }) {
   const [msgs, setMsgs] = React.useState([{ role: 'bot', t: 'Hi! I\'m MINA, your NCEF assistant. How can I help?' }]);
