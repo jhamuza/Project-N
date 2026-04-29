@@ -131,15 +131,49 @@ window.MOCK = {
     { id: 'APP-0426-00094', scheme: 'SA', applicant: 'Maxis Broadband Sdn Bhd', product: '5G mmWave Test Unit', submitted: '2026-04-18T10:15:00', aiScore: 65, priority: 'high', slaHours: 8, assignedTo: null },
     { id: 'APP-0426-00095', scheme: 'A', applicant: 'Digi Telecommunications', product: 'Ericsson AIR 6419', submitted: '2026-04-18T15:42:00', aiScore: 83, priority: 'normal', slaHours: 48, assignedTo: 'OFF-003' },
   ],
+  // Supplier-facing audit trail (no AI/system internals)
+  supplierAuditTrail: {
+    'APP-0426-00087': [
+      { t: 'Application submitted',              d: '15 Apr 2026, 14:20', icon: '\ud83d\udce4', note: '' },
+      { t: 'Documents received and logged',      d: '15 Apr 2026, 14:21', icon: '\ud83d\udccb', note: '6 documents accepted' },
+      { t: 'Compliance check complete',          d: '15 Apr 2026, 14:23', icon: '\u2705', note: 'Compliance score: 87/100 \u2014 2 items require attention' },
+      { t: 'Assigned for officer review',        d: '15 Apr 2026, 14:24', icon: '\u27a1\ufe0f', note: 'Expected response within 3 working days' },
+      { t: 'Under review',                       d: '18 Apr 2026, 10:30', icon: '\ud83d\udc41', note: 'An officer has opened your application' },
+    ],
+    'APP-0426-00085': [
+      { t: 'Application submitted',              d: '8 Apr 2026, 11:00', icon: '\ud83d\udce4', note: '' },
+      { t: 'Documents received and logged',      d: '8 Apr 2026, 11:01', icon: '\ud83d\udccb', note: '5 documents accepted' },
+      { t: 'Compliance check complete',          d: '8 Apr 2026, 11:02', icon: '\u2705', note: 'Compliance score: 94/100 \u2014 all criteria met' },
+      { t: 'Approved \u2014 certificate issued',      d: '10 Apr 2026, 16:45', icon: '\ud83c\udf89', note: 'RCN-0326-00449 issued. Download available.' },
+    ],
+    'APP-0426-00083': [
+      { t: 'Application submitted',              d: '5 Apr 2026, 10:15', icon: '\ud83d\udce4', note: '' },
+      { t: 'Compliance check complete',          d: '5 Apr 2026, 10:17', icon: '\u26a0\ufe0f', note: 'Compliance score: 62/100 \u2014 multiple items flagged' },
+      { t: 'Assigned for officer review',        d: '5 Apr 2026, 10:18', icon: '\u27a1\ufe0f', note: '' },
+      { t: 'Iteration requested',                d: '9 Apr 2026, 13:20', icon: '\u21a9\ufe0f', note: 'Please review the officer comments and resubmit by 4 Jun 2026' },
+    ],
+  },
+  // Officer / MCMC-internal view \u2014 uses technical AI model language
   aiReasoning: [
-    { category: 'SSM/ROC/ROB Validation', score: 18, max: 20, note: 'BRN 201901023456 verified; entity active since 2019.', pass: true },
-    { category: 'Address & Director Match', score: 10, max: 10, note: 'Director (Tan Sri Dato\u2019 Sri Jamaludin Ibrahim) and address match SSM records.', pass: true },
-    { category: 'Completeness of Technical Specs', score: 13, max: 15, note: 'Output power (26 dBm) present but frequency band missing secondary range.', pass: false },
-    { category: 'Brand & Model Consistency', score: 10, max: 10, note: 'SM-S928B consistent across brochure, test report, and photos.', pass: true },
-    { category: 'Test Report & Lab Verification', score: 14, max: 15, note: 'SIRIM QAS (Accreditation #LM-15-004) report dated 2026-03-12.', pass: true },
-    { category: 'Standards Compliance', score: 8, max: 10, note: 'MCMC MTSFB TC G015:2022 \u2014 one clause marked "N/A" without justification.', pass: false },
-    { category: 'Supplier Past Performance', score: 9, max: 10, note: '47 prior approvals; 0 rejections in the last 24 months.', pass: true },
-    { category: 'Completeness & Consistency', score: 5, max: 10, note: '"Marketing Name" field left blank; permitted but may delay label registry.', pass: false },
+    { category: 'SSM/ROC/ROB Validation',        score: 18, max: 20, note: 'BRN 201901023456 verified via SSM API; entity active since 2019. Director identity cross-checked against NRIC.',                          pass: true  },
+    { category: 'Address & Director Match',        score: 10, max: 10, note: 'Qwen2.5-VL extracted registered address from SSM cert; exact match to declared address field.',                                           pass: true  },
+    { category: 'Completeness of Technical Specs', score: 13, max: 15, note: 'Output power (26 dBm) extracted. Secondary frequency band (2400\u20132483.5 MHz sub-band) absent from technical brochure.',                  pass: false },
+    { category: 'Brand & Model Consistency',       score: 10, max: 10, note: 'Model string "SM-S928B" consistent across brochure, test report header, and label photo OCR.',                                           pass: true  },
+    { category: 'Test Report & Lab Verification',  score: 14, max: 15, note: 'SIRIM QAS International (Accreditation #LM-15-004) report dated 2026-03-12. Lab scope matches device category.',                        pass: true  },
+    { category: 'Standards Compliance',            score:  8, max: 10, note: 'MCMC MTSFB TC G015:2022 \u2014 clause 5.3.2 marked "N/A" without documented justification. Flagged for officer review.',                    pass: false },
+    { category: 'Supplier Track Record',           score:  9, max: 10, note: '47 prior approvals; 0 rejections; 0 open enforcement actions in the last 24 months. Verified against NCEF history table.',              pass: true  },
+    { category: 'Completeness & Consistency',      score:  5, max: 10, note: '"Marketing Name" field blank. Frequency band missing from product photo label. Minor \u2014 will not block approval but flags for label check.', pass: false },
+  ],
+  // Supplier-facing compliance breakdown \u2014 same criteria, no AI/model references
+  complianceChecks: [
+    { category: 'Business Registration',           score: 18, max: 20, note: 'Your SSM business registration is valid and active. Company details match the submission.',                                                pass: true  },
+    { category: 'Applicant Identity',              score: 10, max: 10, note: 'Authorised representative and registered address are consistent with your account profile.',                                              pass: true  },
+    { category: 'Technical Specifications',        score: 13, max: 15, note: 'Output power declared correctly. Please ensure the secondary frequency sub-band is included in your technical brochure.',                pass: false },
+    { category: 'Brand & Model Consistency',       score: 10, max: 10, note: 'Model number matches across your brochure, test report, and product label photo \u2014 no discrepancies found.',                              pass: true  },
+    { category: 'Test Report',                     score: 14, max: 15, note: 'Accredited lab report accepted (SIRIM QAS International, dated 2026-03-12). Report scope covers the declared product category.',         pass: true  },
+    { category: 'Standards Declaration',           score:  8, max: 10, note: 'One clause in your MCMC MTSFB TC G015:2022 declaration is marked "N/A" without a reason. Please provide a brief justification.',       pass: false },
+    { category: 'Account Standing',               score:  9, max: 10, note: 'Your account has a strong approval history with no rejections or enforcement actions in the past 24 months.',                            pass: true  },
+    { category: 'Form Completeness',               score:  5, max: 10, note: 'The "Marketing Name" field is blank and the frequency band is missing from the product label photo. Completing these will improve your score.', pass: false },
   ],
   documents: [
     { name: 'Company_Registration_SSM.pdf', type: 'Company Registration', size: '2.1 MB', ocrStatus: 'verified', uploaded: '2026-04-15T14:05:00' },

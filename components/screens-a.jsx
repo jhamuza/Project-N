@@ -267,7 +267,7 @@ SCREENS.applications = function Applications({ nav }) {
             Respond
           </Button>
         )}
-        <Button size="small" onClick={() => nav('officer-review')}>Open</Button>
+        <Button size="small" onClick={() => nav('application-detail')}>Open</Button>
       </antd.Space>
     ) },
   ];
@@ -299,6 +299,147 @@ SCREENS.applications = function Applications({ nav }) {
         />
         <Table rowKey="id" columns={cols} dataSource={filtered} pagination={false} size="middle" />
       </Card>
+    </div>
+  );
+};
+
+// ============ APPLICATION DETAIL (Supplier view) ============
+SCREENS['application-detail'] = function ApplicationDetail({ nav }) {
+  const a = MOCK.assessments.find(x => x.id === 'APP-0426-00087') || MOCK.assessments[0];
+  const auditTrail = (MOCK.supplierAuditTrail || {})[a.id] || [
+    { t: 'Application submitted',     d: '15 Apr 2026, 14:20', icon: '📤', note: '' },
+    { t: 'Compliance check complete', d: '15 Apr 2026, 14:23', icon: '✅', note: '' },
+    { t: 'Assigned for officer review', d: '15 Apr 2026, 14:24', icon: '➡️', note: '' },
+  ];
+  const docs = MOCK.documents || [];
+
+  const iterationNotes = a.status === 'iteration_required' ? [
+    { label: 'Frequency band', note: 'Please include the full secondary frequency range (2400–2483.5 MHz sub-band) in the technical brochure.' },
+    { label: 'Standards clause', note: 'Clause 5.3.2 in MCMC MTSFB TC G015:2022 is marked "N/A" — please provide a brief written justification.' },
+  ] : [];
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1100, margin: '0 auto' }}>
+      <Breadcrumb items={[
+        { title: <a onClick={() => nav('applications')}>My Applications</a> },
+        { title: <span style={{ fontFamily: 'var(--font-mono)' }}>{a.id}</span> },
+      ]} style={{ marginBottom: 16 }} />
+
+      {/* Header */}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 24 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <SchemeBadge scheme={a.scheme} />
+            <Title level={3} style={{ margin: 0 }}>{a.product}</Title>
+            <Text type="secondary">{a.brand} · {a.model}</Text>
+            <StatusPill status={a.status} />
+          </div>
+          <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+            Submitted {new Date(a.submitted).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+            {a.rcn && <> · <Text code style={{ fontSize: 12 }}>{a.rcn}</Text></>}
+          </Text>
+        </div>
+        {a.status === 'iteration_required' && (
+          <Button type="primary" icon={<ReloadOutlined />} onClick={() => nav('iteration-reply')}
+            style={{ background: 'var(--color-warning)', borderColor: 'var(--color-warning)' }}>
+            Respond to Iteration
+          </Button>
+        )}
+      </div>
+
+      {/* Iteration banner */}
+      {a.status === 'iteration_required' && (
+        <antd.Alert type="warning" showIcon style={{ marginBottom: 20 }}
+          message="Action required — officer has requested amendments"
+          description={
+            <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+              {iterationNotes.map((n, i) => <li key={i}><b>{n.label}:</b> {n.note}</li>)}
+            </ul>
+          }
+        />
+      )}
+
+      <Row gutter={20}>
+        {/* LEFT: tabs */}
+        <Col span={16}>
+          <antd.Tabs items={[
+            {
+              key: 'score',
+              label: 'Compliance Score',
+              children: (
+                <div style={{ paddingTop: 8 }}>
+                  <AiScoreCard score={a.aiScore || 87} reasoning={MOCK.complianceChecks || MOCK.aiReasoning} viz="bar" supplierMode />
+                </div>
+              ),
+            },
+            {
+              key: 'docs',
+              label: 'Documents',
+              children: (
+                <div style={{ display: 'grid', gap: 8, paddingTop: 8 }}>
+                  {docs.map((d, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 12px', background: 'var(--color-bg-subtle)', borderRadius: 8 }}>
+                      <span>📄</span>
+                      <span style={{ flex: 1, fontSize: 13 }}>{d.name}</span>
+                      <Text type="secondary" style={{ fontSize: 11 }}>{d.size}</Text>
+                      <Tag color={d.ocrStatus === 'verified' ? 'green' : 'orange'} style={{ fontSize: 10, margin: 0 }}>
+                        {d.ocrStatus === 'verified' ? '✓ Accepted' : 'Pending'}
+                      </Tag>
+                    </div>
+                  ))}
+                </div>
+              ),
+            },
+            {
+              key: 'trail',
+              label: 'Activity',
+              children: (
+                <antd.List
+                  size="small"
+                  style={{ paddingTop: 8 }}
+                  dataSource={auditTrail}
+                  renderItem={e => (
+                    <antd.List.Item style={{ padding: '10px 0' }}>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <div style={{ fontSize: 18 }}>{e.icon}</div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500 }}>{e.t}</div>
+                          {e.note && <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>{e.note}</div>}
+                          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{e.d}</div>
+                        </div>
+                      </div>
+                    </antd.List.Item>
+                  )}
+                />
+              ),
+            },
+          ]} />
+        </Col>
+
+        {/* RIGHT: summary card */}
+        <Col span={8}>
+          <Card size="small" bordered style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600, marginBottom: 10 }}>Application Details</div>
+            {[
+              ['Application ID', a.id],
+              ['Scheme', <SchemeBadge scheme={a.scheme} />],
+              ['Status', <StatusPill status={a.status} />],
+              ['Submitted', new Date(a.submitted).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })],
+              ...(a.rcn ? [['Certificate (RCN)', <Text code style={{ fontSize: 12 }}>{a.rcn}</Text>]] : []),
+              ...(a.iterationDue ? [['Amendment Due', <Text style={{ color: 'var(--color-warning)', fontWeight: 600 }}>{new Date(a.iterationDue).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>]] : []),
+            ].map(([k, v], i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--color-divider)' }}>
+                <Text type="secondary" style={{ fontSize: 12 }}>{k}</Text>
+                <div style={{ fontSize: 13 }}>{v}</div>
+              </div>
+            ))}
+          </Card>
+          {a.status === 'approved' && a.rcn && (
+            <Button block icon={<DownloadOutlined />}>Download Certificate PDF</Button>
+          )}
+          <Button block style={{ marginTop: 8 }} onClick={() => nav('applications')}>← Back to Applications</Button>
+        </Col>
+      </Row>
     </div>
   );
 };
