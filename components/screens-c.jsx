@@ -170,7 +170,7 @@ function CertificateDetail({ cert, nav }) {
       {cert.status === 'expiring' && (
         <>
           <antd.Divider orientation="left" orientationMargin={0} style={{ fontSize: 13 }}>Renewal</antd.Divider>
-          <antd.Alert type="warning" showIcon message={`Certificate expires in ${Math.ceil((new Date(cert.expires) - new Date('2026-04-19')) / 864e5)} days`} description="Start renewal early to avoid supply disruption. AI will reuse most documents from the original submission." />
+          <antd.Alert type="warning" showIcon message={`Certificate expires in ${Math.ceil((new Date(cert.expires) - new Date('2026-04-19')) / 864e5)} days`} description="Start renewal early to avoid supply disruption. Eligible documents from the original submission will be reused." />
           <div style={{ marginTop: 12 }}>
             <antd.Button type="primary" block icon={<ReloadOutlined />} onClick={() => nav && nav('cert-renewal')}>Start Renewal</antd.Button>
           </div>

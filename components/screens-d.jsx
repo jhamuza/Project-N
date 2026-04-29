@@ -776,8 +776,8 @@ SCREENS['public-portal'] = function PublicPortal({ nav }) {
   const faqs = [
     { q: 'What is the NCEF?', a: 'The New Communications Equipment Framework (NCEF) is MCMC\'s regulatory framework for communications equipment registration in Malaysia, replacing legacy SIRIM-managed systems.' },
     { q: 'Which equipment requires registration?', a: 'All communications equipment operating on licensed or unlicensed radio frequency bands in Malaysia — including smartphones, routers, IoT devices, and broadcasting equipment.' },
-    { q: 'What are the registration schemes?', a: 'Scheme A (High Risk — SDoC with full Certification), Scheme B (Medium Risk — SDoC with Verification), Scheme C (Low Risk — AI Auto-Acceptance at ≥90% confidence).' },
-    { q: 'How long does registration take?', a: 'Scheme C with AI auto-accept: same day. Scheme A/B with officer review: 3–5 working days. Special Approval (non-prohibited): 3–5 working days.' },
+    { q: 'What are the registration schemes?', a: 'Scheme A (High Risk — SDoC with full Certification), Scheme B (Medium Risk — SDoC with Verification), Scheme C (Low Risk — expedited approval for qualifying submissions).' },
+    { q: 'How long does registration take?', a: 'Scheme C qualifying submissions: same day. Scheme A/B with officer review: 3–5 working days. Special Approval (non-prohibited): 3–5 working days.' },
     { q: 'How do I renew my certificate?', a: 'Log in to the NCEF Portal and navigate to Certificates. Renewal must be initiated within 6 months of certificate expiry. Documents may be reused if less than 3 years old.' },
   ];
 

@@ -673,7 +673,7 @@ function minaRespond(q) {
   if (/scheme\s*b\b|scheme b/.test(lq))
     return 'Scheme B applies to Category I equipment (wired, low-risk). Submit: SSM cert, technical brochure, self-declaration form, and product photos. Lab test report is not mandatory unless requested by MCMC. Processing: 10–15 working days.';
   if (/scheme\s*c\b|scheme c/.test(lq))
-    return 'Scheme C is for recognised standard equipment with an AI confidence score ≥ 90. Applications scoring ≥ 90 are auto-accepted without officer review. The certificate is issued within 3 working days after payment.';
+    return 'Scheme C is for recognised standard equipment under a manufacturer\'s self-declaration. Qualifying submissions receive expedited processing and the certificate is typically issued within 1 working day after payment.';
   if (/scheme\s*d\b|scheme d/.test(lq))
     return 'Scheme D covers temporary import for R&D, exhibitions, or demonstrations. Maximum validity: 12 months (non-renewable). A written undertaking must be submitted stating the equipment will be re-exported or destroyed after use.';
   if (/document|what.*need|require/.test(lq))
@@ -700,8 +700,8 @@ function minaRespond(q) {
     return 'MCMC targets: Scheme A 15 WD, Scheme B 10 WD, Scheme C 3 WD, Special Approval 45 WD. SLA clock pauses during iteration periods. You will receive notifications at 7 days and 3 days before SLA breach.';
   if (/contact|mcmc|help|support|email|phone/.test(lq))
     return 'MCMC CPPG Helpdesk: cppg@mcmc.gov.my · +603-8688 8000. Portal support: itsupport@mcmc.gov.my. Office hours: Mon–Thu 8:30–17:30, Fri 8:00–12:15 & 14:45–17:30 (MYT). For urgent SLA issues, quote your App ID in the subject line.';
-  if (/ai.*score|confidence|auto.accept|threshold/.test(lq))
-    return 'The AI compliance score (0–100) is calculated from document completeness, test report clauses, and label accuracy. Score ≥ 90: Scheme C auto-accept. Score 70–89: priority review with officer flags. Score < 70: full manual review. You can request a re-score after uploading corrected documents.';
+  if (/compliance.*score|score|auto.accept|threshold/.test(lq))
+    return 'The compliance score (0–100) reflects how completely your submission meets NCEF requirements — covering document completeness, test report clauses, and label accuracy. Submissions scoring 90 or above qualify for expedited Scheme C processing. Scores between 70–89 route to an officer review queue. You can improve your score by uploading corrected or additional documents.';
   if (/import|customs|permit/.test(lq))
     return 'A valid NCEF certificate is required for customs clearance of regulated equipment. The customs permit reference is embedded in the certificate QR code. For bulk imports, use the IMEI/SN batch registration to cover each unit.';
   return 'I\'m not sure about that specific query. Try asking about: schemes (A/B/C/D), required documents, certificate validity, fees, IMEI registration, application status, or contact MCMC CPPG at cppg@mcmc.gov.my for complex cases.';

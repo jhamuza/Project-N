@@ -27,17 +27,19 @@ function SchemeBadge({ scheme }) {
 }
 
 // --- AI SCORE (3 variants, controlled via viz prop) ---
-function AiScoreCard({ score, reasoning, viz = 'gauge', compact = false }) {
+function AiScoreCard({ score, reasoning, viz = 'gauge', compact = false, supplierMode = false }) {
   const tone = score >= 90 ? 'success' : score >= 70 ? 'warning' : 'danger';
-  const verdict = score >= 90 ? 'Auto-accept eligible' : score >= 70 ? 'Priority review' : 'Standard review';
+  const verdictMcmc = score >= 90 ? 'Auto-accept eligible' : score >= 70 ? 'Priority review' : 'Standard review';
+  const verdictSupplier = score >= 90 ? 'Approved automatically' : score >= 70 ? 'Under review' : 'Further review required';
+  const verdict = supplierMode ? verdictSupplier : verdictMcmc;
   const toneColor = { success: 'var(--color-success)', warning: 'var(--color-warning)', danger: 'var(--color-danger)' }[tone];
   const [expanded, setExpanded] = React.useState(false);
 
   const Header = (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
       <div>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: .5, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>AI Confidence Score</div>
-        <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 2 }}>Qwen2.5-VL · 8 criteria</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: .5, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>{supplierMode ? 'Compliance Score' : 'AI Confidence Score'}</div>
+        <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 2 }}>{supplierMode ? '8 compliance criteria' : 'Qwen2.5-VL · 8 criteria'}</div>
       </div>
       <Tag color={tone === 'success' ? 'green' : tone === 'warning' ? 'orange' : 'red'} style={{ margin: 0, fontWeight: 600 }}>{verdict}</Tag>
     </div>
@@ -54,12 +56,22 @@ function AiScoreCard({ score, reasoning, viz = 'gauge', compact = false }) {
           <text x="60" y="76" textAnchor="middle" fontSize="11" fill="var(--color-text-muted)">/ 100</text>
         </svg>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>Verdict</div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>Result</div>
           <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4, color: toneColor }}>{verdict}</div>
           <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 8 }}>
-            {tone === 'success' && 'Exceeds 90% threshold. Officer review optional for Scheme C.'}
-            {tone === 'warning' && '70–89% band. Routes to priority queue.'}
-            {tone === 'danger' && 'Below 70%. Standard officer review required.'}
+            {supplierMode ? (
+              <>
+                {tone === 'success' && 'All compliance criteria met. Your application qualifies for expedited processing.'}
+                {tone === 'warning' && 'Minor items flagged. An officer will review your submission within 2 working days.'}
+                {tone === 'danger' && 'Some criteria require attention. An officer will contact you with details.'}
+              </>
+            ) : (
+              <>
+                {tone === 'success' && 'Exceeds 90% threshold. Officer review optional for Scheme C.'}
+                {tone === 'warning' && '70–89% band. Routes to priority queue.'}
+                {tone === 'danger' && 'Below 70%. Standard officer review required.'}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -80,7 +92,7 @@ function AiScoreCard({ score, reasoning, viz = 'gauge', compact = false }) {
         <div style={{ position: 'absolute', left: '90%', top: -4, bottom: -4, width: 1, background: 'var(--color-border-strong)' }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--color-text-muted)', marginTop: 4, fontWeight: 600 }}>
-        <span>0</span><span>70 priority</span><span>90 auto-accept</span><span>100</span>
+        <span>0</span><span>70</span><span>90</span><span>100</span>
       </div>
     </div>
   );
@@ -108,7 +120,7 @@ function AiScoreCard({ score, reasoning, viz = 'gauge', compact = false }) {
         <>
           <Divider style={{ margin: '16px 0 12px' }} />
           <Button type="link" size="small" style={{ padding: 0 }} onClick={() => setExpanded(!expanded)}>
-            {expanded ? 'Hide' : 'Show'} reasoning ({reasoning.length} criteria)
+            {expanded ? 'Hide' : 'Show'} {supplierMode ? 'compliance details' : 'reasoning'} ({reasoning.length} criteria)
           </Button>
           {expanded && (
             <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -12,7 +12,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
     { k: 'scheme', t: 'Scheme' },
     { k: 'product', t: 'Product' },
     { k: 'docs', t: 'Documents' },
-    { k: 'ai', t: 'AI Validation' },
+    { k: 'ai', t: 'Document Validation' },
     { k: 'review', t: 'Review' },
     { k: 'pay', t: 'Payment' },
     { k: 'confirm', t: 'Confirm' },
@@ -27,9 +27,9 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
   }, [step]);
 
   const schemes = [
-    { k: 'A', t: 'Scheme A', sub: 'Generic Certification', d: 'Most consumer devices — radio/telecom equipment with standard compliance profile.', fee: 'RM 1,200', sla: '3 working days', ai: 'Standard AI review (≥70 priority, ≥90 auto-accept eligible)' },
-    { k: 'B', t: 'Scheme B', sub: 'Specific Certification', d: 'Equipment requiring detailed technical review (non-standard parameters, custom modulation).', fee: 'RM 2,500', sla: '5 working days', ai: 'Enhanced AI review + mandatory officer verification' },
-    { k: 'C', t: 'Scheme C', sub: 'Self-Declaration (SDoC)', d: 'Low-risk equipment under a manufacturer conformity declaration.', fee: 'RM 600', sla: '1 working day', ai: 'AI auto-accept path enabled at ≥90 confidence' },
+    { k: 'A', t: 'Scheme A', sub: 'Generic Certification', d: 'Most consumer devices — radio/telecom equipment with standard compliance profile.', fee: 'RM 1,200', sla: '3 working days', ai: 'Standard compliance review · Processed within 3 working days' },
+    { k: 'B', t: 'Scheme B', sub: 'Specific Certification', d: 'Equipment requiring detailed technical review (non-standard parameters, custom modulation).', fee: 'RM 2,500', sla: '5 working days', ai: 'Enhanced document review + mandatory officer verification' },
+    { k: 'C', t: 'Scheme C', sub: 'Self-Declaration (SDoC)', d: 'Low-risk equipment under a manufacturer conformity declaration.', fee: 'RM 600', sla: '1 working day', ai: 'Eligible for expedited approval within 1 working day' },
   ];
 
   const Sidebar = () => (
@@ -88,7 +88,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
 
   const SchemeStep = () => (
     <div style={{ maxWidth: 900 }}>
-      <Alert type="info" showIcon message="Your product suggests Scheme A based on radio equipment profile" description="Our AI reviewed your uploaded datasheet and matched it to MCMC MTSFB TC G015:2022 category." style={{ marginBottom: 20 }} />
+      <Alert type="info" showIcon message="Your product suggests Scheme A based on radio equipment profile" description="Your uploaded datasheet was assessed and matched to MCMC MTSFB TC G015:2022 category." style={{ marginBottom: 20 }} />
       <Row gutter={16}>
         {schemes.map(s => (
           <Col xs={24} md={8} key={s.k}>
@@ -159,7 +159,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
 
   const DocsStep = () => (
     <div style={{ maxWidth: 780 }}>
-      <Alert message="AI will extract and cross-check data from your uploads" description="Upload clear, non-redacted copies. OCR will populate fields automatically; you can review before submission." type="info" showIcon style={{ marginBottom: 20 }} />
+      <Alert message="We'll extract and verify data from your uploads" description="Upload clear, non-redacted copies. Fields will be populated automatically; you can review before submission." type="info" showIcon style={{ marginBottom: 20 }} />
       <div style={{ display: 'grid', gap: 12 }}>
         {[
           { k: 'reg', label: 'Company Registration (SSM)', req: true, status: 'verified', file: 'Company_Registration_SSM.pdf' },
@@ -189,10 +189,12 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
       {aiRunning && (
         <Card bordered style={{ borderColor: 'var(--color-primary)', marginBottom: 20 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <div style={{ width: 48, height: 48, borderRadius: 24, background: 'var(--color-primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>🤖</div>
+            <div style={{ width: 48, height: 48, borderRadius: 24, background: 'var(--color-primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FileSearchOutlined style={{ fontSize: 24, color: 'var(--color-primary)' }} />
+            </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 600 }}>Qwen2.5-VL analysing your submission…</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>Cross-referencing SSM, OCR data, historical patterns, and compliance standards</div>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>Validating your submission…</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>Cross-referencing SSM records, document content, and compliance standards</div>
               <Progress percent={70} status="active" showInfo={false} strokeColor="var(--color-primary)" style={{ marginTop: 10 }} />
             </div>
           </div>
@@ -200,8 +202,8 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
       )}
       {aiDone && (
         <>
-          <AiScoreCard score={87} reasoning={MOCK.aiReasoning} viz={tweaks.aiViz} />
-          <Alert type="warning" showIcon style={{ marginTop: 16 }} message="2 criteria flagged for officer review" description="Your score of 87 is above the 70 priority threshold but below the 90 auto-accept threshold. Submission will route to priority officer queue with ~2 day turnaround." />
+          <AiScoreCard score={87} reasoning={MOCK.aiReasoning} viz={tweaks.aiViz} supplierMode />
+          <Alert type="warning" showIcon style={{ marginTop: 16 }} message="2 items flagged for officer review" description="Your compliance score of 87 meets the processing threshold but a brief officer review is required. Expected turnaround: ~2 working days." />
         </>
       )}
     </div>
@@ -244,7 +246,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
           </Card>
         </Col>
         <Col span={8}>
-          <AiScoreCard score={87} reasoning={MOCK.aiReasoning} viz="bar" compact />
+          <AiScoreCard score={87} reasoning={MOCK.aiReasoning} viz="bar" compact supplierMode />
           <Card size="small" bordered style={{ marginTop: 12 }}>
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Fee Summary</div>
             <div style={{ fontSize: 32, fontWeight: 700, marginTop: 4 }}>RM 1,200</div>

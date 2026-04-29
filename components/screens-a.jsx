@@ -257,7 +257,7 @@ SCREENS.applications = function Applications({ nav }) {
     { title: 'App ID', dataIndex: 'id', render: (v) => <Text code style={{ fontSize: 12 }}>{v}</Text> },
     { title: 'Scheme', dataIndex: 'scheme', render: (s) => <SchemeBadge scheme={s} /> },
     { title: 'Product', render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.product}</div><div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.brand} · {r.model}</div></div> },
-    { title: 'AI Score', dataIndex: 'aiScore', render: (s) => s ? <Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600, margin: 0 }}>{s}</Tag> : <Text type="secondary">—</Text> },
+    { title: 'Compliance Score', dataIndex: 'aiScore', render: (s) => s ? <Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600, margin: 0 }}>{s}</Tag> : <Text type="secondary">—</Text> },
     { title: 'Status', dataIndex: 'status', render: (s) => <StatusPill status={s} /> },
     { title: 'Updated', dataIndex: 'updated', render: (v) => <Text style={{ fontSize: 12 }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</Text> },
     { title: '', render: (_, r) => (
@@ -310,7 +310,7 @@ SCREENS.onboarding = function Onboarding({ nav }) {
   const [supplierMode, setSupplierMode] = React.useState('new'); // 'new' | 'existing'
   const [selectedSupplier, setSelectedSupplier] = React.useState(null);
   const [supplierSearch, setSupplierSearch] = React.useState('');
-  const steps = ['Account', 'Verify Email', 'Category', 'Details', 'AI Validation', 'Confirmation'];
+  const steps = ['Account', 'Verify Email', 'Category', 'Details', 'Verification', 'Confirmation'];
   const cats = [
     { k: 'A', t: 'Company (Commercial)', d: 'Registered Sdn Bhd or Bhd with active SSM BRN', icon: '🏢' },
     { k: 'B', t: 'Individual (Non-Commercial)', d: 'Malaysian citizen or permanent resident with NRIC', icon: '👤' },
@@ -496,10 +496,10 @@ SCREENS.onboarding = function Onboarding({ nav }) {
         )}
         {step === 4 && (
           <div>
-            <Title level={4}>AI Validation in Progress</Title>
-            <Text type="secondary">We're cross-checking your submission against SSM records, document OCR, and historical patterns.</Text>
+            <Title level={4}>Verification in Progress</Title>
+            <Text type="secondary">We're cross-checking your submission against SSM records, document content, and regulatory requirements.</Text>
             <div style={{ marginTop: 24, display: 'grid', gap: 12 }}>
-              {['SSM BRN lookup', 'Document OCR extraction', 'Director identity match', 'Address verification', 'Confidence scoring'].map((l, i) => (
+              {['SSM BRN lookup', 'Document extraction', 'Director identity match', 'Address verification', 'Compliance scoring'].map((l, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: 'var(--color-bg-subtle)', borderRadius: 8 }}>
                   <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--color-success)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12 }}>✓</div>
                   <div style={{ flex: 1, fontSize: 13 }}>{l}</div>
@@ -508,7 +508,7 @@ SCREENS.onboarding = function Onboarding({ nav }) {
               ))}
             </div>
             <div style={{ marginTop: 24 }}>
-              <AiScoreCard score={94} reasoning={MOCK.aiReasoning} viz="gauge" compact />
+              <AiScoreCard score={94} reasoning={MOCK.aiReasoning} viz="gauge" compact supplierMode />
             </div>
           </div>
         )}
@@ -742,7 +742,7 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
   const [aiDone, setAiDone] = React.useState(false);
   const [payMethod, setPayMethod] = React.useState('fpx');
 
-  const steps = ['Select Certificate', 'Review Documents', 'AI Re-validation', 'Payment', 'Confirmation'];
+  const steps = ['Select Certificate', 'Review Documents', 'Document Re-check', 'Payment', 'Confirmation'];
   const expiringCerts = MOCK.certificates.filter(c => c.status === 'expiring' || c.status === 'active');
   const feeMap = { A: 1200, B: 2500, C: 600, SA: 1200 };
   const fee = feeMap[selectedCert?.scheme] || 1200;
@@ -769,7 +769,7 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
       <Breadcrumb items={[{ title: <a onClick={() => nav('dashboard')}>Dashboard</a> }, { title: <a onClick={() => nav('certificates')}>Certificates</a> }, { title: 'Renew Certificate' }]} />
       <div style={{ margin: '8px 0 24px' }}>
         <Title level={3} style={{ margin: 0 }}>Certificate Renewal</Title>
-        <Text type="secondary">Renew before expiry to avoid supply disruption. AI reuses most documents.</Text>
+        <Text type="secondary">Renew before expiry to avoid supply disruption. Eligible documents from your original submission will be reused.</Text>
       </div>
       <div style={{ marginBottom: 28 }}>
         <Steps current={step} size="small" labelPlacement="vertical" responsive items={steps.map(s => ({ title: s }))} />
@@ -847,10 +847,10 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
               <Card bordered style={{ borderColor: 'var(--color-primary)', marginBottom: 20 }}>
                 <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                   <div style={{ width: 48, height: 48, borderRadius: 24, background: 'var(--color-primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <RobotOutlined style={{ fontSize: 24, color: 'var(--color-primary)' }} />
+                    <FileSearchOutlined style={{ fontSize: 24, color: 'var(--color-primary)' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 600 }}>Re-validating updated documents…</div>
+                    <div style={{ fontSize: 15, fontWeight: 600 }}>Checking updated documents…</div>
                     <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>Cross-referencing new test report, updated declarations, prior approval history</div>
                     <Progress percent={55} status="active" showInfo={false} strokeColor="var(--color-primary)" style={{ marginTop: 10 }} />
                   </div>
@@ -859,8 +859,8 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
             )}
             {aiDone && (
               <>
-                <AiScoreCard score={92} reasoning={MOCK.aiReasoning} viz="bar" />
-                <Alert type="success" showIcon style={{ marginTop: 16 }} message="Score improved to 92 — auto-accept eligible" description="Updated test report resolved the previous frequency band flag. Renewal can proceed without officer review." />
+                <AiScoreCard score={92} reasoning={MOCK.aiReasoning} viz="bar" supplierMode />
+                <Alert type="success" showIcon style={{ marginTop: 16 }} message="Compliance score improved to 92 — eligible for automatic approval" description="Updated test report resolved the previous frequency band flag. Renewal can proceed without further review." />
               </>
             )}
           </div>
@@ -897,7 +897,7 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'var(--color-success)' }}>✓</div>
             <Title level={3} style={{ marginTop: 16 }}>Certificate Renewed</Title>
-            <Text type="secondary">Payment received. New certificate issued automatically (AI score ≥90).</Text>
+            <Text type="secondary">Payment received. New certificate issued automatically — your compliance score meets the required threshold.</Text>
             <div style={{ marginTop: 24, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12, display: 'inline-block' }}>
               <Row gutter={24}>
                 <Col>
