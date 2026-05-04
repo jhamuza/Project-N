@@ -1700,3 +1700,59 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 5. **User reg fee:** RM 100 + RM 50/yr, max 5 years — shown in renewal flow
 6. **Soft-delete suppliers:** `deletedAt` set rather than physical delete; restorable by admin
 7. **AI confidence score** displayed in officer review; 90%/70% threshold commentary shown
+
+---
+
+## 12. User Engagement Findings & Initiatives
+
+> **Last updated: 29 Apr 2026** — Compiled from user engagement session feedback, cross-referenced against URS §5.2 (SDoC), §5.3 (Special Approval), §5.4 (Renewal), §5.5 (IMEI), §5.7 (Importation), §5.13 (Payment), §5.18 (Admin Config).
+
+### 12.1 Confirmed URS Gaps (SDoC)
+
+| Gap | URS Reference | Initiative |
+|---|---|---|
+| Same 6 documents shown for all schemes; CoC mandatory for Scheme A only | §5.2.2, §5.4.3 | #4 |
+| 6-month document validity rule not enforced or displayed | §5.2.1, §5.2.6 | #4 |
+| Part C (Labelling: type + location) missing from wizard | §5.2.1 Part C | #4 |
+| Part D (Registration Period 1–5 yr, capped by CoC validity) missing | §5.2.1 Part D | #4 |
+| Confidence score is an internal routing signal; not for applicants | §5.2.4 | #2 |
+| Document findings not surfaced specifically before submission | §5.2.6 | #3 |
+
+### 12.2 Confirmed URS Gaps (Special Approval)
+
+| Gap | URS Reference | Initiative |
+|---|---|---|
+| Low/Medium vs High Risk use different approval chains; not split in current wizard | §5.3.1, §5.3.2 | #5 |
+| Prohibited flow requires offline meeting → Recommender uploads minutes → 3-tier digital chain | §5.3.3 | #5 |
+| Payment triggers OIC/Recommender assignment — not clearly shown | §5.3.1 step 3–5 | #5 |
+| SA Letter: system draft → OIC edits permitted fields only → OIC publishes | §5.3.3 step 5–7 | #5 |
+| Personal purpose must be blocked for Prohibited equipment | §5.3 note | #5 |
+| Document list must differ by risk tier; not fully generic | §5.3.1–5.3.3 | #5 |
+| Reclassification between risk tiers not implemented | §5.3.4 | #5 |
+
+### 12.3 Initiative Register
+
+| # | Title | Scope | Size | Sprint |
+|---|---|---|---|---|
+| 1 | My Applications: Categorised list with pagination | `screens-a.jsx` applications screen | S–M | 2 |
+| 2 | Remove compliance score from supplier view; replace with doc status | `shared.jsx`, `screens-a.jsx`, `screens-b.jsx` | S | 1 |
+| 3 | Document validation: surface specific findings per document | `screens-b.jsx` DocsStep + ValidationStep | S–M | 1 |
+| 4 | SDoC: scheme-specific documents, Part C/D, 6-month validity rule | `screens-b.jsx` DocsStep, `mock.js` | M | 3 |
+| 5 | Special Approval: risk-tier split, SA Letter editor, prohibited rules | `screens-b.jsx` special-approval | L | 6 |
+| 6 | Importation: RCN auto-populate device details + block-on-error | `screens-g.jsx` | S–M | 4 |
+| 7 | Renewal: max period cap enforcer, expiry clarity, Scheme A CoC warning | `screens-a.jsx` cert-renewal, `screens-c.jsx` | S–M | 3 |
+| 8 | Supplier multi-user accounts: invite / join-request / admin approval | `screens-c.jsx` Profile Team tab, `mock.js` | M | 4 |
+| 9 | Fee editor: full inline edit with SST toggle, SST%, SST amount, total | `screens-e.jsx` FeeTab, `mock.js` feeStructure | S | 2 |
+| 10 | Admin workflow visualiser: flow diagram per application type, stage roles | `screens-e.jsx` WorkflowTab, `mock.js` | M | 5 |
+| 11 | Reports: team-level scope filter | `index.html` SCREENS.reports | S | 5 |
+
+### 12.4 Key Design Decisions (from session)
+
+- **Compliance score is strictly internal** — visible only in officer Active Review; never surfaced to applicants as a benchmark or pass/fail indicator
+- **Document validation is guidance, not verdict** — findings shown as "please ensure…" items, not approval/rejection signals; "Next" blocked only on missing required documents
+- **Special Approval flow must not be fully standardised** until MCMC confirms document requirements per risk/purpose combination — keep flexible until §5.3 requirements are signed off with client
+- **SA Letter editability** is controlled by admin — OIC can only edit fields the admin has unlocked; full letter template and locked fields configurable in Admin Config (§10 workflow visualiser)
+- **Renewal maximum cap** enforced at the duration selector — `max years selectable = 5 − yearsAlreadyUsed`; fee auto-updates per year selected
+- **Importation "Next" block** — must resolve all duplicates and invalid-format entries before proceeding to payment step
+- **Supplier multi-user** — join-request model: user registers with existing SSM BRN → pending approval by supplier admin; or supplier admin invites by email directly
+- **Reports scope** — Team Lead sees their team by default; can optionally expand to org-wide; Normal Officer cannot access Reports (nav restriction already in place)
