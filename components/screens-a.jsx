@@ -928,11 +928,19 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
   const [aiRunning, setAiRunning] = React.useState(false);
   const [aiDone, setAiDone] = React.useState(false);
   const [payMethod, setPayMethod] = React.useState('fpx');
+  const [renewPeriod, setRenewPeriod] = React.useState(1);
+  const [signed, setSigned] = React.useState(false);
+  const [sigName, setSigName] = React.useState('');
+  const [sigIc, setSigIc] = React.useState('');
+  const [sigChecked, setSigChecked] = React.useState(false);
 
-  const steps = ['Select Certificate', 'Review Documents', 'Document Re-check', 'Payment', 'Confirmation'];
+  const steps = ['Select Certificate', 'Review Documents', 'Document Re-check', 'Declaration', 'Payment', 'Confirmation'];
   const expiringCerts = MOCK.certificates.filter(c => c.status === 'expiring' || c.status === 'active');
-  const feeMap = { A: 1200, B: 2500, C: 600, SA: 1200 };
-  const fee = feeMap[selectedCert?.scheme] || 1200;
+  const baseRateMap = { A: 324.07, B: 231.48, C: 138.89, SA: 324.07 };
+  const baseRate = baseRateMap[selectedCert?.scheme] || 324.07;
+  const baseFee = Math.round(baseRate * renewPeriod);
+  const sstAmt = Math.round(baseFee * 0.08);
+  const fee = baseFee + sstAmt;
   const daysLeft = selectedCert ? Math.ceil((new Date(selectedCert.expires) - new Date('2026-04-19')) / 864e5) : 0;
 
   React.useEffect(() => {
@@ -1069,12 +1077,109 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 3 && (() => {
+          const canSign = sigName.trim().length > 3 && sigIc.trim().length >= 6 && sigChecked;
+          const newExpiry = new Date('2026-04-19');
+          newExpiry.setFullYear(newExpiry.getFullYear() + renewPeriod);
+          return (
+            <div style={{ maxWidth: 760 }}>
+              <Alert type="warning" showIcon
+                message="Important: This action is irreversible"
+                description="By signing this declaration, you confirm that all renewal information is accurate. Once signed, you will not be able to go back to amend your application. Ensure all details are correct before proceeding."
+                style={{ marginBottom: 20 }} />
+              <Card title="Renewal Summary" size="small" bordered style={{ marginBottom: 16 }}>
+                <Row gutter={[16, 10]}>
+                  {[
+                    ['Certificate (RCN)', selectedCert?.rcn || '—'],
+                    ['Equipment', `${selectedCert?.brand} ${selectedCert?.model}`],
+                    ['Scheme', `Scheme ${selectedCert?.scheme}`],
+                    ['Renewal Period', `${renewPeriod} year${renewPeriod > 1 ? 's' : ''}`],
+                    ['New Expiry', newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })],
+                    ['Total Fee (incl. SST)', `RM ${fee.toLocaleString('en-MY')}`],
+                  ].map(([k, v], i) => (
+                    <Col span={12} key={i}>
+                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>{k}</div>
+                      <div style={{ fontSize: 13, fontWeight: 500, marginTop: 2 }}>{v}</div>
+                    </Col>
+                  ))}
+                </Row>
+                <Divider style={{ margin: '12px 0 8px' }} />
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 6 }}>Renewal duration (max 5 years cumulative):</div>
+                <antd.Segmented value={renewPeriod} onChange={v => { setRenewPeriod(v); setSigned(false); }} disabled={signed}
+                  options={[1,2,3,4,5].map(y => ({ label: `${y} yr`, value: y }))} />
+              </Card>
+              <Card title="Statutory Declaration" size="small" bordered style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.7, marginBottom: 14 }}>
+                  I, the authorised signatory, hereby declare that:
+                </div>
+                <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+                  {[
+                    'All information provided in this renewal application is true and accurate.',
+                    'The equipment described continues to comply with the applicable technical standards.',
+                    'All supporting documents submitted are authentic and have not been altered or falsified.',
+                    'I understand that providing false or misleading information is an offence under the CMA 1998.',
+                  ].map((t, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                      <span style={{ color: 'var(--color-primary)', fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>
+                      <span>{t}</span>
+                    </div>
+                  ))}
+                </div>
+                <Alert type="info" showIcon style={{ marginBottom: 14 }}
+                  message="Digital Signature Act 1997"
+                  description="This digital signature is legally binding under the Digital Signature Act 1997 (Malaysia)." />
+                <Row gutter={16}>
+                  <Col span={14}>
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Full Name (as per NRIC / Passport) <span style={{ color: 'var(--color-danger)' }}>*</span></div>
+                      <Input placeholder="e.g. Nurul Aisyah binti Ahmad" value={sigName} onChange={e => setSigName(e.target.value)} disabled={signed} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>NRIC / Passport Number <span style={{ color: 'var(--color-danger)' }}>*</span></div>
+                      <Input placeholder="e.g. 900101-14-1234" value={sigIc} onChange={e => setSigIc(e.target.value)} disabled={signed} style={{ fontFamily: 'var(--font-mono)' }} />
+                    </div>
+                  </Col>
+                  <Col span={10}>
+                    <div style={{ height: '100%', border: '1px dashed var(--color-border)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, background: signed ? 'var(--color-success-bg)' : 'var(--color-bg-subtle)', minHeight: 100 }}>
+                      {signed ? (
+                        <>
+                          <span style={{ fontSize: 28, marginBottom: 6 }}>✅</span>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-success)', textAlign: 'center' }}>Signed</div>
+                          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center', marginTop: 4 }}>{sigName}</div>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ fontSize: 22, marginBottom: 6, opacity: .4 }}>✍</span>
+                          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center' }}>Signature preview after signing</div>
+                        </>
+                      )}
+                    </div>
+                  </Col>
+                </Row>
+                <Checkbox checked={sigChecked} onChange={e => setSigChecked(e.target.checked)} disabled={signed} style={{ fontSize: 13, marginTop: 14 }}>
+                  I have read and understand all declarations above, and confirm the information is accurate and complete.
+                </Checkbox>
+                {!signed && (
+                  <Button type="primary" size="large" disabled={!canSign} style={{ marginTop: 14 }} onClick={() => setSigned(true)}>
+                    Sign Declaration
+                  </Button>
+                )}
+                {signed && (
+                  <Alert type="success" showIcon style={{ marginTop: 14 }}
+                    message="Declaration signed successfully"
+                    description={`Signed by ${sigName} on ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}. You may now proceed to payment.`} />
+                )}
+              </Card>
+            </div>
+          );
+        })()}
+
+        {step === 4 && (
           <div style={{ maxWidth: 520 }}>
             <Card bordered>
               <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Renewal Fee</div>
               <div style={{ fontSize: 36, fontWeight: 700 }}>RM {fee.toLocaleString('en-MY')}.00</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 20 }}>Scheme {selectedCert?.scheme} renewal · {selectedCert?.rcn} · Includes 8% SST</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 20 }}>Scheme {selectedCert?.scheme} · {renewPeriod} yr · {selectedCert?.rcn} · Incl. SST 8%</div>
               <Divider />
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Payment Method</div>
               <Radio.Group value={payMethod} onChange={e => setPayMethod(e.target.value)} style={{ display: 'grid', gap: 8, width: '100%' }}>
@@ -1096,35 +1201,45 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
           </div>
         )}
 
-        {step === 4 && (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'var(--color-success)' }}>✓</div>
-            <Title level={3} style={{ marginTop: 16 }}>Certificate Renewed</Title>
-            <Text type="secondary">Payment received. Your renewal has been processed and a new certificate has been issued.</Text>
-            <div style={{ marginTop: 24, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12, display: 'inline-block' }}>
-              <Row gutter={24}>
-                <Col>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>New RCN</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)' }}>{selectedCert?.rcn?.replace(/\d{4}-\d{5}$/, '0426-00501') || 'RCN-0426-00501'}</div>
-                </Col>
-                <Col>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>New Expiry</div>
-                  <div style={{ fontSize: 18, fontWeight: 700 }}>19 Apr 2029</div>
-                </Col>
-              </Row>
+        {step === 5 && (() => {
+          const newExpiry = new Date('2026-04-19');
+          newExpiry.setFullYear(newExpiry.getFullYear() + renewPeriod);
+          return (
+            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+              <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'var(--color-success)' }}>✓</div>
+              <Title level={3} style={{ marginTop: 16 }}>Certificate Renewed</Title>
+              <Text type="secondary">Payment received. Your renewal has been processed and a new certificate has been issued.</Text>
+              <div style={{ marginTop: 24, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12, display: 'inline-block' }}>
+                <Row gutter={24}>
+                  <Col>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>New RCN</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)' }}>{selectedCert?.rcn?.replace(/\d{4}-\d{5}$/, '0426-00501') || 'RCN-0426-00501'}</div>
+                  </Col>
+                  <Col>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>New Expiry</div>
+                    <div style={{ fontSize: 18, fontWeight: 700 }}>{newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                  </Col>
+                  <Col style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Fee Paid</div>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>RM {fee.toLocaleString('en-MY')}</div>
+                  </Col>
+                </Row>
+              </div>
+              <div style={{ marginTop: 28, display: 'flex', gap: 10, justifyContent: 'center' }}>
+                <Button size="large" icon={<DownloadOutlined />}>Download Certificate PDF</Button>
+                <Button size="large" type="primary" onClick={() => nav('certificates')}>View Certificates</Button>
+              </div>
             </div>
-            <div style={{ marginTop: 28, display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <Button size="large" icon={<DownloadOutlined />}>Download Certificate PDF</Button>
-              <Button size="large" type="primary" onClick={() => nav('certificates')}>View Certificates</Button>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--color-divider)' }}>
-          <Button disabled={step === 0} onClick={() => setStep(step - 1)}>← Back</Button>
+          <Button disabled={step === 0 || signed} onClick={() => setStep(step - 1)}>← Back</Button>
           {step < steps.length - 1 && (
-            <Button type="primary" size="large" onClick={() => setStep(step + 1)} disabled={step === 2 && aiRunning}>
-              {step === 3 ? `Pay RM ${fee.toLocaleString('en-MY')} →` : 'Continue →'}
+            <Button type="primary" size="large" onClick={() => setStep(step + 1)} disabled={(step === 2 && aiRunning) || (step === 3 && !signed)}>
+              {step === 3 ? 'Proceed to Payment →'
+                : step === 4 ? `Pay RM ${fee.toLocaleString('en-MY')} →`
+                : 'Continue →'}
             </Button>
           )}
         </div>

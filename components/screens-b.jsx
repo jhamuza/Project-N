@@ -4,8 +4,13 @@
 SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
   const [scheme, setScheme] = React.useState('A');
   const [step, setStep] = React.useState(0);
+  const [period, setPeriod] = React.useState(1);
   const [aiRunning, setAiRunning] = React.useState(false);
   const [aiDone, setAiDone] = React.useState(false);
+  const [signed, setSigned] = React.useState(false);
+  const [sigName, setSigName] = React.useState('');
+  const [sigIc, setSigIc] = React.useState('');
+  const [sigChecked, setSigChecked] = React.useState(false);
   const [form] = Form.useForm();
 
   const steps = [
@@ -14,9 +19,17 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
     { k: 'docs', t: 'Documents' },
     { k: 'ai', t: 'Document Validation' },
     { k: 'review', t: 'Review' },
+    { k: 'declare', t: 'Declaration' },
     { k: 'pay', t: 'Payment' },
     { k: 'confirm', t: 'Confirm' },
   ];
+
+  // Base fee per year per scheme (excl. SST)
+  const baseRates = { A: 324.07, B: 231.48, C: 138.89 };
+  const sstRate = 0.08;
+  const baseFee = Math.round(baseRates[scheme] * period);
+  const sstAmt = Math.round(baseFee * sstRate);
+  const totalFee = baseFee + sstAmt;
 
   React.useEffect(() => {
     if (step === 3 && !aiDone) {
@@ -27,9 +40,9 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
   }, [step]);
 
   const schemes = [
-    { k: 'A', t: 'Scheme A', sub: 'Generic Certification', d: 'Most consumer devices — radio/telecom equipment with standard compliance profile.', fee: 'RM 1,200', sla: '3 working days', ai: 'Standard compliance review · Processed within 3 working days' },
-    { k: 'B', t: 'Scheme B', sub: 'Specific Certification', d: 'Equipment requiring detailed technical review (non-standard parameters, custom modulation).', fee: 'RM 2,500', sla: '5 working days', ai: 'Enhanced document review + mandatory officer verification' },
-    { k: 'C', t: 'Scheme C', sub: 'Self-Declaration (SDoC)', d: 'Low-risk equipment under a manufacturer conformity declaration.', fee: 'RM 600', sla: '1 working day', ai: 'Eligible for expedited approval within 1 working day' },
+    { k: 'A', t: 'Scheme A', sub: 'SDoC with Certification', risk: 'High Risk', d: 'Full manual MCMC review. Certificate of Conformity (CoC) from an accredited body is required alongside all technical documents.', basePerYear: 'RM 350/yr', sla: '5 working days', note: 'Officer manual review + AI support' },
+    { k: 'B', t: 'Scheme B', sub: 'SDoC with Verification', risk: 'Medium Risk', d: 'AI-assisted officer review. CoC or equivalent verification document from an accredited body required. Reclassification possible.', basePerYear: 'RM 250/yr', sla: '3 working days', note: 'AI-assisted review · Reclassification available' },
+    { k: 'C', t: 'Scheme C', sub: 'SDoC (AI Auto-Acceptance)', risk: 'Low Risk', d: 'Eligible for auto-acceptance if all documents meet requirements. No CoC required — a signed Standards Declaration suffices.', basePerYear: 'RM 150/yr', sla: '1 working day', note: 'Auto-acceptance eligible · Fastest route' },
   ];
 
   const Sidebar = () => (
@@ -88,7 +101,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
 
   const SchemeStep = () => (
     <div style={{ maxWidth: 900 }}>
-      <Alert type="info" showIcon message="Your product suggests Scheme A based on radio equipment profile" description="Your uploaded datasheet was assessed and matched to MCMC MTSFB TC G015:2022 category." style={{ marginBottom: 20 }} />
+      <Alert type="info" showIcon message="Your product suggests Scheme A based on radio equipment profile" description="Your uploaded datasheet was assessed and matched to MCMC MTSFB TC G015:2022 category. You may select a different scheme if you believe the classification is incorrect." style={{ marginBottom: 20 }} />
       <Row gutter={16}>
         {schemes.map(s => (
           <Col xs={24} md={8} key={s.k}>
@@ -97,12 +110,13 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
               <SchemeBadge scheme={s.k} />
               <div style={{ fontSize: 18, fontWeight: 600, marginTop: 10 }}>{s.t}</div>
               <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 500 }}>{s.sub}</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 10, lineHeight: 1.5 }}>{s.d}</div>
+              <Tag color={s.k === 'A' ? 'red' : s.k === 'B' ? 'orange' : 'green'} style={{ marginTop: 6, marginBottom: 4 }}>{s.risk}</Tag>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 6, lineHeight: 1.6 }}>{s.d}</div>
               <Divider style={{ margin: '14px 0' }} />
               <div style={{ fontSize: 12, display: 'grid', gap: 6 }}>
-                <div><b>Fee:</b> <span style={{ color: 'var(--color-text-secondary)' }}>{s.fee}</span></div>
+                <div><b>Fee:</b> <span style={{ color: 'var(--color-text-secondary)' }}>{s.basePerYear} (excl. SST)</span></div>
                 <div><b>SLA:</b> <span style={{ color: 'var(--color-text-secondary)' }}>{s.sla}</span></div>
-                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>{s.ai}</div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>{s.note}</div>
               </div>
             </div>
           </Col>
@@ -114,21 +128,17 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
   const ProductStep = () => (
     <Form form={form} layout="vertical" style={{ maxWidth: 780 }}>
       <Row gutter={16}>
-        <Col span={12}><Form.Item label="Brand" required><Input placeholder="Samsung" /></Form.Item></Col>
-        <Col span={12}><Form.Item label="Model / Part Number" required><Input placeholder="SM-S928B" /></Form.Item></Col>
-        <Col span={24}><Form.Item label="Marketing Name" extra="Optional — helps label registry"><Input placeholder="Galaxy S24 Ultra" /></Form.Item></Col>
-        <Col span={12}><Form.Item label="Product Category" required><Select placeholder="Select…" options={[{value:'mobile',label:'Mobile Phone / Smartphone'},{value:'wifi',label:'Wi-Fi / WLAN Device'},{value:'bt',label:'Bluetooth Device'},{value:'iot',label:'IoT / Connected Device'},{value:'network',label:'Network Equipment'}]} /></Form.Item></Col>
-        <Col span={12}><Form.Item label="Country of Origin" required><Select placeholder="Select…" showSearch options={[{value:'vn',label:'Vietnam'},{value:'cn',label:'China'},{value:'kr',label:'Korea, Republic of'},{value:'th',label:'Thailand'}]} /></Form.Item></Col>
+        <Col span={24}><Divider orientation="left" orientationMargin={0} style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-muted)' }}>Part A — Supplier Declaration</Divider></Col>
+        <Col span={12}><Form.Item label="Brand" required><Input placeholder="Samsung" defaultValue="Samsung" /></Form.Item></Col>
+        <Col span={12}><Form.Item label="Model / Part Number" required><Input placeholder="SM-S928B" defaultValue="SM-S928B" /></Form.Item></Col>
+        <Col span={24}><Form.Item label="Marketing Name" extra="Optional — helps label registry"><Input placeholder="Galaxy S24 Ultra" defaultValue="Galaxy S24 Ultra" /></Form.Item></Col>
+        <Col span={12}><Form.Item label="Product Category" required><Select placeholder="Select…" defaultValue="mobile" options={[{value:'mobile',label:'Mobile Phone / Smartphone'},{value:'wifi',label:'Wi-Fi / WLAN Device'},{value:'bt',label:'Bluetooth Device'},{value:'iot',label:'IoT / Connected Device'},{value:'network',label:'Network Equipment'}]} /></Form.Item></Col>
+        <Col span={12}><Form.Item label="Country of Origin" required><Select placeholder="Select…" showSearch defaultValue="vn" options={[{value:'vn',label:'Vietnam'},{value:'cn',label:'China'},{value:'kr',label:'Korea, Republic of'},{value:'th',label:'Thailand'}]} /></Form.Item></Col>
+
+        <Col span={24}><Divider orientation="left" orientationMargin={0} style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-muted)' }}>Part B — Technical Specification</Divider></Col>
         <Col span={24}>
-          <Form.Item
-            label="Certifying Agency (CA)"
-            required
-            extra="Select all accredited labs whose test reports you are submitting. Multiple selections allowed."
-          >
-            <Select
-              mode="multiple"
-              placeholder="Select certifying agencies…"
-              maxTagCount="responsive"
+          <Form.Item label="Certifying Agency (CA)" required extra="Select all accredited labs whose test reports you are submitting. Multiple selections allowed.">
+            <Select mode="multiple" placeholder="Select certifying agencies…" maxTagCount="responsive" defaultValue={scheme === 'C' ? [] : ['sirim']}
               options={[
                 { value: 'sirim', label: 'SIRIM QAS International Sdn Bhd' },
                 { value: 'tuv', label: 'TÜV Rheinland Malaysia' },
@@ -139,50 +149,86 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
                 { value: 'fcc_lab', label: 'FCC-accredited foreign lab (attach accreditation letter)' },
                 { value: 'ce_lab', label: 'CE Notified Body (attach NB certificate)' },
               ]}
-              defaultValue={['sirim']}
             />
           </Form.Item>
         </Col>
-        <Col span={24}>
-          <Divider orientation="left" orientationMargin={0} style={{ fontSize: 14 }}>Technical Parameters</Divider>
-        </Col>
-        <Col span={8}><Form.Item label="Frequency Band (MHz)" required><Input placeholder="2400–2483.5" /></Form.Item></Col>
-        <Col span={8}><Form.Item label="Max Output Power (dBm)" required><Input placeholder="26" /></Form.Item></Col>
-        <Col span={8}><Form.Item label="Antenna Gain (dBi)" required><Input placeholder="3.5" /></Form.Item></Col>
-        <Col span={8}><Form.Item label="Modulation"><Input placeholder="OFDMA, 256-QAM" /></Form.Item></Col>
+        {(scheme === 'A' || scheme === 'B') && (
+          <>
+            <Col span={12}><Form.Item label="CoC Number" required extra="Certificate of Conformity from your accredited CA"><Input placeholder="SIRIM-2026-001234" /></Form.Item></Col>
+            <Col span={6}><Form.Item label="CoC Issuance Date" required><Input type="date" /></Form.Item></Col>
+            <Col span={6}><Form.Item label="CoC Expiry Date" required><Input type="date" /></Form.Item></Col>
+          </>
+        )}
+        <Col span={8}><Form.Item label="Frequency Band (MHz)" required><Input placeholder="2400-2483.5" defaultValue="2400-2483.5" /></Form.Item></Col>
+        <Col span={8}><Form.Item label="Max Output Power (dBm)" required><Input placeholder="26" defaultValue="26" /></Form.Item></Col>
+        <Col span={8}><Form.Item label="Antenna Gain (dBi)" required><Input placeholder="3.5" defaultValue="3.5" /></Form.Item></Col>
+        <Col span={8}><Form.Item label="Modulation"><Input placeholder="OFDMA, 256-QAM" defaultValue="OFDMA, 256-QAM" /></Form.Item></Col>
         <Col span={8}><Form.Item label="Channel Bandwidth (MHz)"><Input placeholder="20 / 40 / 80 / 160" /></Form.Item></Col>
         <Col span={8}><Form.Item label="Supply Voltage (V)"><Input placeholder="5 DC / 3.7 Li-ion" /></Form.Item></Col>
-        <Col span={24}><Form.Item label="Intended Use"><TextArea rows={3} placeholder="Consumer smartphone sold through authorised retail channels in Malaysia." /></Form.Item></Col>
+        <Col span={24}><Form.Item label="Intended Use"><TextArea rows={2} defaultValue="Consumer smartphone sold through authorised retail channels in Malaysia." /></Form.Item></Col>
+
+        <Col span={24}><Divider orientation="left" orientationMargin={0} style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-muted)' }}>Part C — Labelling Information</Divider></Col>
+        <Col span={8}>
+          <Form.Item label="Labelling ID" required extra="Supplier ID or Principal ID">
+            <Select defaultValue="supplier" options={[{ value: 'supplier', label: 'Supplier ID (SUP-0426-00142)' }, { value: 'principal', label: 'Principal ID' }]} />
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item label="Label Type" required>
+            <Select defaultValue="physical" options={[{ value: 'physical', label: 'Physical Label' }, { value: 'electronic', label: 'Electronic Label (e-label)' }]} />
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item label="Label Location" required>
+            <Select defaultValue="product" options={[{ value: 'product', label: 'On Product' }, { value: 'packaging', label: 'On Packaging' }, { value: 'manual', label: 'In User Manual' }]} />
+          </Form.Item>
+        </Col>
       </Row>
     </Form>
   );
 
-  const DocsStep = () => (
-    <div style={{ maxWidth: 780 }}>
-      <Alert message="We'll extract and verify data from your uploads" description="Upload clear, non-redacted copies. Fields will be populated automatically; you can review before submission." type="info" showIcon style={{ marginBottom: 20 }} />
-      <div style={{ display: 'grid', gap: 12 }}>
-        {[
-          { k: 'reg', label: 'Company Registration (SSM)', req: true, status: 'verified', file: 'Company_Registration_SSM.pdf' },
-          { k: 'bro', label: 'Technical Brochure / Datasheet', req: true, status: 'verified', file: 'Technical_Brochure_S24Ultra.pdf' },
-          { k: 'test', label: 'Test Report (accredited lab)', req: true, status: 'verified', file: 'Test_Report_SIRIM_2026.pdf' },
-          { k: 'photo', label: 'Product Photos (front, back, label)', req: true, status: 'pending', file: '3 files uploaded' },
-          { k: 'decl', label: 'Declaration Letter', req: true, status: 'upload' },
-          { k: 'coc', label: 'CE / FCC Certificate (foreign)', req: false, status: 'upload' },
-        ].map(d => (
-          <div key={d.k} className="doc-tile" style={{ padding: 14 }}>
-            <div className="icon">📄</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{d.label} {d.req && <Tag color="red" style={{ fontSize: 10, margin: '0 0 0 6px' }}>Required</Tag>}</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>{d.file || 'Not uploaded'}</div>
+  const DocsStep = () => {
+    const baseDocList = [
+      { k: 'reg', label: 'Company Registration (SSM)', req: true, status: 'verified', file: 'Company_Registration_SSM.pdf', note: 'Valid — matches supplier record' },
+      { k: 'bro', label: 'Technical Brochure / Datasheet', req: true, status: 'verified', file: 'Technical_Brochure_S24Ultra.pdf', note: 'Extracted: frequency band, power levels' },
+      { k: 'test', label: 'Test Report (accredited lab)', req: true, status: 'verified', file: 'Test_Report_SIRIM_2026.pdf', note: 'SIRIM QAS · Issued 10 Mar 2026' },
+      { k: 'photo', label: 'Product Photos (front, back, label)', req: true, status: 'pending', file: '3 files uploaded', note: 'Verification in progress' },
+    ];
+    const schemeDocList = {
+      A: [
+        { k: 'coc', label: 'Certificate of Conformity (CoC)', req: true, status: 'upload', note: 'From accredited body; must be current and valid' },
+        { k: 'decl', label: 'Standards Declaration (MCMC MTSFB TC G015:2022)', req: true, status: 'upload', note: 'Signed by authorised signatory' },
+      ],
+      B: [
+        { k: 'coc', label: 'Certificate of Conformity (CoC) or equivalent', req: true, status: 'upload', note: 'From recognised body or equivalent verification document' },
+        { k: 'decl', label: 'Standards Declaration (MCMC MTSFB TC G015:2022)', req: true, status: 'upload', note: 'Signed by authorised signatory' },
+      ],
+      C: [
+        { k: 'decl', label: 'Standards Declaration (MCMC MTSFB TC G015:2022)', req: true, status: 'upload', note: 'Self-declaration signed by authorised signatory — no CoC required for Scheme C' },
+      ],
+    };
+    const docs = [...baseDocList, ...(schemeDocList[scheme] || [])];
+    return (
+      <div style={{ maxWidth: 780 }}>
+        <Alert message="We'll extract and verify data from your uploads" description="Upload clear, unredacted copies. Fields will be auto-populated where possible; review before proceeding." type="info" showIcon style={{ marginBottom: 16 }} />
+        {scheme === 'C' && <Alert type="success" showIcon message="Scheme C: No Certificate of Conformity required" description="A signed Standards Declaration in lieu of a CoC is sufficient for Scheme C applications." style={{ marginBottom: 16 }} />}
+        <div style={{ display: 'grid', gap: 12 }}>
+          {docs.map(d => (
+            <div key={d.k} className="doc-tile" style={{ padding: 14 }}>
+              <div className="icon">📄</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{d.label} {d.req && <Tag color="red" style={{ fontSize: 10, margin: '0 0 0 6px' }}>Required</Tag>}</div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>{d.file ? d.file : 'Not uploaded'}{d.note && <span style={{ color: d.status === 'verified' ? 'var(--color-success)' : 'var(--color-text-muted)' }}> · {d.note}</span>}</div>
+              </div>
+              {d.status === 'verified' && <Tag color="green">Verified</Tag>}
+              {d.status === 'pending' && <Tag color="orange">Analysing...</Tag>}
+              {d.status === 'upload' && <Upload><Button size="small">+ Upload</Button></Upload>}
             </div>
-            {d.status === 'verified' && <Tag color="green" icon="✓">OCR Verified</Tag>}
-            {d.status === 'pending' && <Tag color="orange">Analysing…</Tag>}
-            {d.status === 'upload' && <Upload><Button size="small">+ Upload</Button></Upload>}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const DocFindingsPanel = () => {
     const findings = MOCK.documentFindings || [];
@@ -306,22 +352,143 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
               </div>
             ))}
           </Card>
+          <Card size="small" bordered style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600, marginBottom: 10 }}>Part D — Registration Period</div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 10 }}>Select registration duration (max 5 years{scheme === 'A' ? ', subject to CoC validity' : ''}).</div>
+            <antd.Segmented
+              value={period}
+              onChange={v => setPeriod(v)}
+              options={[1,2,3,4,5].map(y => ({ label: `${y} yr`, value: y }))}
+              style={{ width: '100%' }}
+            />
+          </Card>
           <Card size="small" bordered>
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Fee Summary</div>
-            <div style={{ fontSize: 32, fontWeight: 700, marginTop: 4 }}>RM 1,200</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Scheme A base fee (incl. 8% SST)</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600, marginBottom: 6 }}>Fee Summary</div>
+            <div style={{ display: 'grid', gap: 4, fontSize: 12, marginBottom: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--color-text-muted)' }}>Scheme {scheme} base ({period} yr)</span><span>RM {baseFee.toLocaleString('en-MY')}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--color-text-muted)' }}>SST (8%)</span><span>RM {sstAmt.toLocaleString('en-MY')}</span></div>
+            </div>
+            <Divider style={{ margin: '8px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>Total</span>
+              <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-primary)' }}>RM {totalFee.toLocaleString('en-MY')}</span>
+            </div>
           </Card>
         </Col>
       </Row>
     </div>
   );
 
+  const DeclarationStep = () => {
+    const canSign = sigName.trim().length > 3 && sigIc.trim().length >= 6 && sigChecked;
+    return (
+      <div style={{ maxWidth: 760 }}>
+        <Alert type="warning" showIcon
+          message="Important: This action is irreversible"
+          description="By signing this declaration, you confirm that all information submitted is accurate. Once signed, you will not be able to go back to amend your application. Ensure all details are correct before proceeding."
+          style={{ marginBottom: 20 }} />
+
+        <Card title="Application Summary" size="small" bordered style={{ marginBottom: 16 }}>
+          <Row gutter={[16, 10]}>
+            {[
+              ['Application ID', 'APP-0426-00088'],
+              ['Scheme', `Scheme ${scheme} — ${schemes.find(s => s.k === scheme)?.sub}`],
+              ['Applicant', 'Nurul Aisyah binti Ahmad'],
+              ['Organisation', 'Axiata Digital Services Sdn Bhd'],
+              ['Brand / Model', 'Samsung / SM-S928B (Galaxy S24 Ultra)'],
+              ['Category', 'Mobile Phone / Smartphone'],
+              ['Registration Period', `${period} year${period > 1 ? 's' : ''}`],
+              ['Total Fee (incl. SST)', `RM ${totalFee.toLocaleString('en-MY')}`],
+            ].map(([k, v], i) => (
+              <Col span={12} key={i}>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>{k}</div>
+                <div style={{ fontSize: 13, fontWeight: 500, marginTop: 2 }}>{v}</div>
+              </Col>
+            ))}
+          </Row>
+        </Card>
+
+        <Card title="Part E — Statutory Declaration" size="small" bordered style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.7, marginBottom: 16 }}>
+            Pursuant to the <b>Communications and Multimedia Act 1998</b> and the <b>Communications and Multimedia (Technical Standards) Regulations</b>, I, the authorised signatory of the applicant organisation, hereby declare that:
+          </div>
+          <div style={{ display: 'grid', gap: 10, marginBottom: 16 }}>
+            {[
+              'All information provided in this application is true, accurate, and complete to the best of my knowledge.',
+              'The equipment described complies with the applicable technical standards specified in the SDoC form.',
+              'All supporting documents submitted are authentic and have not been altered or falsified.',
+              'I understand that providing false or misleading information is an offence under the CMA 1998 and may result in prosecution and revocation of any certificate issued.',
+              'I authorise MCMC to use the submitted information for the purposes of equipment registration, compliance monitoring, and post-market surveillance.',
+            ].map((t, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                <span style={{ color: 'var(--color-primary)', fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>
+                <span>{t}</span>
+              </div>
+            ))}
+          </div>
+          <Alert type="info" showIcon style={{ marginBottom: 16 }}
+            message="Digital Signature Act 1997"
+            description="This digital signature is legally binding under the Digital Signature Act 1997 (Malaysia). It carries the same legal weight as a handwritten signature on a physical document." />
+          <Row gutter={16}>
+            <Col span={14}>
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Full Name (as per NRIC / Passport) <span style={{ color: 'var(--color-danger)' }}>*</span></div>
+                <Input placeholder="e.g. Nurul Aisyah binti Ahmad" value={sigName} onChange={e => setSigName(e.target.value)} disabled={signed} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>NRIC / Passport Number <span style={{ color: 'var(--color-danger)' }}>*</span></div>
+                <Input placeholder="e.g. 900101-14-1234" value={sigIc} onChange={e => setSigIc(e.target.value)} disabled={signed} style={{ fontFamily: 'var(--font-mono)' }} />
+              </div>
+            </Col>
+            <Col span={10}>
+              <div style={{ height: '100%', border: '1px dashed var(--color-border)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, background: signed ? 'var(--color-success-bg)' : 'var(--color-bg-subtle)', minHeight: 100 }}>
+                {signed ? (
+                  <>
+                    <span style={{ fontSize: 28, marginBottom: 6 }}>✅</span>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-success)', textAlign: 'center' }}>Signed</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center', marginTop: 4 }}>{sigName}</div>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize: 22, marginBottom: 6, opacity: .4 }}>✍</span>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center' }}>Signature preview will appear here after signing</div>
+                  </>
+                )}
+              </div>
+            </Col>
+          </Row>
+          <div style={{ marginTop: 16 }}>
+            <Checkbox checked={sigChecked} onChange={e => setSigChecked(e.target.checked)} disabled={signed} style={{ fontSize: 13 }}>
+              I have read and understand all declarations above, and I confirm the information submitted is accurate and complete.
+            </Checkbox>
+          </div>
+          {!signed && (
+            <Button
+              type="primary"
+              size="large"
+              disabled={!canSign}
+              style={{ marginTop: 16 }}
+              onClick={() => setSigned(true)}
+            >
+              Sign Declaration
+            </Button>
+          )}
+          {signed && (
+            <Alert type="success" showIcon style={{ marginTop: 16 }}
+              message="Declaration signed successfully"
+              description={`Signed by ${sigName} on ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}. You may now proceed to payment.`} />
+          )}
+        </Card>
+      </div>
+    );
+  };
+
   const PayStep = () => (
     <div style={{ maxWidth: 560 }}>
       <Card bordered>
         <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Amount Due</div>
-        <div style={{ fontSize: 36, fontWeight: 700 }}>RM 1,200.00</div>
-        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 20 }}>Scheme A · APP-0426-00088 · Includes 8% SST</div>
+        <div style={{ fontSize: 36, fontWeight: 700 }}>RM {totalFee.toLocaleString('en-MY')}.00</div>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 20 }}>Scheme {scheme} · {period} yr · APP-0426-00088 · Incl. SST 8%</div>
         <Divider />
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Payment Method</div>
         <Radio.Group defaultValue="fpx" style={{ display: 'grid', gap: 8, width: '100%' }}>
@@ -343,31 +510,52 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
     </div>
   );
 
-  const ConfirmStep = () => (
-    <div style={{ textAlign: 'center', padding: '40px 20px', maxWidth: 560, margin: '0 auto' }}>
-      <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'var(--color-success)' }}>✓</div>
-      <Title level={3} style={{ marginTop: 16 }}>Application Submitted</Title>
-      <Text type="secondary">Payment received. Your application is in the priority review queue.</Text>
-      <div style={{ marginTop: 24, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12 }}>
-        <Row gutter={16}>
-          <Col span={12}>
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Application ID</div>
-            <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)' }}>APP-0426-00088</div>
-          </Col>
-          <Col span={12}>
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Expected Decision</div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>22 Apr 2026</div>
-          </Col>
-        </Row>
+  const ConfirmStep = () => {
+    const slaMap = { A: '22 Apr 2026', B: '20 Apr 2026', C: '16 Apr 2026' };
+    const isAutoAccept = scheme === 'C';
+    return (
+      <div style={{ textAlign: 'center', padding: '40px 20px', maxWidth: 580, margin: '0 auto' }}>
+        <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'var(--color-success)' }}>✓</div>
+        <Title level={3} style={{ marginTop: 16 }}>Application Submitted</Title>
+        <Text type="secondary">
+          {isAutoAccept
+            ? 'Payment received. Your application is under auto-review — expected decision within 1 working day.'
+            : 'Payment received. Your application has been assigned to an MCMC officer for review.'}
+        </Text>
+        {isAutoAccept && (
+          <Alert type="info" showIcon style={{ marginTop: 16, textAlign: 'left' }}
+            message="Scheme C: Auto-acceptance eligible"
+            description="If all documents clear the automated review, your RCN will be issued automatically without manual intervention. You will receive an email notification when the decision is made." />
+        )}
+        <div style={{ marginTop: 20, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12 }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Application ID</div>
+              <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)' }}>APP-0426-00088</div>
+            </Col>
+            <Col span={12}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Expected Decision</div>
+              <div style={{ fontSize: 18, fontWeight: 700 }}>{slaMap[scheme]}</div>
+            </Col>
+            <Col span={12} style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Scheme</div>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>Scheme {scheme} · {period} year{period > 1 ? 's' : ''}</div>
+            </Col>
+            <Col span={12} style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Fee Paid</div>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>RM {totalFee.toLocaleString('en-MY')}</div>
+            </Col>
+          </Row>
+        </div>
+        <Space style={{ marginTop: 28 }}>
+          <Button size="large" onClick={() => nav('applications')}>View My Applications</Button>
+          <Button size="large" type="primary" onClick={() => nav('dashboard')}>Go to Dashboard</Button>
+        </Space>
       </div>
-      <Space style={{ marginTop: 28 }}>
-        <Button size="large" onClick={() => nav('applications')}>View My Applications</Button>
-        <Button size="large" type="primary" onClick={() => nav('dashboard')}>Go to Dashboard</Button>
-      </Space>
-    </div>
-  );
+    );
+  };
 
-  const StepBody = [SchemeStep, ProductStep, DocsStep, AIStep, ReviewStep, PayStep, ConfirmStep][step];
+  const StepBody = [SchemeStep, ProductStep, DocsStep, AIStep, ReviewStep, DeclarationStep, PayStep, ConfirmStep][step];
 
   return (
     <div style={{ display: 'flex', minHeight: '100%' }}>
@@ -377,10 +565,20 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
         <div style={{ padding: 32 }}>
           <StepBody />
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32, paddingTop: 20, borderTop: '1px solid var(--color-divider)', maxWidth: 900 }}>
-            <Button disabled={step === 0} onClick={() => setStep(step - 1)}>← Back</Button>
+            <Button disabled={step === 0 || signed} onClick={() => setStep(step - 1)}>
+              {signed && step > 5 ? <span title="Declaration signed — cannot go back to amend">← Back</span> : '← Back'}
+            </Button>
             {step < steps.length - 1 && (
-              <Button type="primary" size="large" onClick={() => setStep(step + 1)} disabled={step === 3 && aiRunning}>
-                {step === 4 ? 'Proceed to Payment →' : step === 5 ? 'Pay RM 1,200 →' : 'Continue →'}
+              <Button
+                type="primary"
+                size="large"
+                onClick={() => setStep(step + 1)}
+                disabled={(step === 3 && aiRunning) || (step === 5 && !signed)}
+              >
+                {step === 4 ? 'Proceed to Declaration →'
+                  : step === 5 ? 'Proceed to Payment →'
+                  : step === 6 ? `Pay RM ${totalFee.toLocaleString('en-MY')} →`
+                  : 'Continue →'}
               </Button>
             )}
           </div>
@@ -430,6 +628,10 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
   const [purpose, setPurpose] = React.useState(null);
   const [isProhibited, setIsProhibited] = React.useState(false);
   const [mcmcApproved, setMcmcApproved] = React.useState(null);
+  const [saSigned, setSaSigned] = React.useState(false);
+  const [saSigName, setSaSigName] = React.useState('');
+  const [saSigIc, setSaSigIc] = React.useState('');
+  const [saChecked, setSaChecked] = React.useState([]);
 
   const purposes = [
     { k: 'rd', t: 'Research & Development', d: 'Internal prototype testing, lab evaluation, non-commercial R&D', prohibited: false },
@@ -555,49 +757,102 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
             </div>
           </div>
         )}
-        {step === 4 && (
-          <div>
-            <Title level={4} style={{ marginTop: 0 }}>Declaration & Undertaking</Title>
-            {isProhibited && (
-              <Alert type="warning" showIcon message="Multi-level approval notice" style={{ marginBottom: 16 }}
-                description={
-                  <div>
-                    Your application will route sequentially through:
-                    <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                      {['Officer (CPPG)', 'Head of Certification', 'Director General MCMC'].map((p, i, arr) => (
-                        <React.Fragment key={i}>
-                          <Tag color="purple" style={{ padding: '4px 10px', fontWeight: 600 }}>{p}</Tag>
-                          {i < arr.length - 1 && <span style={{ color: 'var(--color-text-muted)' }}>→</span>}
-                        </React.Fragment>
-                      ))}
+        {step === 4 && (() => {
+          const declItems = [
+            'I declare the information provided is true and accurate to the best of my knowledge.',
+            'I understand misrepresentation is an offence under the CMA 1998 and may result in prosecution.',
+            'I agree not to use the equipment outside the declared purpose, location, or duration.',
+            'I will surrender the equipment to MCMC upon completion of the approved activity.',
+            ...(isProhibited ? ['I accept that prohibited equipment may not be transferred, sold, or exhibited to any third party without explicit written MCMC approval.'] : []),
+          ];
+          const allChecked = saChecked.length === declItems.length;
+          const canSaSign = allChecked && saSigName.trim().length > 3 && saSigIc.trim().length >= 6;
+          return (
+            <div style={{ maxWidth: 780 }}>
+              <Alert type="warning" showIcon
+                message="Important: This action is irreversible"
+                description="Once you sign this declaration, you will not be able to go back to amend your application. Please review all information carefully before proceeding."
+                style={{ marginBottom: 16 }} />
+              {isProhibited && (
+                <Alert type="warning" showIcon message="Multi-level approval notice" style={{ marginBottom: 16 }}
+                  description={
+                    <div>
+                      Your application will route sequentially through:
+                      <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        {['Officer (CPPG)', 'Head of Certification', 'Director General MCMC'].map((p, i, arr) => (
+                          <React.Fragment key={i}>
+                            <Tag color="purple" style={{ padding: '4px 10px', fontWeight: 600 }}>{p}</Tag>
+                            {i < arr.length - 1 && <span style={{ color: 'var(--color-text-muted)' }}>→</span>}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                      <div style={{ marginTop: 10, fontSize: 12 }}>Expected decision time: 10–15 working days</div>
                     </div>
-                    <div style={{ marginTop: 10, fontSize: 12 }}>Expected decision time: 10–15 working days</div>
+                  }
+                />
+              )}
+              <Title level={4} style={{ marginTop: 0, marginBottom: 16 }}>Declaration & Undertaking</Title>
+              <div style={{ display: 'grid', gap: 12, marginBottom: 20 }}>
+                {declItems.map((t, i) => (
+                  <Checkbox
+                    key={i}
+                    checked={saChecked.includes(i)}
+                    onChange={e => setSaChecked(prev => e.target.checked ? [...prev, i] : prev.filter(x => x !== i))}
+                    disabled={saSigned}
+                    style={{ fontSize: 13, lineHeight: 1.6 }}
+                  >{t}</Checkbox>
+                ))}
+              </div>
+              <Divider />
+              <div style={{ background: 'var(--color-bg-subtle)', borderRadius: 10, padding: 16, maxWidth: 480, marginBottom: 20, border: '1px solid var(--color-border)' }}>
+                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Fee Waiver Code <Tag style={{ fontSize: 10 }}>Optional</Tag></div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 10 }}>If MCMC has issued a waiver code for this application (e.g. academic/R&D exemption), enter it here to waive the SA application fee.</div>
+                <WaiverCodeInput />
+              </div>
+              <Alert type="info" showIcon style={{ marginBottom: 16 }}
+                message="Digital Signature Act 1997"
+                description="This digital signature is legally binding under the Digital Signature Act 1997 (Malaysia). It carries the same legal weight as a handwritten signature." />
+              <Row gutter={16} style={{ maxWidth: 600 }}>
+                <Col span={14}>
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Full Name (as per NRIC / Passport) <span style={{ color: 'var(--color-danger)' }}>*</span></div>
+                    <Input placeholder="e.g. Dr. Siti Hajar binti Mohd Nor" value={saSigName} onChange={e => setSaSigName(e.target.value)} disabled={saSigned} />
                   </div>
-                }
-              />
-            )}
-            <div style={{ display: 'grid', gap: 14, maxWidth: 760 }}>
-              {[
-                'I declare the information provided is true and accurate to the best of my knowledge.',
-                'I understand misrepresentation is an offence under the CMA 1998 and may result in prosecution.',
-                'I agree not to use the equipment outside the declared purpose, location, or duration.',
-                'I will surrender the equipment to MCMC upon completion of the approved activity.',
-                ...(isProhibited ? ['I accept that prohibited equipment may not be transferred, sold, or exhibited to any third party without explicit written MCMC approval.'] : []),
-              ].map((t, i) => (
-                <Checkbox key={i} style={{ fontSize: 13, lineHeight: 1.6 }}>{t}</Checkbox>
-              ))}
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>NRIC / Passport Number <span style={{ color: 'var(--color-danger)' }}>*</span></div>
+                    <Input placeholder="e.g. 820315-10-5678" value={saSigIc} onChange={e => setSaSigIc(e.target.value)} disabled={saSigned} style={{ fontFamily: 'var(--font-mono)' }} />
+                  </div>
+                </Col>
+                <Col span={10}>
+                  <div style={{ height: '100%', border: '1px dashed var(--color-border)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, background: saSigned ? 'var(--color-success-bg)' : 'var(--color-bg-subtle)', minHeight: 100 }}>
+                    {saSigned ? (
+                      <>
+                        <span style={{ fontSize: 28, marginBottom: 6 }}>✅</span>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-success)', textAlign: 'center' }}>Signed</div>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center', marginTop: 4 }}>{saSigName}</div>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: 22, marginBottom: 6, opacity: .4 }}>✍</span>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center' }}>Signature preview after signing</div>
+                      </>
+                    )}
+                  </div>
+                </Col>
+              </Row>
+              {!saSigned && (
+                <Button type="primary" size="large" disabled={!canSaSign} style={{ marginTop: 16 }} onClick={() => setSaSigned(true)}>
+                  Sign Declaration
+                </Button>
+              )}
+              {saSigned && (
+                <Alert type="success" showIcon style={{ marginTop: 14 }}
+                  message="Declaration signed successfully"
+                  description={`Signed by ${saSigName} on ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}. You may now submit your application.`} />
+              )}
             </div>
-            <Divider />
-            <div style={{ background: 'var(--color-bg-subtle)', borderRadius: 10, padding: 16, maxWidth: 480, marginBottom: 20, border: '1px solid var(--color-border)' }}>
-              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Fee Waiver Code <Tag style={{ fontSize: 10 }}>Optional</Tag></div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 10 }}>If MCMC has issued a waiver code for this application (e.g. academic/R&D exemption), enter it here to bypass the standard SA application fee.</div>
-              <WaiverCodeInput />
-            </div>
-            <Form.Item label="Digital signature (full name)" required style={{ maxWidth: 400 }}>
-              <Input placeholder="Dr. Siti Hajar binti Mohd Nor" />
-            </Form.Item>
-          </div>
-        )}
+          );
+        })()}
         {step === 5 && (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: isProhibited ? '#EDE7F6' : 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: isProhibited ? '#5E35B1' : 'var(--color-success)' }}>{isProhibited ? '⏳' : '✓'}</div>
@@ -614,8 +869,12 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
           </div>
         )}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--color-divider)' }}>
-          <Button disabled={step === 0} onClick={() => setStep(step - 1)}>← Back</Button>
-          {step < steps.length - 1 && <Button type="primary" onClick={() => setStep(step + 1)}>Continue →</Button>}
+          <Button disabled={step === 0 || saSigned} onClick={() => setStep(step - 1)}>← Back</Button>
+          {step < steps.length - 1 && (
+            <Button type="primary" onClick={() => setStep(step + 1)} disabled={step === 4 && !saSigned}>
+              {step === 4 ? 'Submit Application →' : 'Continue →'}
+            </Button>
+          )}
         </div>
       </Card>
     </div>
