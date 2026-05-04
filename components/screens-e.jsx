@@ -570,10 +570,156 @@ SCREENS['admin-config'] = function AdminConfig({ nav, currentUser }) {
     );
   };
 
+  // ── WORKFLOW DIAGRAM ──────────────────────────────────────────────────────────
+  const FlowDiagramTab = () => {
+    const [appType, setAppType] = React.useState('sdoc-ab');
+
+    const roleTag = { supplier: 'geekblue', system: 'purple', officer: 'blue', recommender: 'green', verifier: 'orange', approver: 'red', rmcd: 'gold', esb: 'default', mixed: 'cyan' };
+
+    const WORKFLOWS = {
+      'sdoc-ab': {
+        label: 'SDoC — Scheme A / B', badge: 'orange', totalSLA: '11 working days',
+        note: 'Full 4-tier approval chain: Officer → Recommender → Verifier → Approver',
+        stages: [
+          { n: 1, label: 'Submit Application', roleKey: 'supplier', roleLabel: 'Supplier', sla: 'Same day', actions: ['Selects scheme', 'Uploads CoC + docs', 'Pays registration fee', 'Signs declaration (Part E)'] },
+          { n: 2, label: 'AI Validation', roleKey: 'system', roleLabel: 'System (Qwen2.5-VL)', sla: '< 5 min', actions: ['Scores all documents (8 sub-scores)', 'Routes < 70 as Priority', 'Routes ≥ 90 (Scheme C only) for auto-accept'] },
+          { n: 3, label: 'OIC / Officer Review', roleKey: 'officer', roleLabel: 'CPPG Officer', sla: '3 wd', actions: ['Full document review', 'Iterate (request revision)', 'Escalate to Recommender'] },
+          { n: 4, label: 'Recommender', roleKey: 'recommender', roleLabel: 'Recommender (P5/P6)', sla: '3 wd', actions: ['Endorse application', 'Return to Officer for clarification'] },
+          { n: 5, label: 'Verifier', roleKey: 'verifier', roleLabel: 'Verifier (P7)', sla: '3 wd', actions: ['Policy and technical verification', 'Return to Recommender'] },
+          { n: 6, label: 'Approver', roleKey: 'approver', roleLabel: 'Approver (P8)', sla: '2 wd', actions: ['Accept → trigger certificate issuance', 'Not Accept (reject with reasons)', 'Return for further review'] },
+          { n: 7, label: 'Certificate Issued', roleKey: 'system', roleLabel: 'System', sla: 'Automatic', actions: ['RCN generated (format: RCN-MMYY-XXXXX)', 'Label registry updated', 'Supplier notified by email'] },
+        ],
+      },
+      'sdoc-c': {
+        label: 'SDoC — Scheme C (Self-Declaration)', badge: 'green', totalSLA: '0 – 1 working day',
+        note: 'AI auto-accept path for scores ≥ 90; officer review only when score < 90',
+        stages: [
+          { n: 1, label: 'Submit Application', roleKey: 'supplier', roleLabel: 'Supplier', sla: 'Same day', actions: ['Self-declaration (no CoC required)', 'Standards Declaration letter only', 'Pays registration fee'] },
+          { n: 2, label: 'AI Validation', roleKey: 'system', roleLabel: 'System (Qwen2.5-VL)', sla: '< 5 min', actions: ['Score ≥ 90 → Auto-accept path', 'Score < 90 → Route to Officer', 'Score < 70 → Priority queue'] },
+          { n: 3, label: 'Auto-Accept or Officer Review', roleKey: 'mixed', roleLabel: 'System / CPPG Officer', sla: '0 – 1 wd', actions: ['Auto-accept if AI score ≥ 90 (expedited)', 'Officer confirms if score < 90', 'Iterate if docs insufficient'] },
+          { n: 4, label: 'Certificate Issued', roleKey: 'system', roleLabel: 'System', sla: 'Automatic', actions: ['RCN generated', 'Label registry updated', 'Supplier notified'] },
+        ],
+      },
+      'sa': {
+        label: 'Special Approval', badge: 'purple', totalSLA: '30 – 45 working days',
+        note: 'Risk-tiered: Low/Med risk = standard chain; High risk or Prohibited = extended review + MOSTI endorsement',
+        stages: [
+          { n: 1, label: 'Submit Application', roleKey: 'supplier', roleLabel: 'Supplier', sla: 'Same day', actions: ['Purpose declaration (R&D / Demo / Trial etc.)', 'Risk tier auto-classified', 'Prohibited equipment: extra MOSTI docs required'] },
+          { n: 2, label: 'OIC / Officer Review', roleKey: 'officer', roleLabel: 'CPPG Officer', sla: '5 wd', actions: ['Technical assessment', 'Risk tier validation', 'Iterate or escalate to Recommender'] },
+          { n: 3, label: 'Recommender', roleKey: 'recommender', roleLabel: 'Recommender (P5/P6)', sla: '5 wd', actions: ['Endorsement with conditions', 'SA Letter draft prepared'] },
+          { n: 4, label: 'Verifier', roleKey: 'verifier', roleLabel: 'Verifier (P7)', sla: '5 wd', actions: ['Policy compliance review', 'SA Letter reviewed & finalised'] },
+          { n: 5, label: 'Approver', roleKey: 'approver', roleLabel: 'Approver (P8)', sla: '5 wd', actions: ['Issue SA Letter', 'Reject with detailed reasons'] },
+          { n: 6, label: 'SA Letter Issued', roleKey: 'system', roleLabel: 'System', sla: 'Automatic', actions: ['SA Letter PDF emailed to supplier', 'Valid for one shipment/purpose only'] },
+        ],
+      },
+      'renewal': {
+        label: 'Certificate Renewal', badge: 'blue', totalSLA: '3 working days',
+        note: 'CoC must remain valid for Scheme A. Renewal period capped at remaining CoC validity or 5 years, whichever is shorter.',
+        stages: [
+          { n: 1, label: 'Submit Renewal', roleKey: 'supplier', roleLabel: 'Supplier', sla: 'Same day', actions: ['Select certificate', 'Update docs if needed (Scheme A: CoC re-upload)', 'Select renewal period (1–5 yr, capped)', 'Sign declaration + pay fee'] },
+          { n: 2, label: 'Document Re-check', roleKey: 'mixed', roleLabel: 'System + CPPG Officer', sla: '2 wd', actions: ['AI re-validates updated documents', 'CoC validity check for Scheme A', 'Officer confirms compliance'] },
+          { n: 3, label: 'Certificate Renewed', roleKey: 'system', roleLabel: 'System', sla: 'Automatic', actions: ['Expiry date extended', 'RCN updated in label registry', 'Renewal history recorded'] },
+        ],
+      },
+      'imei': {
+        label: 'IMEI / SN Registration', badge: 'cyan', totalSLA: 'Same day (< 2 min)',
+        note: 'Fully automated: format validation + duplicate check + GSMA DB lookup. No manual approval step.',
+        stages: [
+          { n: 1, label: 'Submit', roleKey: 'supplier', roleLabel: 'Supplier', sla: 'Same day', actions: ['Link to RCN', 'Enter IMEI/SN range manually or upload CSV', 'Confirm batch quantity'] },
+          { n: 2, label: 'Format & Uniqueness Validation', roleKey: 'system', roleLabel: 'System', sla: '< 2 min', actions: ['Luhn algorithm check (IMEI)', 'Duplicate check against NCEF DB', 'GSMA TAC lookup for brand/model match'] },
+          { n: 3, label: 'Registered', roleKey: 'system', roleLabel: 'System', sla: 'Automatic', actions: ['IMEIs/SNs linked to RCN', 'Receipt generated (format: IMEI-RCP-XXXX)', 'Importation validation now possible'] },
+        ],
+      },
+      'import': {
+        label: 'Importation (via RMCD)', badge: 'default', totalSLA: 'RMCD-determined',
+        note: 'MCMC validates equipment reference and transmits via IBM webMethods ESB. Fees and CoA are RMCD\'s responsibility.',
+        stages: [
+          { n: 1, label: 'Submit Application', roleKey: 'supplier', roleLabel: 'Supplier', sla: 'Same day', actions: ['Select permit type (Scheme A/B/C or SA)', 'Validate RCN or SA reference', 'Enter trader, consignor, logistics details'] },
+          { n: 2, label: 'NCEF Validation', roleKey: 'system', roleLabel: 'System', sla: '< 5 min', actions: ['RCN/SA cross-check against NCEF registry', 'IMEI/SN quantity verification', 'Block if validation fails'] },
+          { n: 3, label: 'Transmit to RMCD', roleKey: 'esb', roleLabel: 'IBM webMethods ESB', sla: '< 1 min', actions: ['Push to RMCD MyOGA via ESB', 'RMCD reference number assigned'] },
+          { n: 4, label: 'RMCD Review & Payment', roleKey: 'rmcd', roleLabel: 'RMCD', sla: 'RMCD-determined', actions: ['Fee determination by RMCD', 'Importer pays at RMCD MyOGA portal'] },
+          { n: 5, label: 'CoA Issued', roleKey: 'rmcd', roleLabel: 'RMCD', sla: 'Post-payment', actions: ['CoA format: CoA-MMYY-XXXXXX', 'Status reflected in NCEF import permits list'] },
+        ],
+      },
+    };
+
+    const wf = WORKFLOWS[appType];
+
+    return (
+      <div>
+        <antd.Alert type="info" showIcon style={{ marginBottom: 20 }}
+          message="Workflow diagrams are read-only. Modify stage assignments in the Workflow Config tab."
+        />
+        <div style={{ marginBottom: 20 }}>
+          <antd.Typography.Text strong style={{ marginRight: 12 }}>Application type:</antd.Typography.Text>
+          <antd.Radio.Group value={appType} onChange={e => setAppType(e.target.value)} optionType="button" buttonStyle="solid">
+            {Object.entries(WORKFLOWS).map(([k, w]) => (
+              <antd.Radio.Button key={k} value={k}>{w.label.split(' — ')[0].split(' (')[0]}</antd.Radio.Button>
+            ))}
+          </antd.Radio.Group>
+        </div>
+
+        <antd.Card bordered style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+            <div>
+              <antd.Space>
+                <antd.Typography.Title level={4} style={{ margin: 0 }}>{wf.label}</antd.Typography.Title>
+                <antd.Tag color="blue">Total SLA: {wf.totalSLA}</antd.Tag>
+                <antd.Tag>{wf.stages.length} stages</antd.Tag>
+              </antd.Space>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 6 }}>{wf.note}</div>
+            </div>
+          </div>
+
+          {/* Flow diagram */}
+          <div style={{ overflowX: 'auto', paddingBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0, minWidth: 'max-content' }}>
+              {wf.stages.map((s, i) => (
+                <React.Fragment key={s.n}>
+                  {i > 0 && (
+                    <div style={{ alignSelf: 'flex-start', marginTop: 28, padding: '0 4px', color: 'var(--color-text-muted)', fontSize: 18, userSelect: 'none' }}>→</div>
+                  )}
+                  <div style={{ width: 200, background: '#fafafa', border: '1.5px solid var(--color-border)', borderRadius: 10, padding: '12px 14px', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: -10, left: 14, background: 'var(--color-primary)', color: '#fff', borderRadius: 10, fontSize: 10, fontWeight: 700, padding: '1px 8px' }}>Step {s.n}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, marginTop: 4, lineHeight: 1.3 }}>{s.label}</div>
+                    <antd.Tag color={roleTag[s.roleKey] || 'default'} style={{ marginBottom: 8, fontSize: 10 }}>{s.roleLabel}</antd.Tag>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 8 }}>SLA: <b>{s.sla}</b></div>
+                    <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 8 }}>
+                      {s.actions.map((a, j) => (
+                        <div key={j} style={{ fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.5, display: 'flex', gap: 4, alignItems: 'baseline' }}>
+                          <span style={{ color: 'var(--color-primary)', fontSize: 8, marginTop: 3 }}>●</span>{a}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </antd.Card>
+
+        {/* Stage summary table */}
+        <antd.Card title="Stage Summary" bordered size="small">
+          <antd.Table rowKey="n" pagination={false} size="small"
+            dataSource={wf.stages}
+            columns={[
+              { title: '#', dataIndex: 'n', width: 40, align: 'center' },
+              { title: 'Stage', dataIndex: 'label', render: v => <b>{v}</b> },
+              { title: 'Responsible', dataIndex: 'roleLabel', render: (v, r) => <antd.Tag color={roleTag[r.roleKey] || 'default'} style={{ fontSize: 11 }}>{v}</antd.Tag> },
+              { title: 'SLA', dataIndex: 'sla' },
+              { title: 'Key Actions', dataIndex: 'actions', render: v => v.slice(0, 2).map((a, i) => <div key={i} style={{ fontSize: 11 }}>{a}</div>) },
+            ]}
+          />
+        </antd.Card>
+      </div>
+    );
+  };
+
   const tabs = [
     { key: 'fees',          label: <antd.Space><DollarOutlined />Fee Structure</antd.Space>,          children: <FeeTab /> },
     { key: 'iteration',     label: <antd.Space><HistoryOutlined />Iteration & SLA</antd.Space>,        children: <IterationTab /> },
     { key: 'workflow',      label: <antd.Space><BranchesOut_e />Workflow Config</antd.Space>,          children: <WorkflowTab /> },
+    { key: 'flow-diagram',  label: <antd.Space><NodeIndexOut_e />Workflow Diagram</antd.Space>,        children: <FlowDiagramTab /> },
     { key: 'ai',            label: <antd.Space><RobotOutlined />AI Thresholds</antd.Space>,            children: <AITab /> },
     { key: 'announcements', label: <antd.Space><BellOutlined />Announcements</antd.Space>,             children: <AnnouncementsTab /> },
   ];

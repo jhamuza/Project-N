@@ -333,6 +333,9 @@ window.MOCK = {
     { name: 'En. Syahrul Azlan',  id: 'OFF-003', role: 'officer',   team: 'CPPG-TL-01', approved: 35, rejected: 8,  avgTurnaround: 3.9, slaCompliance: 98, aiOverrides: 1 },
     { name: 'En. Ahmad Rashid',   id: 'OFF-004', role: 'officer',   team: 'CPPG-TL-01', approved: 29, rejected: 5,  avgTurnaround: 6.1, slaCompliance: 89, aiOverrides: 9 },
     { name: 'Pn. Halimah Yusof',  id: 'OFF-005', role: 'officer',   team: 'CPPG-TL-01', approved: 37, rejected: 3,  avgTurnaround: 4.7, slaCompliance: 94, aiOverrides: 2 },
+    { name: 'En. Zulkifli Hassan',id: 'OFF-006', role: 'team-lead', team: 'CPPG-SA-01', approved: 52, rejected: 7,  avgTurnaround: 5.1, slaCompliance: 93, aiOverrides: 4 },
+    { name: 'Pn. Maziah Abdullah', id: 'OFF-007',role: 'officer',   team: 'CPPG-SA-01', approved: 44, rejected: 5,  avgTurnaround: 4.8, slaCompliance: 97, aiOverrides: 2 },
+    { name: 'En. Hairul Nizam',   id: 'OFF-008', role: 'officer',   team: 'CPPG-SA-01', approved: 38, rejected: 6,  avgTurnaround: 6.3, slaCompliance: 91, aiOverrides: 8 },
   ],
   // Top applicants by volume (for Reports screen)
   topApplicants: [

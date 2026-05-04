@@ -329,6 +329,9 @@ SCREENS.reports = function Reports({ nav, currentUser }) {
   );
 
   const [period, setPeriod] = React.useState('ytd');
+  const [scope, setScope]   = React.useState('team');
+  const myTeam = currentUser?.team || 'CPPG-TL-01';
+
   const allTrend = MOCK.monthlyTrend || [];
   const trend = period === 'month' ? allTrend.slice(-1)
               : period === '3m'    ? allTrend.filter(d => !d.forecast).slice(-3)
@@ -340,7 +343,9 @@ SCREENS.reports = function Reports({ nav, currentUser }) {
   const totalAutoAccept = actual.reduce((a, b) => a + b.aiAutoAccepted,0);
   const approvalRate    = totalSubmitted ? Math.round(totalApproved / totalSubmitted * 100) : 0;
 
-  const officers = MOCK.officerPerformance || [];
+  const allOfficers = MOCK.officerPerformance || [];
+  const officers = scope === 'team' ? allOfficers.filter(o => o.team === myTeam) : allOfficers;
+  const teamSla = officers.length ? Math.round(officers.reduce((a, o) => a + o.slaCompliance, 0) / officers.length * 10) / 10 : 0;
   const schemeDist = MOCK.schemeDistribution || [];
   const procTime   = MOCK.processingTime    || [];
 
@@ -450,13 +455,23 @@ SCREENS.reports = function Reports({ nav, currentUser }) {
         <div>
           <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>CPPG · MCMC</div>
           <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>Reports & Analytics</antd.Typography.Title>
-          <antd.Typography.Text type="secondary">NCEF Certification Performance · 2026</antd.Typography.Text>
+          <antd.Typography.Text type="secondary">NCEF Certification Performance · 2026{scope === 'team' ? ` · ${myTeam}` : ' · All CPPG teams'}</antd.Typography.Text>
         </div>
-        <Space>
+        <Space wrap>
+          <antd.Segmented value={scope} onChange={setScope}
+            options={[{ label: `My Team (${myTeam})`, value: 'team' }, { label: 'All CPPG', value: 'all' }]}
+          />
           <antd.Segmented value={period} onChange={setPeriod} options={[{ label: 'This Month', value: 'month' }, { label: 'Last 3M', value: '3m' }, { label: 'Full Year', value: 'ytd' }]} />
           <Button icon={<DownloadOutlined />}>Export PDF</Button>
         </Space>
       </div>
+
+      {scope === 'all' && (
+        <antd.Alert type="info" showIcon style={{ marginBottom: 16 }}
+          message="All CPPG teams view"
+          description={`Showing data across all ${allOfficers.length} officers in the CPPG division. Switch to "My Team" to see ${myTeam} only.`}
+        />
+      )}
 
       {/* KPI row */}
       <antd.Row gutter={[16,16]} style={{ marginBottom: 20 }}>
@@ -464,7 +479,7 @@ SCREENS.reports = function Reports({ nav, currentUser }) {
           { l: 'Applications YTD',  v: totalSubmitted,     d: '+18% vs same period last year',                                           color: 'var(--color-primary)' },
           { l: 'Approval Rate',     v: `${approvalRate}%`, d: `${totalApproved} approved of ${totalSubmitted} submitted`,                color: 'var(--color-success)' },
           { l: 'AI Auto-Accepted',  v: totalAutoAccept,    d: `${totalApproved ? Math.round(totalAutoAccept/totalApproved*100) : 0}% of approvals (≥90 score)`, color: 'var(--color-info)' },
-          { l: 'Team SLA',          v: '95.3%',            d: 'Team target 95% · On track',                                             color: 'var(--color-success)' },
+          { l: scope === 'team' ? 'Team SLA' : 'CPPG SLA', v: `${teamSla}%`, d: `${officers.length} officer${officers.length !== 1 ? 's' : ''} · Target: 95%`, color: teamSla >= 95 ? 'var(--color-success)' : 'var(--color-warning)' },
         ].map((k, i) => (
           <antd.Col xs={12} md={6} key={i}>
             <div className="kpi-card">
@@ -500,9 +515,9 @@ SCREENS.reports = function Reports({ nav, currentUser }) {
           </antd.Card>
         </antd.Col>
         <antd.Col xs={24} lg={12}>
-          <antd.Card title="Officer SLA Compliance" bordered
-            extra={<antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>Target: 95% · Dashed line</antd.Typography.Text>}>
-            <PlotlyChart data={slaData} layout={slaLayout} style={{ height: 200 }} />
+          <antd.Card title={scope === 'team' ? `Officer SLA — ${myTeam}` : 'Officer SLA — All CPPG'} bordered
+            extra={<antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>Target: 95% · Dashed line · {officers.length} officers shown</antd.Typography.Text>}>
+            <PlotlyChart data={slaData} layout={slaLayout} style={{ height: Math.max(200, officers.length * 32) }} />
           </antd.Card>
         </antd.Col>
       </antd.Row>

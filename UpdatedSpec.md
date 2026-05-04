@@ -1743,8 +1743,8 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | 7 | Renewal: max period cap enforcer, expiry clarity, Scheme A CoC warning | `screens-a.jsx` cert-renewal, `screens-c.jsx` | S–M | 3 | **Done** |
 | 8 | Supplier multi-user accounts: invite / join-request / admin approval | `screens-c.jsx` Profile Team tab, `mock.js` | M | 4 | **Done** |
 | 9 | Fee editor: full inline edit with SST toggle, SST%, SST amount, total | `screens-e.jsx` FeeTab, `mock.js` feeStructure | S | 2 | **Done** |
-| 10 | Admin workflow visualiser: flow diagram per application type, stage roles | `screens-e.jsx` WorkflowTab, `mock.js` | M | 5 | Pending |
-| 11 | Reports: team-level scope filter | `index.html` SCREENS.reports | S | 5 | Pending |
+| 10 | Admin workflow visualiser: flow diagram per application type, stage roles | `screens-e.jsx` WorkflowTab, `mock.js` | M | 5 | **Done** |
+| 11 | Reports: team-level scope filter | `index.html` SCREENS.reports | S | 5 | **Done** |
 
 #### Sprint 1 Completion Notes (2026-05-04)
 
@@ -1826,6 +1826,27 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 - Pending requests section renders above the team table when `joinReqs.length > 0` — bordered card with warning colour, explains the SSM BRN match, lists each request with avatar, name, role tag, email, message, and request date
 - Each row has Approve and Reject buttons with loading states; Approve removes from pending list and shows a success message; Reject removes from list and shows an info message
 - Return value refactored from a single `antd.Card` to `antd.Space` wrapping the optional pending-requests card and the existing team members card
+
+#### Sprint 5 Completion Notes (2026-05-04)
+
+**Initiative #10 - Admin Workflow Visualiser (screens-e.jsx):**
+- New `FlowDiagramTab` component added to AdminConfig between "Workflow Config" and "AI Thresholds" tabs
+- Application type selector (Radio.Group button style): SDoC A/B, SDoC C, Special Approval, Renewal, IMEI, Importation
+- Per-type workflow definition (`WORKFLOWS` object) specifies: label, badge, total SLA, explanatory note, and an ordered `stages` array
+- Each stage carries: step number, label, responsible role (with colour-coded Tag), SLA, and a list of key actions
+- Visual flow renders as a horizontally-scrollable flex row of 200px cards connected by "→" separators; each card has a "Step N" pill header, role tag, SLA, and bullet list of actions
+- A stage summary table below the flow diagram shows all stages in tabular form for quick reference
+- Workflow data covers all 6 application types: SDoC A/B (7 stages), SDoC C (4 stages), Special Approval (6 stages), Renewal (3 stages), IMEI (3 stages), Importation (5 stages)
+
+**Initiative #11 - Reports Scope Filter (index.html):**
+- `MOCK.officerPerformance` extended: 3 officers from CPPG-SA-01 team added (EN. Zulkifli, Pn. Maziah, En. Hairul) bringing total to 8 officers across 2 teams
+- `scope` state added to Reports screen (default `'team'`); `myTeam` derived from `currentUser?.team`
+- Scope Segmented toggle rendered in header: "My Team (CPPG-TL-01)" / "All CPPG"
+- `officers` computed from scope: `scope === 'team'` filters `officerPerformance` to `o.team === myTeam`; `'all'` shows all 8 officers
+- KPI 4th tile dynamically changes label ("Team SLA" / "CPPG SLA"), value (live mean of filtered officers' `slaCompliance`), and colour (green ≥ 95%, warning otherwise)
+- Officer SLA chart title and height adapt to scope: height = `max(200, officers.length × 32)` so all bars are legible
+- "All CPPG" view adds an informational Alert showing total officer count and offering hint to switch back to team scope
+- Page subtitle appended with team name or "All CPPG teams"
 
 ### 12.4 Key Design Decisions (from session)
 
