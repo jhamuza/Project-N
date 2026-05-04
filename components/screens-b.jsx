@@ -42,7 +42,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
   const schemes = [
     { k: 'A', t: 'Scheme A', sub: 'SDoC with Certification', risk: 'High Risk', d: 'Full manual MCMC review. Certificate of Conformity (CoC) from an accredited body is required alongside all technical documents.', basePerYear: 'RM 350/yr', sla: '5 working days', note: 'Officer manual review + AI support' },
     { k: 'B', t: 'Scheme B', sub: 'SDoC with Verification', risk: 'Medium Risk', d: 'AI-assisted officer review. CoC or equivalent verification document from an accredited body required. Reclassification possible.', basePerYear: 'RM 250/yr', sla: '3 working days', note: 'AI-assisted review · Reclassification available' },
-    { k: 'C', t: 'Scheme C', sub: 'SDoC (AI Auto-Acceptance)', risk: 'Low Risk', d: 'Eligible for auto-acceptance if all documents meet requirements. No CoC required — a signed Standards Declaration suffices.', basePerYear: 'RM 150/yr', sla: '1 working day', note: 'Auto-acceptance eligible · Fastest route' },
+    { k: 'C', t: 'Scheme C', sub: 'SDoC (Self-Declaration)', risk: 'Low Risk', d: 'Eligible for expedited acceptance if all documents meet requirements. No CoC required — a signed Standards Declaration suffices.', basePerYear: 'RM 150/yr', sla: '1 working day', note: 'Expedited review · Fastest route' },
   ];
 
   const Sidebar = () => (
@@ -524,8 +524,8 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
         </Text>
         {isAutoAccept && (
           <Alert type="info" showIcon style={{ marginTop: 16, textAlign: 'left' }}
-            message="Scheme C: Auto-acceptance eligible"
-            description="If all documents clear the automated review, your RCN will be issued automatically without manual intervention. You will receive an email notification when the decision is made." />
+            message="Scheme C: Expedited review"
+            description="Your application is eligible for expedited processing. If all documents are in order, your RCN will be issued without manual intervention. You will receive an email notification when the decision is made." />
         )}
         <div style={{ marginTop: 20, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12 }}>
           <Row gutter={16}>
@@ -555,7 +555,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
     );
   };
 
-  const StepBody = [SchemeStep, ProductStep, DocsStep, AIStep, ReviewStep, DeclarationStep, PayStep, ConfirmStep][step];
+  const stepBodies = [SchemeStep, ProductStep, DocsStep, AIStep, ReviewStep, DeclarationStep, PayStep, ConfirmStep];
 
   return (
     <div style={{ display: 'flex', minHeight: '100%' }}>
@@ -563,7 +563,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
       <div style={{ flex: 1 }}>
         <TopBar />
         <div style={{ padding: 32 }}>
-          <StepBody />
+          {stepBodies[step]()}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32, paddingTop: 20, borderTop: '1px solid var(--color-divider)', maxWidth: 900 }}>
             <Button disabled={step === 0 || signed} onClick={() => setStep(step - 1)}>
               {signed && step > 5 ? <span title="Declaration signed — cannot go back to amend">← Back</span> : '← Back'}
