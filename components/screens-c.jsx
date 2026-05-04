@@ -526,10 +526,66 @@ function OrgTab({ cu }) {
 
 function TeamTab({ onInvite }) {
   const [q, setQ] = React.useState('');
+  const [joinReqs, setJoinReqs] = React.useState(MOCK.joinRequests || []);
+  const [actionLoading, setActionLoading] = React.useState(null);
   const team = MOCK.teamMembers.filter(m => !q || (m.name + m.email + m.role).toLowerCase().includes(q.toLowerCase()));
   const roleColor = { Administrator: 'purple', 'PIC (Technical)': 'blue', Submitter: 'cyan', Finance: 'gold' };
 
+  function handleApprove(req) {
+    setActionLoading(req.id + '-approve');
+    setTimeout(() => {
+      setJoinReqs(prev => prev.filter(r => r.id !== req.id));
+      antd.message.success(`${req.name} approved — they can now sign in to NCEF.`);
+      setActionLoading(null);
+    }, 800);
+  }
+
+  function handleReject(req) {
+    setActionLoading(req.id + '-reject');
+    setTimeout(() => {
+      setJoinReqs(prev => prev.filter(r => r.id !== req.id));
+      antd.message.info(`Join request from ${req.name} rejected.`);
+      setActionLoading(null);
+    }, 800);
+  }
+
   return (
+    <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
+    {joinReqs.length > 0 && (
+      <antd.Card
+        bordered
+        style={{ borderColor: 'var(--color-warning)', borderWidth: 1.5 }}
+        title={<antd.Space><ClockCircleOutlined style={{ color: 'var(--color-warning)' }} /> Pending Join Requests <antd.Badge count={joinReqs.length} style={{ background: 'var(--color-warning)' }} /></antd.Space>}
+      >
+        <antd.Alert type="warning" showIcon style={{ marginBottom: 16 }}
+          message="These users registered using your company SSM BRN (201901023456) and are awaiting administrator approval before they can access the NCEF portal."
+        />
+        <antd.List
+          dataSource={joinReqs}
+          renderItem={req => (
+            <antd.List.Item
+              actions={[
+                <antd.Button type="primary" size="small" icon={<CheckCircleOutlined />}
+                  loading={actionLoading === req.id + '-approve'}
+                  onClick={() => handleApprove(req)}>Approve</antd.Button>,
+                <antd.Button danger size="small" icon={<CloseCircleOutlined />}
+                  loading={actionLoading === req.id + '-reject'}
+                  onClick={() => handleReject(req)}>Reject</antd.Button>,
+              ]}
+            >
+              <antd.List.Item.Meta
+                avatar={<antd.Avatar style={{ background: 'var(--color-warning)', color: '#fff' }}>{req.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</antd.Avatar>}
+                title={<antd.Space>{req.name}<antd.Tag color={roleColor[req.role] || 'default'}>{req.role}</antd.Tag></antd.Space>}
+                description={<div>
+                  <div style={{ fontSize: 12 }}>{req.email}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{req.message} · Requested {new Date(req.registeredAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                </div>}
+              />
+            </antd.List.Item>
+          )}
+        />
+      </antd.Card>
+    )}
     <antd.Card
       title={<antd.Space><TeamOutlined /> Team Members <antd.Badge count={MOCK.teamMembers.length} style={{ background: 'var(--color-primary-subtle)', color: 'var(--color-primary)' }} showZero /></antd.Space>}
       bordered
@@ -580,6 +636,7 @@ function TeamTab({ onInvite }) {
         ]}
       />
     </antd.Card>
+    </antd.Space>
   );
 }
 

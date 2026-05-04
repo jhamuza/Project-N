@@ -275,6 +275,10 @@ window.MOCK = {
     { id: 4, name: 'Siti Hajar Binti Mohd Nor', email: 'siti.h@axiatadigital.com.my', role: 'Finance', status: 'active', lastActive: '2026-04-15T09:00:00', joined: '2025-02-14' },
     { id: 5, name: 'Rajesh Kumar a/l Muthu', email: 'rajesh.k@axiatadigital.com.my', role: 'Submitter', status: 'invited', lastActive: null, joined: '2026-04-14' },
   ],
+  joinRequests: [
+    { id: 'JR-001', name: 'Ahmad Faizal bin Hamdan', email: 'ahmad.faizal@axiatadigital.com.my', role: 'Submitter', registeredAt: '2026-04-28T10:23:00', ssm: '201901023456', message: 'Requesting to join as a Submitter for the NCEF compliance team.' },
+    { id: 'JR-002', name: 'Tan Mei Ling', email: 'meilingt@axiatadigital.com.my', role: 'PIC (Technical)', registeredAt: '2026-05-02T14:45:00', ssm: '201901023456', message: 'New PIC (Technical) for our radio equipment division.' },
+  ],
   // Certificates
   certificates: [
     { rcn: 'RCN-0326-00449', app: 'APP-0426-00085', scheme: 'C', product: 'Mi Band 9 Pro', brand: 'Xiaomi', model: 'M2320B1', issued: '2026-04-10', expires: '2029-04-09', status: 'active', labelType: 'e-label' },

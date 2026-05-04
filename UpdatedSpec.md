@@ -1739,9 +1739,9 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | 3 | Document validation: surface specific findings per document | `screens-b.jsx` DocsStep + ValidationStep | S–M | 1 | **Done** |
 | 4 | SDoC: scheme-specific documents, Part C/D, eSignature (Part E) | `screens-b.jsx` DocsStep, ProductStep, ReviewStep | M | 2 | **Done** |
 | 5 | Special Approval: risk-tier split, SA Letter editor, prohibited rules | `screens-b.jsx` special-approval | L | 6 | Pending |
-| 6 | Importation: RCN auto-populate device details + block-on-error | `screens-g.jsx` | S–M | 4 | Pending |
+| 6 | Importation: RCN auto-populate device details + block-on-error | `screens-g.jsx` | S–M | 4 | **Done** |
 | 7 | Renewal: max period cap enforcer, expiry clarity, Scheme A CoC warning | `screens-a.jsx` cert-renewal, `screens-c.jsx` | S–M | 3 | **Done** |
-| 8 | Supplier multi-user accounts: invite / join-request / admin approval | `screens-c.jsx` Profile Team tab, `mock.js` | M | 4 | Pending |
+| 8 | Supplier multi-user accounts: invite / join-request / admin approval | `screens-c.jsx` Profile Team tab, `mock.js` | M | 4 | **Done** |
 | 9 | Fee editor: full inline edit with SST toggle, SST%, SST amount, total | `screens-e.jsx` FeeTab, `mock.js` feeStructure | S | 2 | **Done** |
 | 10 | Admin workflow visualiser: flow diagram per application type, stage roles | `screens-e.jsx` WorkflowTab, `mock.js` | M | 5 | Pending |
 | 11 | Reports: team-level scope filter | `index.html` SCREENS.reports | S | 5 | Pending |
@@ -1810,6 +1810,22 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 - Inline alert appears on selected Scheme A card if CoC expires within 12 months, explaining why the renewal period is capped and directing user to upload a renewed CoC
 - Declaration step period Segmented control: options beyond `maxYears` are disabled; cap reason displayed below selector
 - Document list (step 1) dynamically adds "Certificate of Conformity (CoC)" as a required re-upload for Scheme A renewals
+
+#### Sprint 4 Completion Notes (2026-05-04)
+
+**Initiative #6 - Importation RCN improvements (screens-g.jsx):**
+- `validateError` state added; `doValidate()` now sets `validateError = true` on failure instead of a disappearing toast — inline `antd.Alert` type="error" stays visible until the user edits the reference field
+- Error Alert shows valid test RCN values for demo purposes
+- On success the Review step (step 5) now renders two additional rows: "Scheme" (coloured tag from `validatedProduct.scheme`) and "Brand / Manufacturer" (from `validatedProduct.brand`)
+- Scheme C permit type description corrected: "AI-accepted or officer-reviewed" removed, replaced with "Expedited review"
+- `resetWizard()` clears `validateError` to ensure clean state on new applications
+
+**Initiative #8 - Supplier multi-user join-request flow (screens-c.jsx + mock.js):**
+- `MOCK.joinRequests` added: 2 pending users registered with company SSM BRN `201901023456` with name, email, intended role, registration timestamp, and a brief message
+- `TeamTab` now manages local `joinReqs` state initialised from `MOCK.joinRequests`
+- Pending requests section renders above the team table when `joinReqs.length > 0` — bordered card with warning colour, explains the SSM BRN match, lists each request with avatar, name, role tag, email, message, and request date
+- Each row has Approve and Reject buttons with loading states; Approve removes from pending list and shows a success message; Reject removes from list and shows an info message
+- Return value refactored from a single `antd.Card` to `antd.Space` wrapping the optional pending-requests card and the existing team members card
 
 ### 12.4 Key Design Decisions (from session)
 

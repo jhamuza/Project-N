@@ -56,6 +56,7 @@ SCREENS['importation'] = function Importation({ nav }) {
   const [imeiQty, setImeiQty]     = React.useState('');
   const [validating, setValidating] = React.useState(false);
   const [validated, setValidated]   = React.useState(false);
+  const [validateError, setValidateError] = React.useState(false);
   const [validatedProduct, setVP]   = React.useState(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [done, setDone]           = React.useState(false);
@@ -63,16 +64,17 @@ SCREENS['importation'] = function Importation({ nav }) {
 
   const STEPS = ['Permit Type', 'Validate Reference', 'Trader & Consignor', 'Consignee & Agent', 'Logistics', 'Review & Submit'];
 
-  function resetWizard() { setStep(0); setPermitType(''); setRef(''); setQty(''); setImeiQty(''); setValidated(false); setVP(null); setDone(false); }
+  function resetWizard() { setStep(0); setPermitType(''); setRef(''); setQty(''); setImeiQty(''); setValidated(false); setVP(null); setValidateError(false); setDone(false); }
 
   function doValidate() {
     setValidating(true);
+    setValidateError(false);
     setTimeout(() => {
       const cert = MOCK.certificates.find(c => c.rcn.toLowerCase() === ref.toLowerCase());
       const saApp = ref.startsWith('SA-') ? { product: 'Keysight N5182B Signal Generator', scheme: 'SA' } : null;
       const found = cert || saApp;
       if (found) { setVP(found); setValidated(true); }
-      else antd.message.error('Reference not found or expired. Check your RCN / SA reference number.');
+      else setValidateError(true);
       setValidating(false);
     }, 1200);
   }
@@ -145,7 +147,7 @@ SCREENS['importation'] = function Importation({ nav }) {
               {[
                 { v: 'Scheme A', t: 'Scheme A — Standard Certification', d: 'Full SDoC with CoC from accredited body. Validates RCN validity and IMEI/SN data.', badge: 'red' },
                 { v: 'Scheme B', t: 'Scheme B — Specific Certification', d: 'SDoC with detailed technical verification. Validates RCN and quantity.', badge: 'orange' },
-                { v: 'Scheme C', t: 'Scheme C — Self-Declaration', d: 'Low-risk equipment. AI-accepted or officer-reviewed. Validates RCN.', badge: 'green' },
+                { v: 'Scheme C', t: 'Scheme C — Self-Declaration', d: 'Low-risk equipment. Expedited review. Validates RCN.', badge: 'green' },
                 { v: 'SA',       t: 'Special Approval', d: 'R&D, demonstration, trial, market survey, PoC, or personal import. Validates SA reference number.', badge: 'purple' },
               ].map(opt => (
                 <antd.Radio key={opt.v} value={opt.v} style={{ padding: 14, border: `1.5px solid ${permitType === opt.v ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 8, margin: 0, background: permitType === opt.v ? 'var(--color-primary-soft)' : '#fff' }}>
@@ -178,7 +180,7 @@ SCREENS['importation'] = function Importation({ nav }) {
               <antd.Form.Item label={permitType === 'SA' ? 'Special Approval Reference Number' : 'Registered Compliance Number (RCN)'} required>
                 <antd.Input size="large"
                   placeholder={permitType === 'SA' ? 'SA-0426-00012' : 'RCN-0326-00449'}
-                  value={ref} onChange={e => { setRef(e.target.value); setValidated(false); setVP(null); }}
+                  value={ref} onChange={e => { setRef(e.target.value); setValidated(false); setVP(null); setValidateError(false); }}
                   prefix={<SafetyCertificateOutlined style={{ color: 'var(--color-text-muted)' }} />}
                   suffix={validated ? <CheckCircleOutlined style={{ color: 'var(--color-success)' }} /> : null}
                 />
@@ -198,6 +200,11 @@ SCREENS['importation'] = function Importation({ nav }) {
                 )}
               </antd.Row>
 
+              {validateError && (
+                <antd.Alert type="error" showIcon style={{ marginBottom: 8 }} message="Reference not found"
+                  description="The RCN or SA reference number was not found in NCEF records, or may have expired. Verify the reference and try again. Valid test values: RCN-0326-00449, RCN-0326-00442, SA-0426-00012."
+                />
+              )}
               {validated && validatedProduct && (
                 <antd.Alert type="success" showIcon style={{ marginBottom: 8 }} message="Reference validated successfully"
                   description={
@@ -346,6 +353,8 @@ SCREENS['importation'] = function Importation({ nav }) {
               <antd.Descriptions.Item label="Permit Type" span={2}><antd.Tag>{permitType}</antd.Tag></antd.Descriptions.Item>
               <antd.Descriptions.Item label={permitType === 'SA' ? 'SA Reference' : 'RCN'}><antd.Typography.Text code>{ref}</antd.Typography.Text></antd.Descriptions.Item>
               <antd.Descriptions.Item label="Product">{validatedProduct?.product || validatedProduct?.model || '—'}</antd.Descriptions.Item>
+              {validatedProduct?.scheme && <antd.Descriptions.Item label="Scheme"><antd.Tag color={{ A: 'red', B: 'orange', C: 'green', SA: 'purple' }[validatedProduct.scheme] || 'default'}>Scheme {validatedProduct.scheme}</antd.Tag></antd.Descriptions.Item>}
+              {validatedProduct?.brand && <antd.Descriptions.Item label="Brand / Manufacturer">{validatedProduct.brand}</antd.Descriptions.Item>}
               <antd.Descriptions.Item label="Quantity">{qty} units</antd.Descriptions.Item>
               {permitType !== 'SA' && <antd.Descriptions.Item label="IMEI / SNs">{imeiQty || 0} identifiers</antd.Descriptions.Item>}
               <antd.Descriptions.Item label="Consignor">Guangdong OPPO Mobile Telecom Corp.</antd.Descriptions.Item>
