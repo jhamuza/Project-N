@@ -1737,7 +1737,7 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | 1 | My Applications: Categorised list with pagination | `screens-a.jsx` applications screen | S–M | 2 | Pending |
 | 2 | Remove compliance score from supplier view; replace with doc status | `shared.jsx`, `screens-a.jsx`, `screens-b.jsx` | S | 1 | **Done** |
 | 3 | Document validation: surface specific findings per document | `screens-b.jsx` DocsStep + ValidationStep | S–M | 1 | **Done** |
-| 4 | SDoC: scheme-specific documents, Part C/D, 6-month validity rule | `screens-b.jsx` DocsStep, `mock.js` | M | 3 | Pending |
+| 4 | SDoC: scheme-specific documents, Part C/D, eSignature (Part E) | `screens-b.jsx` DocsStep, ProductStep, ReviewStep | M | 2 | **Done** |
 | 5 | Special Approval: risk-tier split, SA Letter editor, prohibited rules | `screens-b.jsx` special-approval | L | 6 | Pending |
 | 6 | Importation: RCN auto-populate device details + block-on-error | `screens-g.jsx` | S–M | 4 | Pending |
 | 7 | Renewal: max period cap enforcer, expiry clarity, Scheme A CoC warning | `screens-a.jsx` cert-renewal, `screens-c.jsx` | S–M | 3 | Pending |
@@ -1759,6 +1759,27 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 - SDoC validation spinner text changed to "Checking your documents..." (no AI reference)
 - Renewal step 2 replaced with 5-item per-document verified checklist showing specific acceptance notes
 - Onboarding step 4 replaced with neutral "Verification complete" alert
+
+#### Sprint 2 Completion Notes (2026-05-04)
+
+**SDoC Wizard — Scheme-specific flows aligned to URS:**
+- Scheme descriptions corrected per URS §5.2: Scheme A = "SDoC with Certification" (High Risk), Scheme B = "SDoC with Verification" (Medium Risk), Scheme C = "SDoC (AI Auto-Acceptance)" (Low Risk)
+- Registration fees corrected to RM 350/250/150 per year (excl. SST) per Appendix B; total fee = base × period + 8% SST
+- Part C (Labelling) fields added to Product step: Labelling ID (Supplier/Principal), Label Type (Physical/Electronic), Label Location (Product/Packaging/User Manual)
+- Part D (Registration Period) Segmented control (1-5 years) added to Review step sidebar; fee breakdown shows base + SST amount + total dynamically
+- Document list is now scheme-aware: Scheme A and B require Certificate of Conformity (CoC); Scheme C uses a Standards Declaration letter only (no CoC required); CoC number and date fields shown conditionally
+- Scheme C ConfirmStep shows auto-acceptance eligible alert with "decision within 1 working day" message
+- SLA dates in ConfirmStep differ by scheme (A: 5 wd, B: 3 wd, C: 1 wd)
+
+**eSignature (Part E) — all registration and renewal flows:**
+- New "Declaration" step added to SDoC wizard between Review (step 4) and Payment (step 6)
+- New "Declaration" step added to Cert Renewal wizard between Document Re-check (step 2) and Payment (step 4)
+- Special Approval Declaration step upgraded from a simple text input to a full signing flow
+- Declaration step contains: application/renewal summary, numbered statutory clauses referencing CMA 1998, DSA 1997 notice, full-name + NRIC inputs, signature preview panel
+- Warning Alert at top: "Once signed, you cannot go back to amend your application"
+- "Sign Declaration" button requires all declaration checkboxes ticked + name (min 4 chars) + NRIC (min 6 chars)
+- After signing: `signed = true`; Back button becomes disabled for all upstream steps; Continue/Pay blocked until signed
+- Cert Renewal Declaration step also includes the period selector (1-5 yr) with note that changing period resets signature
 
 ### 12.4 Key Design Decisions (from session)
 
