@@ -1732,19 +1732,33 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 
 ### 12.3 Initiative Register
 
-| # | Title | Scope | Size | Sprint |
-|---|---|---|---|---|
-| 1 | My Applications: Categorised list with pagination | `screens-a.jsx` applications screen | S–M | 2 |
-| 2 | Remove compliance score from supplier view; replace with doc status | `shared.jsx`, `screens-a.jsx`, `screens-b.jsx` | S | 1 |
-| 3 | Document validation: surface specific findings per document | `screens-b.jsx` DocsStep + ValidationStep | S–M | 1 |
-| 4 | SDoC: scheme-specific documents, Part C/D, 6-month validity rule | `screens-b.jsx` DocsStep, `mock.js` | M | 3 |
-| 5 | Special Approval: risk-tier split, SA Letter editor, prohibited rules | `screens-b.jsx` special-approval | L | 6 |
-| 6 | Importation: RCN auto-populate device details + block-on-error | `screens-g.jsx` | S–M | 4 |
-| 7 | Renewal: max period cap enforcer, expiry clarity, Scheme A CoC warning | `screens-a.jsx` cert-renewal, `screens-c.jsx` | S–M | 3 |
-| 8 | Supplier multi-user accounts: invite / join-request / admin approval | `screens-c.jsx` Profile Team tab, `mock.js` | M | 4 |
-| 9 | Fee editor: full inline edit with SST toggle, SST%, SST amount, total | `screens-e.jsx` FeeTab, `mock.js` feeStructure | S | 2 |
-| 10 | Admin workflow visualiser: flow diagram per application type, stage roles | `screens-e.jsx` WorkflowTab, `mock.js` | M | 5 |
-| 11 | Reports: team-level scope filter | `index.html` SCREENS.reports | S | 5 |
+| # | Title | Scope | Size | Sprint | Status |
+|---|---|---|---|---|---|
+| 1 | My Applications: Categorised list with pagination | `screens-a.jsx` applications screen | S–M | 2 | Pending |
+| 2 | Remove compliance score from supplier view; replace with doc status | `shared.jsx`, `screens-a.jsx`, `screens-b.jsx` | S | 1 | **Done** |
+| 3 | Document validation: surface specific findings per document | `screens-b.jsx` DocsStep + ValidationStep | S–M | 1 | **Done** |
+| 4 | SDoC: scheme-specific documents, Part C/D, 6-month validity rule | `screens-b.jsx` DocsStep, `mock.js` | M | 3 | Pending |
+| 5 | Special Approval: risk-tier split, SA Letter editor, prohibited rules | `screens-b.jsx` special-approval | L | 6 | Pending |
+| 6 | Importation: RCN auto-populate device details + block-on-error | `screens-g.jsx` | S–M | 4 | Pending |
+| 7 | Renewal: max period cap enforcer, expiry clarity, Scheme A CoC warning | `screens-a.jsx` cert-renewal, `screens-c.jsx` | S–M | 3 | Pending |
+| 8 | Supplier multi-user accounts: invite / join-request / admin approval | `screens-c.jsx` Profile Team tab, `mock.js` | M | 4 | Pending |
+| 9 | Fee editor: full inline edit with SST toggle, SST%, SST amount, total | `screens-e.jsx` FeeTab, `mock.js` feeStructure | S | 2 | Pending |
+| 10 | Admin workflow visualiser: flow diagram per application type, stage roles | `screens-e.jsx` WorkflowTab, `mock.js` | M | 5 | Pending |
+| 11 | Reports: team-level scope filter | `index.html` SCREENS.reports | S | 5 | Pending |
+
+#### Sprint 1 Completion Notes (2026-05-04)
+
+**Initiative #2 - Compliance score removed from supplier view:**
+- `AiScoreCard` with numeric score removed from SDoC AI validation step, ReviewStep sidebar, application-detail "Document Validation" tab, onboarding step 4, and renewal step 2
+- "Compliance Score" column in applications list replaced with "Validation" tag (No issues / Items to review) keyed off `aiScore >= 90`
+- `AiScoreCard` with `supplierMode` retained only in `officer-review` (MCMC internal, line 786 of screens-b.jsx)
+
+**Initiative #3 - Document validation findings per document:**
+- Added `MOCK.documentFindings` (6 entries): one per document type with `status` and `findings[]` array of `{ field, note }` guidance items
+- Added `DocFindingsPanel` component in `screens-b.jsx`: summary counts (Accepted / Items to review), per-document cards with per-field notes, guidance alert stating findings are not blockers
+- SDoC validation spinner text changed to "Checking your documents..." (no AI reference)
+- Renewal step 2 replaced with 5-item per-document verified checklist showing specific acceptance notes
+- Onboarding step 4 replaced with neutral "Verification complete" alert
 
 ### 12.4 Key Design Decisions (from session)
 
