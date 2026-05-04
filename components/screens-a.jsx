@@ -257,7 +257,7 @@ SCREENS.applications = function Applications({ nav }) {
     { title: 'App ID', dataIndex: 'id', render: (v) => <Text code style={{ fontSize: 12 }}>{v}</Text> },
     { title: 'Scheme', dataIndex: 'scheme', render: (s) => <SchemeBadge scheme={s} /> },
     { title: 'Product', render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.product}</div><div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.brand} · {r.model}</div></div> },
-    { title: 'Compliance Score', dataIndex: 'aiScore', render: (s) => s ? <Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600, margin: 0 }}>{s}</Tag> : <Text type="secondary">—</Text> },
+    { title: 'Validation', dataIndex: 'aiScore', render: (s) => !s ? <Text type="secondary">Pending</Text> : s >= 90 ? <Tag color="green" icon={<CheckCircleOutlined />}>No issues</Tag> : <Tag color="orange" icon={<WarningOutlined />}>Items to review</Tag> },
     { title: 'Status', dataIndex: 'status', render: (s) => <StatusPill status={s} /> },
     { title: 'Updated', dataIndex: 'updated', render: (v) => <Text style={{ fontSize: 12 }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</Text> },
     { title: '', render: (_, r) => (
@@ -364,13 +364,57 @@ SCREENS['application-detail'] = function ApplicationDetail({ nav }) {
         <Col span={16}>
           <antd.Tabs items={[
             {
-              key: 'score',
-              label: 'Compliance Score',
-              children: (
-                <div style={{ paddingTop: 8 }}>
-                  <AiScoreCard score={a.aiScore || 87} reasoning={MOCK.complianceChecks || MOCK.aiReasoning} viz="bar" supplierMode />
-                </div>
-              ),
+              key: 'findings',
+              label: 'Document Validation',
+              children: (() => {
+                const docFindings = MOCK.documentFindings || [];
+                const reviewCount = docFindings.filter(d => d.findings.length > 0).length;
+                const acceptedCount = docFindings.filter(d => d.findings.length === 0).length;
+                return (
+                  <div style={{ paddingTop: 8 }}>
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+                      <div style={{ padding: '8px 16px', background: 'var(--color-success-bg)', borderRadius: 8, textAlign: 'center' }}>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-success)' }}>{acceptedCount}</div>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Accepted</div>
+                      </div>
+                      {reviewCount > 0 && (
+                        <div style={{ padding: '8px 16px', background: 'var(--color-warning-bg)', borderRadius: 8, textAlign: 'center' }}>
+                          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-warning)' }}>{reviewCount}</div>
+                          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Items to review</div>
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'grid', gap: 10 }}>
+                      {docFindings.map((doc, i) => (
+                        <div key={i} style={{ padding: '12px 14px', border: `1px solid ${doc.findings.length > 0 ? 'var(--color-warning)' : 'var(--color-border)'}`, borderRadius: 10, background: doc.findings.length > 0 ? 'var(--color-warning-bg)' : 'var(--color-bg-subtle)' }}>
+                          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                            <span style={{ fontSize: 15 }}>{doc.findings.length === 0 ? '✅' : '📋'}</span>
+                            <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>{doc.docLabel}</span>
+                            <Tag color={doc.findings.length === 0 ? 'green' : 'orange'} style={{ margin: 0 }}>
+                              {doc.findings.length === 0 ? 'Accepted' : 'Please review'}
+                            </Tag>
+                          </div>
+                          {doc.findings.length > 0 && (
+                            <div style={{ marginTop: 8, paddingLeft: 25, display: 'grid', gap: 5 }}>
+                              {doc.findings.map((f, j) => (
+                                <div key={j} style={{ fontSize: 12 }}>
+                                  <span style={{ fontWeight: 600, color: 'var(--color-warning)' }}>{f.field}:</span>{' '}
+                                  <span style={{ color: 'var(--color-text-secondary)' }}>{f.note}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {reviewCount > 0 && a.status !== 'approved' && (
+                      <antd.Alert type="info" showIcon style={{ marginTop: 14 }}
+                        message="These are guidance items, not blockers"
+                        description="Addressing the items above before resubmission will reduce the chance of an officer requesting further changes." />
+                    )}
+                  </div>
+                );
+              })(),
             },
             {
               key: 'docs',
@@ -383,7 +427,7 @@ SCREENS['application-detail'] = function ApplicationDetail({ nav }) {
                       <span style={{ flex: 1, fontSize: 13 }}>{d.name}</span>
                       <Text type="secondary" style={{ fontSize: 11 }}>{d.size}</Text>
                       <Tag color={d.ocrStatus === 'verified' ? 'green' : 'orange'} style={{ fontSize: 10, margin: 0 }}>
-                        {d.ocrStatus === 'verified' ? '✓ Accepted' : 'Pending'}
+                        {d.ocrStatus === 'verified' ? 'Accepted' : 'Pending'}
                       </Tag>
                     </div>
                   ))}
@@ -648,8 +692,10 @@ SCREENS.onboarding = function Onboarding({ nav }) {
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 24 }}>
-              <AiScoreCard score={94} reasoning={MOCK.aiReasoning} viz="gauge" compact supplierMode />
+            <div style={{ marginTop: 20 }}>
+              <Alert type="success" showIcon
+                message="Verification complete"
+                description="All checks passed. Your account details have been verified and your profile is ready for activation." />
             </div>
           </div>
         )}
@@ -1000,8 +1046,24 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
             )}
             {aiDone && (
               <>
-                <AiScoreCard score={92} reasoning={MOCK.aiReasoning} viz="bar" supplierMode />
-                <Alert type="success" showIcon style={{ marginTop: 16 }} message="Compliance score improved to 92 — eligible for automatic approval" description="Updated test report resolved the previous frequency band flag. Renewal can proceed without further review." />
+                <div style={{ display: 'grid', gap: 10, marginBottom: 16 }}>
+                  {[
+                    { label: 'Company Registration', note: 'Valid and active.', ok: true },
+                    { label: 'Technical Brochure', note: 'Accepted. No changes required.', ok: true },
+                    { label: 'Test Report', note: 'Updated report accepted. Previous frequency band flag resolved.', ok: true },
+                    { label: 'Product Photos', note: 'Accepted.', ok: true },
+                    { label: 'Declaration Letter', note: 'Redated and accepted.', ok: true },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 14px', background: 'var(--color-success-bg)', border: '1px solid var(--color-border)', borderRadius: 8 }}>
+                      <span style={{ fontSize: 15, marginTop: 1 }}>✅</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{item.label}</div>
+                        <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>{item.note}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Alert type="success" showIcon message="All documents verified" description="No issues found. Your renewal can proceed to payment." />
               </>
             )}
           </div>
@@ -1038,7 +1100,7 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'var(--color-success)' }}>✓</div>
             <Title level={3} style={{ marginTop: 16 }}>Certificate Renewed</Title>
-            <Text type="secondary">Payment received. New certificate issued automatically — your compliance score meets the required threshold.</Text>
+            <Text type="secondary">Payment received. Your renewal has been processed and a new certificate has been issued.</Text>
             <div style={{ marginTop: 24, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12, display: 'inline-block' }}>
               <Row gutter={24}>
                 <Col>

@@ -184,6 +184,61 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
     </div>
   );
 
+  const DocFindingsPanel = () => {
+    const findings = MOCK.documentFindings || [];
+    const reviewCount = findings.filter(d => d.status === 'review').length;
+    const acceptedCount = findings.filter(d => d.status === 'accepted').length;
+    return (
+      <div>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+          <div style={{ padding: '10px 20px', background: 'var(--color-success-bg)', borderRadius: 8, textAlign: 'center' }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-success)' }}>{acceptedCount}</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Accepted</div>
+          </div>
+          {reviewCount > 0 && (
+            <div style={{ padding: '10px 20px', background: 'var(--color-warning-bg)', borderRadius: 8, textAlign: 'center' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-warning)' }}>{reviewCount}</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Items to review</div>
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'grid', gap: 10 }}>
+          {findings.map((doc, i) => (
+            <div key={i} style={{ padding: '12px 16px', border: `1px solid ${doc.findings.length > 0 ? 'var(--color-warning)' : 'var(--color-border)'}`, borderRadius: 10, background: doc.findings.length > 0 ? 'var(--color-warning-bg)' : 'var(--color-bg-subtle)' }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span style={{ fontSize: 16 }}>{doc.status === 'accepted' ? '✅' : '📋'}</span>
+                <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>{doc.docLabel}</span>
+                <Tag color={doc.status === 'accepted' ? 'green' : 'orange'} style={{ margin: 0 }}>
+                  {doc.status === 'accepted' ? 'Accepted' : 'Please review'}
+                </Tag>
+              </div>
+              {doc.findings.length > 0 && (
+                <div style={{ marginTop: 10, paddingLeft: 26, display: 'grid', gap: 6 }}>
+                  {doc.findings.map((f, j) => (
+                    <div key={j} style={{ fontSize: 12 }}>
+                      <span style={{ fontWeight: 600, color: 'var(--color-warning)' }}>{f.field}:</span>{' '}
+                      <span style={{ color: 'var(--color-text-secondary)' }}>{f.note}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        {reviewCount > 0 && (
+          <Alert type="info" showIcon style={{ marginTop: 16 }}
+            message="Items above are guidance, not blockers"
+            description="You can proceed to submit. Addressing these items before submission will reduce the chance of an officer requesting changes later." />
+        )}
+        {reviewCount === 0 && (
+          <Alert type="success" showIcon style={{ marginTop: 16 }}
+            message="All documents look good"
+            description="No issues were identified. You can proceed to the review step." />
+        )}
+      </div>
+    );
+  };
+
   const AIStep = () => (
     <div style={{ maxWidth: 780 }}>
       {aiRunning && (
@@ -193,19 +248,14 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
               <FileSearchOutlined style={{ fontSize: 24, color: 'var(--color-primary)' }} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 600 }}>Validating your submission…</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>Cross-referencing SSM records, document content, and compliance standards</div>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>Checking your documents...</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>Verifying document content, completeness, and consistency</div>
               <Progress percent={70} status="active" showInfo={false} strokeColor="var(--color-primary)" style={{ marginTop: 10 }} />
             </div>
           </div>
         </Card>
       )}
-      {aiDone && (
-        <>
-          <AiScoreCard score={87} reasoning={MOCK.aiReasoning} viz={tweaks.aiViz} supplierMode />
-          <Alert type="warning" showIcon style={{ marginTop: 16 }} message="2 items flagged for officer review" description="Your compliance score of 87 meets the processing threshold but a brief officer review is required. Expected turnaround: ~2 working days." />
-        </>
-      )}
+      {aiDone && <DocFindingsPanel />}
     </div>
   );
 
@@ -246,8 +296,17 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
           </Card>
         </Col>
         <Col span={8}>
-          <AiScoreCard score={87} reasoning={MOCK.aiReasoning} viz="bar" compact supplierMode />
-          <Card size="small" bordered style={{ marginTop: 12 }}>
+          <Card size="small" bordered style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600, marginBottom: 10 }}>Document Validation</div>
+            {(MOCK.documentFindings || []).map((doc, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: i < (MOCK.documentFindings.length - 1) ? '1px solid var(--color-divider)' : 'none' }}>
+                <span style={{ fontSize: 13 }}>{doc.status === 'accepted' ? '✅' : '📋'}</span>
+                <span style={{ flex: 1, fontSize: 12, color: 'var(--color-text-secondary)' }}>{doc.docLabel}</span>
+                {doc.findings.length > 0 && <Tag color="orange" style={{ fontSize: 10, margin: 0 }}>Review</Tag>}
+              </div>
+            ))}
+          </Card>
+          <Card size="small" bordered>
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Fee Summary</div>
             <div style={{ fontSize: 32, fontWeight: 700, marginTop: 4 }}>RM 1,200</div>
             <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Scheme A base fee (incl. 8% SST)</div>

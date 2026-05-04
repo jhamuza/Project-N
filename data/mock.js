@@ -175,6 +175,54 @@ window.MOCK = {
     { category: 'Account Standing',               score:  9, max: 10, note: 'Your account has a strong approval history with no rejections or enforcement actions in the past 24 months.',                            pass: true  },
     { category: 'Form Completeness',               score:  5, max: 10, note: 'The "Marketing Name" field is blank and the frequency band is missing from the product label photo. Completing these will improve your score.', pass: false },
   ],
+  // Document-level findings shown to suppliers during validation step.
+  // Each entry maps to one uploaded document. Findings give specific guidance, not pass/fail verdicts.
+  documentFindings: [
+    {
+      docKey: 'reg',
+      docLabel: 'Company Registration (SSM)',
+      status: 'accepted',
+      findings: [],
+    },
+    {
+      docKey: 'bro',
+      docLabel: 'Technical Brochure / Datasheet',
+      status: 'review',
+      findings: [
+        { field: 'Frequency Band', note: 'Secondary sub-band range not specified. Please include the full operating range in the technical brochure (e.g. 2400-2483.5 MHz including all sub-bands).' },
+      ],
+    },
+    {
+      docKey: 'test',
+      docLabel: 'Test Report (accredited lab)',
+      status: 'accepted',
+      findings: [],
+    },
+    {
+      docKey: 'photo',
+      docLabel: 'Product Photos (front, back, label)',
+      status: 'review',
+      findings: [
+        { field: 'Label Photo', note: 'Frequency band is not visible on the label photo. Please ensure the label shows the operating frequency or resubmit a clearer image.' },
+      ],
+    },
+    {
+      docKey: 'decl',
+      docLabel: 'Standards Declaration (MCMC MTSFB TC G015:2022)',
+      status: 'review',
+      findings: [
+        { field: 'Clause 5.3.2', note: 'This clause is marked as N/A without a written justification. Please add a brief explanation for why this clause does not apply to your product.' },
+      ],
+    },
+    {
+      docKey: 'form',
+      docLabel: 'Application Form',
+      status: 'review',
+      findings: [
+        { field: 'Marketing Name', note: 'Field is blank. This is not mandatory but leaving it blank may delay the product being added to the label registry after approval.' },
+      ],
+    },
+  ],
   documents: [
     { name: 'Company_Registration_SSM.pdf', type: 'Company Registration', size: '2.1 MB', ocrStatus: 'verified', uploaded: '2026-04-15T14:05:00' },
     { name: 'Technical_Brochure_S24Ultra.pdf', type: 'Technical Brochure', size: '4.8 MB', ocrStatus: 'verified', uploaded: '2026-04-15T14:08:00' },
