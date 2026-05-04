@@ -20,20 +20,20 @@ const AimOut_e         = window.icons.AimOutlined     || window.icons.Thunderbol
 // ─── Mock data for admin config ───────────────────────────────────────────────
 Object.assign(window.MOCK, {
   feeStructure: [
-    { id: 'fee-01', category: 'SDoC Registration',  scheme: 'Scheme A', type: 'Annual (per model)',     amount: 1200, currency: 'MYR', sst: true  },
-    { id: 'fee-02', category: 'SDoC Registration',  scheme: 'Scheme B', type: 'Annual (per model)',     amount: 2500, currency: 'MYR', sst: true  },
-    { id: 'fee-03', category: 'SDoC Registration',  scheme: 'Scheme C', type: 'Annual (per model)',     amount: 600,  currency: 'MYR', sst: true  },
-    { id: 'fee-04', category: 'Special Approval',   scheme: 'Low/Med Risk', type: 'Per application',    amount: 500,  currency: 'MYR', sst: true  },
-    { id: 'fee-05', category: 'Special Approval',   scheme: 'High Risk',    type: 'Per application',    amount: 1000, currency: 'MYR', sst: true  },
-    { id: 'fee-06', category: 'Special Approval',   scheme: 'Prohibited',   type: 'Per application',    amount: 2000, currency: 'MYR', sst: true  },
-    { id: 'fee-07', category: 'IMEI Registration',  scheme: 'All',          type: 'Per IMEI number',    amount: 0.50, currency: 'MYR', sst: false },
-    { id: 'fee-08', category: 'Serial Number Reg.', scheme: 'All',          type: 'Per serial number',  amount: 0.15, currency: 'MYR', sst: false },
-    { id: 'fee-09', category: 'Account Registration',scheme: 'Category A',  type: 'Per year',           amount: 300,  currency: 'MYR', sst: true  },
-    { id: 'fee-10', category: 'Account Registration',scheme: 'Category B/C',type: 'Per year',           amount: 0,    currency: 'MYR', sst: false },
-    { id: 'fee-11', category: 'Account Registration',scheme: 'Category D',  type: 'Per year',           amount: 200,  currency: 'MYR', sst: true  },
-    { id: 'fee-12', category: 'Renewal',            scheme: 'Scheme A',     type: 'Per year per model', amount: 600,  currency: 'MYR', sst: true  },
-    { id: 'fee-13', category: 'Renewal',            scheme: 'Scheme B',     type: 'Per year per model', amount: 1000, currency: 'MYR', sst: true  },
-    { id: 'fee-14', category: 'Renewal',            scheme: 'Scheme C',     type: 'Per year per model', amount: 300,  currency: 'MYR', sst: true  },
+    { id: 'fee-01', category: 'SDoC Registration',   scheme: 'Scheme A', type: 'Per year per model',   baseFee: 324.07, sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-02', category: 'SDoC Registration',   scheme: 'Scheme B', type: 'Per year per model',   baseFee: 231.48, sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-03', category: 'SDoC Registration',   scheme: 'Scheme C', type: 'Per year per model',   baseFee: 138.89, sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-04', category: 'Special Approval',    scheme: 'Low/Med Risk', type: 'Per application',  baseFee: 500.00, sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-05', category: 'Special Approval',    scheme: 'High Risk',    type: 'Per application',  baseFee: 1000.00,sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-06', category: 'Special Approval',    scheme: 'Prohibited',   type: 'Per application',  baseFee: 2000.00,sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-07', category: 'IMEI Registration',   scheme: 'All',          type: 'Per IMEI number',  baseFee: 0.50,   sstEnabled: false, sstPct: 0 },
+    { id: 'fee-08', category: 'Serial Number Reg.',  scheme: 'All',          type: 'Per serial number', baseFee: 0.15,  sstEnabled: false, sstPct: 0 },
+    { id: 'fee-09', category: 'Account Registration',scheme: 'Category A',   type: 'Per year',         baseFee: 300.00, sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-10', category: 'Account Registration',scheme: 'Category B/C', type: 'Per year',         baseFee: 0.00,   sstEnabled: false, sstPct: 0 },
+    { id: 'fee-11', category: 'Account Registration',scheme: 'Category D',   type: 'Per year',         baseFee: 200.00, sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-12', category: 'Renewal',             scheme: 'Scheme A',     type: 'Per year per model',baseFee: 324.07, sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-13', category: 'Renewal',             scheme: 'Scheme B',     type: 'Per year per model',baseFee: 231.48, sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-14', category: 'Renewal',             scheme: 'Scheme C',     type: 'Per year per model',baseFee: 138.89, sstEnabled: true,  sstPct: 8 },
   ],
   workflowChainConfig: [
     { id: 'wf-01', step: 1, roleLabel: 'OIC / CPPG Officer', roleKey: 'officer',      actions: ['Escalate', 'Return for iteration'], canReject: false, mandatory: true  },
@@ -66,48 +66,110 @@ SCREENS['admin-config'] = function AdminConfig({ nav, currentUser }) {
   // ── FEE STRUCTURE ──────────────────────────────────────────────────────────
   const FeeTab = () => {
     const [fees, setFees] = React.useState(MOCK.feeStructure);
-    const [editId, setEditId] = React.useState(null);
-    const [editVal, setEditVal] = React.useState('');
+    const [dirty, setDirty] = React.useState(false);
     const [saved, setSaved] = React.useState(false);
+    const [editingId, setEditingId] = React.useState(null);
+    const [editBuf, setEditBuf] = React.useState({});
     const categories = [...new Set(fees.map(f => f.category))];
 
-    function startEdit(f) { setEditId(f.id); setEditVal(String(f.amount)); }
+    function sstAmt(f) { return f.sstEnabled ? Math.round(f.baseFee * f.sstPct) / 100 : 0; }
+    function total(f)  { return f.baseFee + sstAmt(f); }
+
+    function startEdit(f) {
+      setEditingId(f.id);
+      setEditBuf({ baseFee: String(f.baseFee), sstPct: String(f.sstPct), sstEnabled: f.sstEnabled });
+    }
     function commitEdit(id) {
-      setFees(prev => prev.map(f => f.id === id ? { ...f, amount: parseFloat(editVal) || 0 } : f));
-      setEditId(null);
+      setFees(prev => prev.map(f => f.id === id ? {
+        ...f,
+        baseFee: parseFloat(editBuf.baseFee) || 0,
+        sstPct: editBuf.sstEnabled ? (parseFloat(editBuf.sstPct) || 0) : 0,
+        sstEnabled: editBuf.sstEnabled,
+      } : f));
+      setEditingId(null);
+      setDirty(true);
       setSaved(false);
     }
+
+    const fmtMYR = v => `RM ${v.toFixed(2)}`;
+
+    const columns = [
+      { title: 'Scheme / Type', dataIndex: 'scheme', width: 160, render: v => <antd.Tag>{v}</antd.Tag> },
+      { title: 'Basis', dataIndex: 'type', width: 180, render: v => <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{v}</span> },
+      {
+        title: 'Actual Fee', dataIndex: 'baseFee', width: 150, align: 'right',
+        render: (v, r) => editingId === r.id
+          ? <antd.InputNumber size="small" value={parseFloat(editBuf.baseFee)} min={0} step={0.01} precision={2}
+              onChange={val => setEditBuf(b => ({ ...b, baseFee: String(val ?? 0) }))}
+              style={{ width: 100 }} addonBefore="RM" />
+          : <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{fmtMYR(v)}</span>,
+      },
+      {
+        title: 'SST', width: 110, align: 'center',
+        render: (_, r) => editingId === r.id
+          ? <antd.Space size={4}>
+              <antd.Switch size="small" checked={editBuf.sstEnabled} onChange={v => setEditBuf(b => ({ ...b, sstEnabled: v, sstPct: v ? (b.sstPct || '8') : '0' }))} />
+              {editBuf.sstEnabled && (
+                <antd.InputNumber size="small" value={parseFloat(editBuf.sstPct)} min={0} max={30} step={1} precision={0}
+                  onChange={val => setEditBuf(b => ({ ...b, sstPct: String(val ?? 0) }))}
+                  style={{ width: 64 }} addonAfter="%" />
+              )}
+            </antd.Space>
+          : r.sstEnabled
+            ? <antd.Tag color="orange">{r.sstPct}%</antd.Tag>
+            : <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>Exempt</antd.Typography.Text>,
+      },
+      {
+        title: 'SST Amount', width: 120, align: 'right',
+        render: (_, r) => {
+          const amt = editingId === r.id
+            ? (editBuf.sstEnabled ? (parseFloat(editBuf.baseFee) || 0) * (parseFloat(editBuf.sstPct) || 0) / 100 : 0)
+            : sstAmt(r);
+          return <span style={{ fontSize: 12, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>{fmtMYR(amt)}</span>;
+        },
+      },
+      {
+        title: 'Total', width: 130, align: 'right',
+        render: (_, r) => {
+          const base = editingId === r.id ? (parseFloat(editBuf.baseFee) || 0) : r.baseFee;
+          const sst  = editingId === r.id
+            ? (editBuf.sstEnabled ? base * (parseFloat(editBuf.sstPct) || 0) / 100 : 0)
+            : sstAmt(r);
+          return <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--color-primary)' }}>{fmtMYR(base + sst)}</span>;
+        },
+      },
+      {
+        title: '', width: 100, align: 'right',
+        render: (_, r) => {
+          if (!isAdmin) return null;
+          if (editingId === r.id) return (
+            <antd.Space size={4}>
+              <antd.Button size="small" type="primary" onClick={() => commitEdit(r.id)}>Save</antd.Button>
+              <antd.Button size="small" onClick={() => setEditingId(null)}>Cancel</antd.Button>
+            </antd.Space>
+          );
+          return <antd.Button type="text" size="small" icon={<EditOutlined />} onClick={() => startEdit(r)} disabled={editingId !== null} />;
+        },
+      },
+    ];
 
     return (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <antd.Typography.Text type="secondary" style={{ fontSize: 13 }}>
-            All fees are in Malaysian Ringgit (MYR). SST (8%) applies where indicated. Changes take effect from the next billing cycle.
+            All fees in MYR. Total = Actual Fee + SST Amount. Changes take effect from the next billing cycle.
           </antd.Typography.Text>
           <antd.Space>
             {saved && <antd.Tag color="green" icon={<CheckCircleOutlined />}>Saved</antd.Tag>}
-            <antd.Button type="primary" icon={<CheckOutlined />} onClick={() => setSaved(true)} disabled={editId !== null}>Save Fee Schedule</antd.Button>
+            <antd.Button type="primary" icon={<CheckOutlined />} onClick={() => { setSaved(true); setDirty(false); }} disabled={!dirty || editingId !== null}>
+              Publish Fee Schedule
+            </antd.Button>
           </antd.Space>
         </div>
         {categories.map(cat => (
           <div key={cat} style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 8 }}>{cat}</div>
-            <antd.Table
-              rowKey="id"
-              dataSource={fees.filter(f => f.category === cat)}
-              pagination={false}
-              size="small"
-              columns={[
-                { title: 'Scheme / Type', dataIndex: 'scheme', width: 180, render: v => <antd.Tag>{v}</antd.Tag> },
-                { title: 'Basis',         dataIndex: 'type',   width: 200, render: v => <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{v}</span> },
-                { title: 'SST',           dataIndex: 'sst',    width: 80,  align: 'center', render: v => v ? <antd.Tag color="orange">8%</antd.Tag> : <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>Exempt</antd.Typography.Text> },
-                { title: 'Amount (MYR)',  dataIndex: 'amount', align: 'right', render: (v, r) => editId === r.id
-                  ? <antd.Space><antd.Input size="small" value={editVal} onChange={e => setEditVal(e.target.value)} style={{ width: 100, textAlign: 'right' }} autoFocus /><antd.Button size="small" type="primary" onClick={() => commitEdit(r.id)}>✓</antd.Button><antd.Button size="small" onClick={() => setEditId(null)}>✕</antd.Button></antd.Space>
-                  : <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>RM {v.toFixed(2)}</span>
-                },
-                { title: '', width: 60, render: (_, r) => isAdmin && editId !== r.id && <antd.Button type="text" size="small" icon={<EditOutlined />} onClick={() => startEdit(r)} /> },
-              ]}
-            />
+            <antd.Table rowKey="id" dataSource={fees.filter(f => f.category === cat)} pagination={false} size="small" columns={columns} />
           </div>
         ))}
         <antd.Alert type="info" showIcon message="Waiver codes" description="System Administrators and Officers may issue waiver codes to grant specific applicants a discount or full waiver of applicable fees. Manage waivers via the Suppliers screen." style={{ marginTop: 8 }} />

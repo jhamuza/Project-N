@@ -1734,15 +1734,15 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 
 | # | Title | Scope | Size | Sprint | Status |
 |---|---|---|---|---|---|
-| 1 | My Applications: Categorised list with pagination | `screens-a.jsx` applications screen | S–M | 2 | Pending |
+| 1 | My Applications: Categorised list with pagination | `screens-a.jsx` applications screen | S–M | 2 | **Done** |
 | 2 | Remove compliance score from supplier view; replace with doc status | `shared.jsx`, `screens-a.jsx`, `screens-b.jsx` | S | 1 | **Done** |
 | 3 | Document validation: surface specific findings per document | `screens-b.jsx` DocsStep + ValidationStep | S–M | 1 | **Done** |
 | 4 | SDoC: scheme-specific documents, Part C/D, eSignature (Part E) | `screens-b.jsx` DocsStep, ProductStep, ReviewStep | M | 2 | **Done** |
 | 5 | Special Approval: risk-tier split, SA Letter editor, prohibited rules | `screens-b.jsx` special-approval | L | 6 | Pending |
 | 6 | Importation: RCN auto-populate device details + block-on-error | `screens-g.jsx` | S–M | 4 | Pending |
-| 7 | Renewal: max period cap enforcer, expiry clarity, Scheme A CoC warning | `screens-a.jsx` cert-renewal, `screens-c.jsx` | S–M | 3 | Pending |
+| 7 | Renewal: max period cap enforcer, expiry clarity, Scheme A CoC warning | `screens-a.jsx` cert-renewal, `screens-c.jsx` | S–M | 3 | **Done** |
 | 8 | Supplier multi-user accounts: invite / join-request / admin approval | `screens-c.jsx` Profile Team tab, `mock.js` | M | 4 | Pending |
-| 9 | Fee editor: full inline edit with SST toggle, SST%, SST amount, total | `screens-e.jsx` FeeTab, `mock.js` feeStructure | S | 2 | Pending |
+| 9 | Fee editor: full inline edit with SST toggle, SST%, SST amount, total | `screens-e.jsx` FeeTab, `mock.js` feeStructure | S | 2 | **Done** |
 | 10 | Admin workflow visualiser: flow diagram per application type, stage roles | `screens-e.jsx` WorkflowTab, `mock.js` | M | 5 | Pending |
 | 11 | Reports: team-level scope filter | `index.html` SCREENS.reports | S | 5 | Pending |
 
@@ -1763,7 +1763,7 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 #### Sprint 2 Completion Notes (2026-05-04)
 
 **SDoC Wizard — Scheme-specific flows aligned to URS:**
-- Scheme descriptions corrected per URS §5.2: Scheme A = "SDoC with Certification" (High Risk), Scheme B = "SDoC with Verification" (Medium Risk), Scheme C = "SDoC (AI Auto-Acceptance)" (Low Risk)
+- Scheme descriptions corrected per URS §5.2: Scheme A = "SDoC with Certification" (High Risk), Scheme B = "SDoC with Verification" (Medium Risk), Scheme C = "SDoC (Self-Declaration)" (Low Risk)
 - Registration fees corrected to RM 350/250/150 per year (excl. SST) per Appendix B; total fee = base × period + 8% SST
 - Part C (Labelling) fields added to Product step: Labelling ID (Supplier/Principal), Label Type (Physical/Electronic), Label Location (Product/Packaging/User Manual)
 - Part D (Registration Period) Segmented control (1-5 years) added to Review step sidebar; fee breakdown shows base + SST amount + total dynamically
@@ -1780,6 +1780,36 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 - "Sign Declaration" button requires all declaration checkboxes ticked + name (min 4 chars) + NRIC (min 6 chars)
 - After signing: `signed = true`; Back button becomes disabled for all upstream steps; Continue/Pay blocked until signed
 - Cert Renewal Declaration step also includes the period selector (1-5 yr) with note that changing period resets signature
+
+**Bug fix — declaration scroll reset:**
+- Root cause: `<StepBody />` where `StepBody` is a new function reference on every render caused React to unmount/remount the component on each keystroke, resetting scroll position
+- Fix: changed to `{stepBodies[step]()}` — step bodies are called as functions, not rendered as JSX components; no unmount/remount on parent re-render
+- Scheme C label further updated: "SDoC (AI Auto-Acceptance)" corrected to "SDoC (Self-Declaration)"; confirmation alert changed to "Expedited review"
+
+#### Sprint 2 (remaining) + Sprint 3 Completion Notes (2026-05-04)
+
+**Initiative #9 - Fee editor (screens-e.jsx FeeTab):**
+- Fee data corrected to match URS Appendix B: Scheme A = RM 324.07/yr base (total RM 350 incl. SST), Scheme B = RM 231.48/yr, Scheme C = RM 138.89/yr; same rates apply to Renewal
+- `feeStructure` schema updated: `baseFee` (numeric), `sstEnabled` (bool), `sstPct` (number, e.g. 8)
+- FeeTab now shows 6 columns: Scheme/Type, Basis, Actual Fee (editable), SST toggle + SST% (editable when enabled), SST Amount (auto-calculated), Total (auto-calculated, highlighted)
+- Inline edit mode per row: click pencil icon to enter, Save/Cancel per row, Publish button activates only after unsaved changes exist
+- SST toggle disables SST% and zeroes SST amount when off; SST% field only visible when SST is enabled
+
+**Initiative #1 - My Applications categorised list (screens-a.jsx):**
+- Applications screen upgraded from a Segmented status filter to a tabbed layout: All | SDoC | Special Approval | Renewals — each tab shows a count badge
+- Status filter moved to a Select dropdown (All statuses / Draft / Under Review / Needs action / Approved / Rejected) alongside a live search box
+- Pagination added: 8 rows per page with total count shown
+- Warning banner appears at the top if any applications are in `iteration_required` state, with direct link to filter
+- Type column shows application category label (SDoC / Special Approval / Renewal) below the scheme badge
+- Empty state shows Ant Design Empty component when no results match filters
+
+**Initiative #7 - Renewal max period cap and Scheme A CoC warning (screens-a.jsx):**
+- `COC_EXPIRY` map added (keyed by RCN) providing CoC expiry dates for Scheme A certificates
+- `maxRenewYears(cert)` computes: `min(5 − yearsUsed, cocYearsLeft)` for Scheme A; `5 − yearsUsed` for Scheme B/C
+- Certificate selector (step 0) now shows four data points per card: Current Expiry, Max Renewal, CoC Expiry (Scheme A only), tags for "Expiring Soon" and "CoC expiring soon"
+- Inline alert appears on selected Scheme A card if CoC expires within 12 months, explaining why the renewal period is capped and directing user to upload a renewed CoC
+- Declaration step period Segmented control: options beyond `maxYears` are disabled; cap reason displayed below selector
+- Document list (step 1) dynamically adds "Certificate of Conformity (CoC)" as a required re-upload for Scheme A renewals
 
 ### 12.4 Key Design Decisions (from session)
 

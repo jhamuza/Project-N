@@ -250,27 +250,83 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks }) {
 
 // ============ APPLICATIONS LIST ============
 SCREENS.applications = function Applications({ nav }) {
-  const [filter, setFilter] = React.useState('all');
+  const [typeTab, setTypeTab] = React.useState('all');
+  const [statusFilter, setStatusFilter] = React.useState('all');
+  const [search, setSearch] = React.useState('');
   const all = MOCK.assessments;
-  const filtered = filter === 'all' ? all : all.filter(a => a.status === filter);
+
+  function appType(a) {
+    if (a.scheme === 'SA') return 'sa';
+    if (a.scheme === 'IMEI') return 'imei';
+    if (a.scheme === 'REN') return 'renewal';
+    return 'sdoc';
+  }
+
+  const byType = typeTab === 'all' ? all : all.filter(a => appType(a) === typeTab);
+  const byStatus = statusFilter === 'all' ? byType : byType.filter(a => a.status === statusFilter);
+  const filtered = search
+    ? byStatus.filter(a => [a.id, a.product, a.brand, a.model].join(' ').toLowerCase().includes(search.toLowerCase()))
+    : byStatus;
+
+  const sdocCount = all.filter(a => appType(a) === 'sdoc').length;
+  const saCount   = all.filter(a => appType(a) === 'sa').length;
+  const iterCount = all.filter(a => a.status === 'iteration_required').length;
+  const draftCount = all.filter(a => a.status === 'draft').length;
+
+  const statusOptions = [
+    { label: 'All statuses', value: 'all' },
+    { label: `Draft (${draftCount})`,     value: 'draft' },
+    { label: 'Under Review',              value: 'under_review' },
+    { label: `Needs action (${iterCount})`, value: 'iteration_required' },
+    { label: 'Approved',                  value: 'approved' },
+    { label: 'Rejected',                  value: 'rejected' },
+  ];
+
   const cols = [
-    { title: 'App ID', dataIndex: 'id', render: (v) => <Text code style={{ fontSize: 12 }}>{v}</Text> },
-    { title: 'Scheme', dataIndex: 'scheme', render: (s) => <SchemeBadge scheme={s} /> },
-    { title: 'Product', render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.product}</div><div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.brand} · {r.model}</div></div> },
-    { title: 'Validation', dataIndex: 'aiScore', render: (s) => !s ? <Text type="secondary">Pending</Text> : s >= 90 ? <Tag color="green" icon={<CheckCircleOutlined />}>No issues</Tag> : <Tag color="orange" icon={<WarningOutlined />}>Items to review</Tag> },
-    { title: 'Status', dataIndex: 'status', render: (s) => <StatusPill status={s} /> },
-    { title: 'Updated', dataIndex: 'updated', render: (v) => <Text style={{ fontSize: 12 }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</Text> },
-    { title: '', render: (_, r) => (
+    { title: 'App ID', dataIndex: 'id', width: 160, render: v => <Text code style={{ fontSize: 12 }}>{v}</Text> },
+    { title: 'Type / Scheme', width: 130, render: (_, r) => (
+      <antd.Space direction="vertical" size={2}>
+        <SchemeBadge scheme={r.scheme} />
+        <Text style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+          {appType(r) === 'sa' ? 'Special Approval' : appType(r) === 'renewal' ? 'Renewal' : 'SDoC'}
+        </Text>
+      </antd.Space>
+    )},
+    { title: 'Product', render: (_, r) => (
+      <div>
+        <div style={{ fontWeight: 600, fontSize: 13 }}>{r.product}</div>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.brand} · {r.model}</div>
+      </div>
+    )},
+    { title: 'Validation', dataIndex: 'aiScore', width: 130, render: s =>
+      !s ? <Text type="secondary" style={{ fontSize: 12 }}>Pending</Text>
+      : s >= 90 ? <Tag color="green" icon={<CheckCircleOutlined />}>No issues</Tag>
+      : <Tag color="orange" icon={<WarningOutlined />}>Items to review</Tag>
+    },
+    { title: 'Status', dataIndex: 'status', width: 150, render: s => <StatusPill status={s} /> },
+    { title: 'Updated', dataIndex: 'updated', width: 100, render: v =>
+      <Text style={{ fontSize: 12 }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}</Text>
+    },
+    { title: '', width: 130, render: (_, r) => (
       <antd.Space size={4}>
         {r.status === 'iteration_required' && (
-          <Button size="small" type="primary" icon={<ReloadOutlined />} onClick={() => nav('iteration-reply')} style={{ background: 'var(--color-warning)', borderColor: 'var(--color-warning)' }}>
+          <Button size="small" type="primary" icon={<ReloadOutlined />} onClick={() => nav('iteration-reply')}
+            style={{ background: 'var(--color-warning)', borderColor: 'var(--color-warning)' }}>
             Respond
           </Button>
         )}
         <Button size="small" onClick={() => nav('application-detail')}>Open</Button>
       </antd.Space>
-    ) },
+    )},
   ];
+
+  const typeTabs = [
+    { key: 'all',     label: <span>All <antd.Badge count={all.length} style={{ backgroundColor: 'var(--color-text-muted)', marginLeft: 4 }} /></span> },
+    { key: 'sdoc',    label: <span>SDoC <antd.Badge count={sdocCount} style={{ backgroundColor: 'var(--color-primary)', marginLeft: 4 }} /></span> },
+    { key: 'sa',      label: <span>Special Approval <antd.Badge count={saCount} color="purple" style={{ marginLeft: 4 }} /></span> },
+    { key: 'renewal', label: <span>Renewals <antd.Badge count={all.filter(a => appType(a) === 'renewal').length} color="cyan" style={{ marginLeft: 4 }} /></span> },
+  ];
+
   return (
     <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
@@ -279,25 +335,32 @@ SCREENS.applications = function Applications({ nav }) {
           <Title level={3} style={{ margin: '4px 0 0' }}>My Applications</Title>
         </div>
         <Space>
-          <Input.Search placeholder="Search by ID, product, model…" style={{ width: 280 }} />
-          <Button type="primary" onClick={() => nav('sdoc-wizard')}>+ New Application</Button>
+          <Input.Search placeholder="Search by ID, product, model…" style={{ width: 260 }}
+            value={search} onChange={e => setSearch(e.target.value)} allowClear />
+          <antd.Select value={statusFilter} onChange={setStatusFilter} style={{ width: 180 }} options={statusOptions} />
+          <Button type="primary" onClick={() => nav('sdoc-wizard')}>+ New SDoC</Button>
         </Space>
       </div>
-      <Card bordered>
-        <Segmented
-          value={filter}
-          onChange={setFilter}
-          options={[
-            { label: `All (${all.length})`, value: 'all' },
-            { label: `Draft (${all.filter(a => a.status === 'draft').length})`, value: 'draft' },
-            { label: `Under Review (${all.filter(a => a.status === 'under_review').length})`, value: 'under_review' },
-            { label: `Iteration (${all.filter(a => a.status === 'iteration_required').length})`, value: 'iteration_required' },
-            { label: `Approved (${all.filter(a => a.status === 'approved').length})`, value: 'approved' },
-            { label: `Rejected (${all.filter(a => a.status === 'rejected').length})`, value: 'rejected' },
-          ]}
-          style={{ marginBottom: 16 }}
+
+      {iterCount > 0 && (
+        <antd.Alert type="warning" showIcon style={{ marginBottom: 16 }}
+          message={`${iterCount} application${iterCount > 1 ? 's' : ''} require${iterCount === 1 ? 's' : ''} your attention`}
+          description="MCMC has returned these applications for amendment. Please respond before the iteration deadline to avoid rejection."
+          action={<Button size="small" onClick={() => setStatusFilter('iteration_required')}>View</Button>}
         />
-        <Table rowKey="id" columns={cols} dataSource={filtered} pagination={false} size="middle" />
+      )}
+
+      <Card bordered>
+        <antd.Tabs activeKey={typeTab} onChange={k => { setTypeTab(k); setStatusFilter('all'); }} items={typeTabs} style={{ marginBottom: 8 }} />
+        <Table
+          rowKey="id"
+          columns={cols}
+          dataSource={filtered}
+          size="middle"
+          pagination={{ pageSize: 8, showSizeChanger: false, showTotal: (t, r) => `${r[0]}-${r[1]} of ${t}` }}
+          locale={{ emptyText: <antd.Empty description="No applications match the current filters" image={antd.Empty.PRESENTED_IMAGE_SIMPLE} /> }}
+          rowClassName={r => r.status === 'iteration_required' ? 'ant-table-row-warning' : ''}
+        />
       </Card>
     </div>
   );
@@ -922,6 +985,12 @@ SCREENS['imei-register'] = function ImeiRegister({ nav }) {
 };
 
 // ============ CERTIFICATE RENEWAL WIZARD ============
+// CoC expiry data for Scheme A certificates (mock — in production this comes from the CoC document)
+const COC_EXPIRY = {
+  'RCN-0326-00442': '2027-03-31',
+  'RCN-0125-00198': '2026-09-30',
+};
+
 SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
   const [step, setStep] = React.useState(0);
   const [selectedCert, setSelectedCert] = React.useState(MOCK.certificates.find(c => c.status === 'expiring') || MOCK.certificates[0]);
@@ -934,14 +1003,39 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
   const [sigIc, setSigIc] = React.useState('');
   const [sigChecked, setSigChecked] = React.useState(false);
 
+  const TODAY = new Date('2026-04-19');
   const steps = ['Select Certificate', 'Review Documents', 'Document Re-check', 'Declaration', 'Payment', 'Confirmation'];
   const expiringCerts = MOCK.certificates.filter(c => c.status === 'expiring' || c.status === 'active');
   const baseRateMap = { A: 324.07, B: 231.48, C: 138.89, SA: 324.07 };
   const baseRate = baseRateMap[selectedCert?.scheme] || 324.07;
-  const baseFee = Math.round(baseRate * renewPeriod);
+
+  // Max years the applicant may renew:
+  //   - Hard cap: 5 years total. Years already used = full years between issued date and today.
+  //   - Scheme A additional cap: renewal cannot extend past CoC expiry date.
+  function yearsUsed(cert) {
+    if (!cert) return 0;
+    const issued = new Date(cert.issued);
+    return Math.floor((TODAY - issued) / (365.25 * 864e5));
+  }
+  function maxRenewYears(cert) {
+    if (!cert) return 1;
+    const remaining = Math.max(1, 5 - yearsUsed(cert));
+    if (cert.scheme === 'A') {
+      const cocExp = COC_EXPIRY[cert.rcn];
+      if (cocExp) {
+        const cocYearsLeft = Math.floor((new Date(cocExp) - TODAY) / (365.25 * 864e5));
+        return Math.max(1, Math.min(remaining, cocYearsLeft));
+      }
+    }
+    return remaining;
+  }
+  const maxYears = maxRenewYears(selectedCert);
+  const safeRenewPeriod = Math.min(renewPeriod, maxYears);
+  const baseFee = Math.round(baseRate * safeRenewPeriod);
   const sstAmt = Math.round(baseFee * 0.08);
   const fee = baseFee + sstAmt;
-  const daysLeft = selectedCert ? Math.ceil((new Date(selectedCert.expires) - new Date('2026-04-19')) / 864e5) : 0;
+  const daysLeft = selectedCert ? Math.ceil((new Date(selectedCert.expires) - TODAY) / 864e5) : 0;
+  const cocExpiryDate = selectedCert?.scheme === 'A' ? COC_EXPIRY[selectedCert.rcn] : null;
 
   React.useEffect(() => {
     if (step === 2 && !aiDone) {
@@ -951,13 +1045,19 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
     }
   }, [step]);
 
-  const docList = [
-    { label: 'Company Registration (SSM)', age: '2024-01-15', reuse: true, expired: false },
-    { label: 'Technical Brochure / Datasheet', age: '2026-03-10', reuse: true, expired: false },
-    { label: 'Test Report (accredited lab)', age: '2023-04-02', reuse: false, expired: true, note: 'Older than 3 years — must re-upload' },
-    { label: 'Product Photos (front, back, label)', age: '2026-03-10', reuse: true, expired: false },
-    { label: 'Declaration Letter', age: '2023-04-02', reuse: false, expired: true, note: 'Must be redated for renewal' },
-  ];
+  const docList = React.useMemo(() => {
+    const base = [
+      { label: 'Company Registration (SSM)', age: '2024-01-15', reuse: true, expired: false },
+      { label: 'Technical Brochure / Datasheet', age: '2026-03-10', reuse: true, expired: false },
+      { label: 'Test Report (accredited lab)', age: '2023-04-02', reuse: false, expired: true, note: 'Older than 3 years — must re-upload' },
+      { label: 'Product Photos (front, back, label)', age: '2026-03-10', reuse: true, expired: false },
+      { label: 'Standards Declaration Letter', age: '2023-04-02', reuse: false, expired: true, note: 'Must be redated for renewal' },
+    ];
+    if (selectedCert?.scheme === 'A') {
+      base.push({ label: 'Certificate of Conformity (CoC)', age: '', reuse: false, expired: true, note: 'Scheme A renewal requires an updated CoC from your accredited Certifying Agency' });
+    }
+    return base;
+  }, [selectedCert?.scheme]);
 
   return (
     <div style={{ padding: 32, maxWidth: 900, margin: '0 auto' }}>
@@ -974,30 +1074,66 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
         {step === 0 && (
           <div>
             <Title level={4} style={{ marginTop: 0 }}>Select Certificate to Renew</Title>
-            <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
+            <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+              Renewal must be initiated within 6 months of expiry. Maximum cumulative registration period is 5 years from the original issue date.
+            </Text>
+            <div style={{ display: 'grid', gap: 10 }}>
               {expiringCerts.map(c => {
-                const days = Math.ceil((new Date(c.expires) - new Date('2026-04-19')) / 864e5);
+                const days = Math.ceil((new Date(c.expires) - TODAY) / 864e5);
+                const coc = c.scheme === 'A' ? COC_EXPIRY[c.rcn] : null;
+                const cocDays = coc ? Math.ceil((new Date(coc) - TODAY) / 864e5) : null;
+                const maxYr = maxRenewYears(c);
                 return (
-                  <div
-                    key={c.rcn}
-                    onClick={() => setSelectedCert(c)}
-                    style={{ padding: 16, border: `2px solid ${selectedCert?.rcn === c.rcn ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 12, cursor: 'pointer', background: selectedCert?.rcn === c.rcn ? 'var(--color-primary-soft)' : '#fff', display: 'flex', gap: 16, alignItems: 'center' }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                        <SchemeBadge scheme={c.scheme} />
-                        <span style={{ fontWeight: 600 }}>{c.product}</span>
-                        <Text type="secondary" style={{ fontSize: 12 }}>{c.brand} · {c.model}</Text>
+                  <div key={c.rcn} onClick={() => { setSelectedCert(c); setRenewPeriod(1); setSigned(false); }}
+                    style={{ padding: 16, border: `2px solid ${selectedCert?.rcn === c.rcn ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 12, cursor: 'pointer', background: selectedCert?.rcn === c.rcn ? 'var(--color-primary-soft)' : '#fff' }}>
+                    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <SchemeBadge scheme={c.scheme} />
+                          <span style={{ fontWeight: 600 }}>{c.product}</span>
+                          <Text type="secondary" style={{ fontSize: 12 }}>{c.brand} · {c.model}</Text>
+                        </div>
+                        <div style={{ marginTop: 8, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                          <div>
+                            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>Certificate</div>
+                            <Text code style={{ fontSize: 11 }}>{c.rcn}</Text>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>Current Expiry</div>
+                            <Text style={{ fontSize: 12, color: days < 90 ? 'var(--color-warning)' : 'var(--color-text-secondary)', fontWeight: days < 90 ? 600 : 400 }}>
+                              {new Date(c.expires).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              {days < 90 && <span> ({days} days)</span>}
+                            </Text>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>Max Renewal</div>
+                            <Text style={{ fontSize: 12, color: maxYr < 3 ? 'var(--color-warning)' : 'var(--color-text-secondary)', fontWeight: 500 }}>
+                              {maxYr} year{maxYr !== 1 ? 's' : ''}
+                              {c.scheme === 'A' && coc && <span style={{ color: 'var(--color-text-muted)' }}> (CoC limit)</span>}
+                            </Text>
+                          </div>
+                          {coc && (
+                            <div>
+                              <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>CoC Expiry</div>
+                              <Text style={{ fontSize: 12, color: cocDays < 180 ? 'var(--color-warning)' : 'var(--color-text-secondary)', fontWeight: cocDays < 180 ? 600 : 400 }}>
+                                {new Date(coc).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </Text>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ marginTop: 6, display: 'flex', gap: 12 }}>
-                        <Text code style={{ fontSize: 11 }}>{c.rcn}</Text>
-                        <Text style={{ fontSize: 11, color: days < 90 ? 'var(--color-warning)' : 'var(--color-text-muted)', fontWeight: days < 90 ? 600 : 400 }}>
-                          Expires {new Date(c.expires).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} {days < 90 && `(${days} days left)`}
-                        </Text>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', flexShrink: 0 }}>
+                        {days < 90 && <Tag color="orange" icon={<ClockCircleOutlined />}>Expiring Soon</Tag>}
+                        {c.scheme === 'A' && cocDays !== null && cocDays < 180 && <Tag color="red">CoC expiring soon</Tag>}
+                        {selectedCert?.rcn === c.rcn && <CheckCircleOutlined style={{ fontSize: 20, color: 'var(--color-primary)' }} />}
                       </div>
                     </div>
-                    {days < 90 && <Tag color="orange" icon={<ClockCircleOutlined />}>Expiring Soon</Tag>}
-                    {selectedCert?.rcn === c.rcn && <CheckCircleOutlined style={{ fontSize: 20, color: 'var(--color-primary)' }} />}
+                    {c.scheme === 'A' && selectedCert?.rcn === c.rcn && cocDays !== null && cocDays < 365 && (
+                      <Alert type="warning" showIcon style={{ marginTop: 12 }}
+                        message="Scheme A: CoC expiry limits renewal period"
+                        description={`Your Certificate of Conformity expires ${new Date(coc).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}. The renewal period is capped at ${maxYr} year${maxYr !== 1 ? 's' : ''} to match your CoC validity. Upload a renewed CoC if you require a longer registration period.`}
+                      />
+                    )}
                   </div>
                 );
               })}
@@ -1105,8 +1241,14 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
                 </Row>
                 <Divider style={{ margin: '12px 0 8px' }} />
                 <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 6 }}>Renewal duration (max 5 years cumulative):</div>
-                <antd.Segmented value={renewPeriod} onChange={v => { setRenewPeriod(v); setSigned(false); }} disabled={signed}
-                  options={[1,2,3,4,5].map(y => ({ label: `${y} yr`, value: y }))} />
+                <antd.Segmented value={safeRenewPeriod} onChange={v => { setRenewPeriod(v); setSigned(false); }} disabled={signed}
+                  options={[1,2,3,4,5].map(y => ({ label: `${y} yr`, value: y, disabled: y > maxYears }))} />
+                {maxYears < 5 && (
+                  <div style={{ fontSize: 11, color: 'var(--color-warning)', marginTop: 6 }}>
+                    Maximum {maxYears} year{maxYears !== 1 ? 's' : ''} available
+                    {cocExpiryDate && ` — limited by CoC expiry (${new Date(cocExpiryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })})`}
+                  </div>
+                )}
               </Card>
               <Card title="Statutory Declaration" size="small" bordered style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.7, marginBottom: 14 }}>
