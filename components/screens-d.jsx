@@ -125,15 +125,15 @@ SCREENS['suppliers-mgmt'] = function SuppliersMgmt({ nav, currentUser }) {
           ]} />
           <antd.Input placeholder="Search company, BRN, Supplier ID, PIC…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />} style={{ width: 320 }} value={q} onChange={e => setQ(e.target.value)} />
         </div>
-        <antd.Table rowKey="id" dataSource={filtered} pagination={false} onRow={r => ({ onClick: () => setSelected(r), style: { cursor: 'pointer' } })} columns={[
-          { title: 'Supplier ID', dataIndex: 'id', render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
-          { title: 'Company', render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.name}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>BRN {r.brn}</div></div> },
-          { title: 'Cat', dataIndex: 'category', render: c => <antd.Tag style={{ background: `${catColor[c]}18`, color: catColor[c], border: 'none', fontWeight: 700 }}>Cat {c}</antd.Tag> },
-          { title: 'Since', dataIndex: 'since', render: v => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
-          { title: 'Approvals', dataIndex: 'approvals', align: 'center', render: v => <antd.Tag color={v >= 20 ? 'green' : v >= 5 ? 'blue' : 'default'}>{v}</antd.Tag> },
-          { title: 'PIC', render: (_, r) => <div><div style={{ fontSize: 12 }}>{r.pic}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.picEmail}</div></div> },
-          { title: 'Status', render: (_, r) => r.verifiedAt ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>Verified</antd.Tag> : r.active ? <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Pending</antd.Tag> : <antd.Tag icon={<CloseCircleOutlined />}>Inactive</antd.Tag> },
-          { title: '', render: (_, r) => (
+        <antd.Table rowKey="id" dataSource={filtered} pagination={false} scroll={{ x: 'max-content' }} onRow={r => ({ onClick: () => setSelected(r), style: { cursor: 'pointer' } })} columns={[
+          { title: 'Supplier ID', dataIndex: 'id',       width: 110, render: v => <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+          { title: 'Company',     width: 220, ellipsis: true, render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.name}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>BRN {r.brn}</div></div> },
+          { title: 'Cat',         dataIndex: 'category', width: 70,  render: c => <antd.Tag style={{ background: `${catColor[c]}18`, color: catColor[c], border: 'none', fontWeight: 700 }}>Cat {c}</antd.Tag> },
+          { title: 'Since',       dataIndex: 'since',    width: 120, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span> },
+          { title: 'Approvals',   dataIndex: 'approvals', width: 90, align: 'center', render: v => <antd.Tag color={v >= 20 ? 'green' : v >= 5 ? 'blue' : 'default'}>{v}</antd.Tag> },
+          { title: 'PIC',         width: 200, render: (_, r) => <div><div style={{ fontSize: 12 }}>{r.pic}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.picEmail}</div></div> },
+          { title: 'Status',      width: 100, render: (_, r) => r.verifiedAt ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>Verified</antd.Tag> : r.active ? <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Pending</antd.Tag> : <antd.Tag icon={<CloseCircleOutlined />}>Inactive</antd.Tag> },
+          { title: '', width: 120, render: (_, r) => (
             <antd.Space size="small" onClick={e => e.stopPropagation()}>
               {isLead && !r.verifiedAt && r.active && <antd.Button size="small" type="primary" icon={<CheckCircleOutlined />}>Verify</antd.Button>}
               {isLead && r.active && <antd.Tooltip title="Deactivate"><antd.Button size="small" danger type="text" icon={<CloseCircleOutlined />} /></antd.Tooltip>}
@@ -347,14 +347,14 @@ SCREENS['importation'] = function Importation({ nav }) {
       {/* Past permits */}
       {pastPermits.length > 0 && (
         <antd.Card title="My Import Permits" bordered style={{ marginBottom: 20 }} size="small">
-          <antd.Table rowKey="id" dataSource={pastPermits} pagination={false} size="small" columns={[
-            { title: 'Permit ID', dataIndex: 'id', render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
-            { title: 'Type', dataIndex: 'type', render: v => <antd.Tag>{v}</antd.Tag> },
-            { title: 'RCN', dataIndex: 'rcn', render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
-            { title: 'Product', dataIndex: 'product' },
-            { title: 'Qty', dataIndex: 'quantity', align: 'right', render: v => v.toLocaleString() },
-            { title: 'Status', dataIndex: 'status', render: s => s === 'coa_issued' ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>CoA Issued</antd.Tag> : <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Pending RMCD</antd.Tag> },
-            { title: 'CoA Ref', dataIndex: 'coaRef', render: v => v ? <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> : <antd.Typography.Text type="secondary">—</antd.Typography.Text> },
+          <antd.Table rowKey="id" dataSource={pastPermits} pagination={false} size="small" scroll={{ x: 'max-content' }} columns={[
+            { title: 'Permit ID', dataIndex: 'id',       width: 130, render: v => <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+            { title: 'Type',      dataIndex: 'type',     width: 100, render: v => <antd.Tag>{v}</antd.Tag> },
+            { title: 'RCN',       dataIndex: 'rcn',      width: 150, render: v => <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+            { title: 'Product',   dataIndex: 'product',  width: 200, ellipsis: true },
+            { title: 'Qty',       dataIndex: 'quantity', width: 70,  align: 'right', render: v => v.toLocaleString() },
+            { title: 'Status',    dataIndex: 'status',   width: 140, render: s => s === 'coa_issued' ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>CoA Issued</antd.Tag> : <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Pending RMCD</antd.Tag> },
+            { title: 'CoA Ref',   dataIndex: 'coaRef',   width: 130, render: v => v ? <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> : <antd.Typography.Text type="secondary">—</antd.Typography.Text> },
           ]} />
         </antd.Card>
       )}
@@ -471,10 +471,10 @@ SCREENS['pms'] = function PMS({ nav, currentUser }) {
   const riskColor = s => s >= 85 ? 'var(--color-danger)' : s >= 70 ? 'var(--color-warning)' : 'var(--color-success)';
 
   const AuditTable = ({ data, showFindings }) => (
-    <antd.Table rowKey="id" dataSource={data} pagination={false} columns={[
-      { title: 'Audit ID', dataIndex: 'id', render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
-      { title: 'Supplier', dataIndex: 'supplier', render: (v, r) => <div><div style={{ fontWeight: 600 }}>{v}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.supplierId}</div></div> },
-      { title: 'Risk Score', dataIndex: 'riskScore', render: s => (
+    <antd.Table rowKey="id" dataSource={data} pagination={false} scroll={{ x: 'max-content' }} columns={[
+      { title: 'Audit ID',   dataIndex: 'id',               width: 120, render: v => <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+      { title: 'Supplier',   dataIndex: 'supplier',         width: 200, render: (v, r) => <div><div style={{ fontWeight: 600 }}>{v}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.supplierId}</div></div> },
+      { title: 'Risk Score', dataIndex: 'riskScore',        width: 130, render: s => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 60, height: 6, background: 'var(--color-bg-subtle)', borderRadius: 999, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${s}%`, background: riskColor(s), borderRadius: 999 }} />
@@ -482,11 +482,11 @@ SCREENS['pms'] = function PMS({ nav, currentUser }) {
           <antd.Tag color={s >= 85 ? 'red' : s >= 70 ? 'orange' : 'green'} style={{ fontWeight: 600 }}>{s}</antd.Tag>
         </div>
       ) },
-      { title: 'Products', dataIndex: 'products', align: 'center' },
-      { title: 'Non-Conf.', dataIndex: 'nonConformances', align: 'center', render: v => v > 0 ? <antd.Tag color="red">{v}</antd.Tag> : <antd.Tag color="green">0</antd.Tag> },
-      { title: 'Last Audit', dataIndex: 'lastAudit', render: v => v ? new Date(v).toLocaleDateString('en-GB') : <antd.Typography.Text type="secondary">Never</antd.Typography.Text> },
-      { title: 'Reason', dataIndex: 'reason', render: v => <antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
-      { title: '', render: (_, r) => (
+      { title: 'Products',   dataIndex: 'products',         width: 90,  align: 'center' },
+      { title: 'Non-Conf.',  dataIndex: 'nonConformances',  width: 90,  align: 'center', render: v => v > 0 ? <antd.Tag color="red">{v}</antd.Tag> : <antd.Tag color="green">0</antd.Tag> },
+      { title: 'Last Audit', dataIndex: 'lastAudit',        width: 110, render: v => v ? <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB')}</span> : <antd.Typography.Text type="secondary">Never</antd.Typography.Text> },
+      { title: 'Reason',     dataIndex: 'reason',           width: 200, ellipsis: true, render: v => <antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
+      { title: '', width: 160, render: (_, r) => (
         <antd.Space size="small">
           {showFindings
             ? <antd.Button size="small" type="primary" icon={<EditOutlined />}>Record Findings</antd.Button>

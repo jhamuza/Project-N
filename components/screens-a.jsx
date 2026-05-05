@@ -292,7 +292,7 @@ SCREENS.applications = function Applications({ nav }) {
         </Text>
       </antd.Space>
     )},
-    { title: 'Product', render: (_, r) => (
+    { title: 'Product', width: 220, render: (_, r) => (
       <div>
         <div style={{ fontWeight: 600, fontSize: 13 }}>{r.product}</div>
         <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.brand} · {r.model}</div>
@@ -357,6 +357,7 @@ SCREENS.applications = function Applications({ nav }) {
           columns={cols}
           dataSource={filtered}
           size="middle"
+          scroll={{ x: 'max-content' }}
           pagination={{ pageSize: 8, showSizeChanger: false, showTotal: (t, r) => `${r[0]}-${r[1]} of ${t}` }}
           locale={{ emptyText: <antd.Empty description="No applications match the current filters" image={antd.Empty.PRESENTED_IMAGE_SIMPLE} /> }}
           rowClassName={r => r.status === 'iteration_required' ? 'ant-table-row-warning' : ''}

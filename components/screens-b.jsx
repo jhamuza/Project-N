@@ -1518,18 +1518,18 @@ SCREENS['suppliers-mgmt'] = function SuppliersManagement({ nav, currentUser }) {
           rowKey="id"
           dataSource={list}
           pagination={{ pageSize: 8 }}
+          scroll={{ x: 'max-content' }}
           columns={[
-            { title: 'Supplier ID', dataIndex: 'id', render: v => <Typography.Text code style={{ fontSize: 12 }}>{v}</Typography.Text> },
-            { title: 'Name', dataIndex: 'name', render: (v, r) => <span style={{ fontWeight: 600, color: r.deletedAt ? 'var(--color-text-muted)' : 'inherit', textDecoration: r.deletedAt ? 'line-through' : 'none' }}>{v}</span> },
-            { title: 'BRN', dataIndex: 'brn' },
-            { title: 'Category', dataIndex: 'category', render: c => <Tag color={c === 'A' ? 'blue' : c === 'B' ? 'green' : c === 'C' ? 'purple' : 'default'}>Cat {c}</Tag> },
-            { title: 'PIC', dataIndex: 'pic', render: (v, r) => v ? <div style={{ fontSize: 12 }}><div>{v}</div><div style={{ color: 'var(--color-text-muted)' }}>{r.picEmail}</div></div> : '—' },
-            { title: 'Approvals', dataIndex: 'approvals', align: 'right' },
-            { title: 'Added by', dataIndex: 'addedBy', render: v => v === 'self-registration' ? <Tag>Self</Tag> : v === 'mcmc-admin' ? <Tag color="blue" icon={<CrownOutlined />}>Admin</Tag> : <Tag color="cyan" icon={<UserOutlined />}>Officer</Tag> },
-            { title: 'Verified', dataIndex: 'verifiedAt', render: v => v ? <Tag color="green" icon={<CheckCircleOutlined />}>{v}</Tag> : <Tag color="orange">No verification</Tag> },
+            { title: 'Supplier ID', dataIndex: 'id',       width: 120, render: v => <Typography.Text code style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{v}</Typography.Text> },
+            { title: 'Name',        dataIndex: 'name',     width: 200, ellipsis: true, render: (v, r) => <span style={{ fontWeight: 600, color: r.deletedAt ? 'var(--color-text-muted)' : 'inherit', textDecoration: r.deletedAt ? 'line-through' : 'none' }}>{v}</span> },
+            { title: 'BRN',         dataIndex: 'brn',      width: 140 },
+            { title: 'Category',    dataIndex: 'category', width: 90,  render: c => <Tag color={c === 'A' ? 'blue' : c === 'B' ? 'green' : c === 'C' ? 'purple' : 'default'}>Cat {c}</Tag> },
+            { title: 'PIC',         dataIndex: 'pic',      width: 200, render: (v, r) => v ? <div style={{ fontSize: 12 }}><div>{v}</div><div style={{ color: 'var(--color-text-muted)' }}>{r.picEmail}</div></div> : '—' },
+            { title: 'Approvals',   dataIndex: 'approvals', width: 90, align: 'right' },
+            { title: 'Added by',    dataIndex: 'addedBy',  width: 100, render: v => v === 'self-registration' ? <Tag>Self</Tag> : v === 'mcmc-admin' ? <Tag color="blue" icon={<CrownOutlined />}>Admin</Tag> : <Tag color="cyan" icon={<UserOutlined />}>Officer</Tag> },
+            { title: 'Verified',    dataIndex: 'verifiedAt', width: 140, render: v => v ? <Tag color="green" icon={<CheckCircleOutlined />} style={{ whiteSpace: 'nowrap' }}>{v}</Tag> : <Tag color="orange">No verification</Tag> },
             {
-              title: 'Action',
-              key: 'action',
+              title: 'Action', key: 'action', width: 90,
               render: (_, r) => r.deletedAt
                 ? <Button size="small" type="link" onClick={() => handleRestore(r)}>Restore</Button>
                 : <Button size="small" type="link" danger icon={<DeleteOutlined />} onClick={() => setConfirmRemove(r)}>Remove</Button>,

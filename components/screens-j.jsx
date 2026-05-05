@@ -257,17 +257,17 @@ SCREENS['compliance-status'] = function ComplianceStatus({ nav, currentUser }) {
       <antd.Alert type="info" showIcon style={{ marginBottom: 16 }} icon={<InfoCircleOutlined />}
         message="Suspending a supplier immediately blocks all new submissions system-wide. Status changes propagate in real time and are immutably logged."
       />
-      <antd.Table rowKey="id" dataSource={filteredSup} pagination={false}
+      <antd.Table rowKey="id" dataSource={filteredSup} pagination={false} scroll={{ x: 'max-content' }}
         rowSelection={isLead ? { selectedRowKeys: [...selected], onChange: keys => setSelected(new Set(keys)) } : undefined}
         onRow={r => ({ style: { background: getStatus(r, 'id') === 'suspended' ? 'var(--color-danger-bg)' : getStatus(r, 'id') === 'under_surveillance' ? 'var(--color-warning-bg)' : 'transparent' } })}
         columns={[
-          { title: 'Supplier', render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.name}</div><antd.Typography.Text code style={{ fontSize: 11 }}>{r.id}</antd.Typography.Text></div> },
-          { title: 'Cat', dataIndex: 'category', render: c => <antd.Tag>Cat {c}</antd.Tag> },
-          { title: 'Active Certs', dataIndex: 'certCount', align: 'center' },
-          { title: 'Pending Apps', dataIndex: 'pendingApps', align: 'center', render: v => v > 0 ? <antd.Tag color="orange">{v}</antd.Tag> : '—' },
-          { title: 'Compliance Status', render: (_, r) => <StatusTag status={getStatus(r, 'id')} /> },
-          { title: 'Last Changed', render: (_, r) => r.lastChanged ? <div><div style={{ fontSize: 12 }}>{r.lastChanged}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.changedBy}</div></div> : <antd.Typography.Text type="secondary">—</antd.Typography.Text> },
-          { title: '', render: (_, r) => (
+          { title: 'Supplier',          width: 220, render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.name}</div><antd.Typography.Text code style={{ fontSize: 11 }}>{r.id}</antd.Typography.Text></div> },
+          { title: 'Cat',               dataIndex: 'category',   width: 70,  render: c => <antd.Tag>Cat {c}</antd.Tag> },
+          { title: 'Active Certs',      dataIndex: 'certCount',  width: 100, align: 'center' },
+          { title: 'Pending Apps',      dataIndex: 'pendingApps', width: 110, align: 'center', render: v => v > 0 ? <antd.Tag color="orange">{v}</antd.Tag> : '—' },
+          { title: 'Compliance Status', width: 160, render: (_, r) => <StatusTag status={getStatus(r, 'id')} /> },
+          { title: 'Last Changed',      width: 160, render: (_, r) => r.lastChanged ? <div><div style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{r.lastChanged}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.changedBy}</div></div> : <antd.Typography.Text type="secondary">—</antd.Typography.Text> },
+          { title: '', width: 140, render: (_, r) => (
             <antd.Space>
               <antd.Button size="small" icon={<EyeOutlined />} onClick={() => { setDrawerTarget(r); setDrawerType('supplier'); }}>History</antd.Button>
               {isLead && <antd.Button size="small" onClick={() => openChange(r)}>Change</antd.Button>}
@@ -287,17 +287,17 @@ SCREENS['compliance-status'] = function ComplianceStatus({ nav, currentUser }) {
       <antd.Alert type="info" showIcon style={{ marginBottom: 16 }} icon={<InfoCircleOutlined />}
         message="Cancelling a certificate immediately removes it from the Public Search Portal. IMEI/SN registry entries are marked inactive in real time."
       />
-      <antd.Table rowKey="rcn" dataSource={filteredCert} pagination={false}
+      <antd.Table rowKey="rcn" dataSource={filteredCert} pagination={false} scroll={{ x: 'max-content' }}
         onRow={r => ({ style: { background: getStatus(r, 'rcn') === 'cancelled' ? 'var(--color-bg-subtle)' : getStatus(r, 'rcn') === 'under_surveillance' ? 'var(--color-warning-bg)' : 'transparent' } })}
         columns={[
-          { title: 'Certificate', render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.product}</div><antd.Typography.Text code style={{ fontSize: 11 }}>{r.rcn}</antd.Typography.Text></div> },
-          { title: 'Brand', dataIndex: 'brand' },
-          { title: 'Scheme', dataIndex: 'scheme', render: s => <SchemeBadge scheme={s} /> },
-          { title: 'Supplier', dataIndex: 'supplierId', render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
-          { title: 'Expires', dataIndex: 'expires', render: v => <span style={{ color: new Date(v) < new Date() ? 'var(--color-danger)' : 'inherit' }}>{new Date(v).toLocaleDateString('en-GB')}</span> },
-          { title: 'Compliance Status', render: (_, r) => <StatusTag status={getStatus(r, 'rcn')} /> },
-          { title: 'Last Changed', render: (_, r) => r.lastChanged ? <div><div style={{ fontSize: 12 }}>{r.lastChanged}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.changedBy}</div></div> : <antd.Typography.Text type="secondary">—</antd.Typography.Text> },
-          { title: '', render: (_, r) => (
+          { title: 'Certificate',       width: 220, render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.product}</div><antd.Typography.Text code style={{ fontSize: 11 }}>{r.rcn}</antd.Typography.Text></div> },
+          { title: 'Brand',             dataIndex: 'brand',      width: 120 },
+          { title: 'Scheme',            dataIndex: 'scheme',     width: 90,  render: s => <SchemeBadge scheme={s} /> },
+          { title: 'Supplier',          dataIndex: 'supplierId', width: 120, render: v => <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+          { title: 'Expires',           dataIndex: 'expires',    width: 110, render: v => <span style={{ color: new Date(v) < new Date() ? 'var(--color-danger)' : 'inherit', whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB')}</span> },
+          { title: 'Compliance Status', width: 160, render: (_, r) => <StatusTag status={getStatus(r, 'rcn')} /> },
+          { title: 'Last Changed',      width: 160, render: (_, r) => r.lastChanged ? <div><div style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{r.lastChanged}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.changedBy}</div></div> : <antd.Typography.Text type="secondary">—</antd.Typography.Text> },
+          { title: '', width: 140, render: (_, r) => (
             <antd.Space>
               <antd.Button size="small" icon={<EyeOutlined />} onClick={() => { setDrawerTarget(r); setDrawerType('cert'); }}>History</antd.Button>
               {isLead && <antd.Button size="small" onClick={() => openChange(r)}>Change</antd.Button>}

@@ -86,20 +86,21 @@ SCREENS.certificates = function Certificates({ nav }) {
           rowKey="rcn"
           dataSource={filtered}
           pagination={false}
+          scroll={{ x: 'max-content' }}
           onRow={(r) => ({ onClick: () => setSelected(r), style: { cursor: 'pointer' } })}
           columns={[
-            { title: 'RCN', dataIndex: 'rcn', render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
-            { title: 'Scheme', dataIndex: 'scheme', render: s => <SchemeBadge scheme={s} /> },
-            { title: 'Product', render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.product}</div><div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.brand} · {r.model}</div></div> },
-            { title: 'Label', dataIndex: 'labelType', render: v => <antd.Tag>{v === 'e-label' ? 'e-Label' : 'Physical'}</antd.Tag> },
-            { title: 'Issued', dataIndex: 'issued', render: v => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
-            { title: 'Expires', dataIndex: 'expires', render: (v, r) => (
-              <span style={{ color: r.status === 'expiring' ? 'var(--color-warning)' : r.status === 'expired' ? 'var(--color-danger)' : 'inherit', fontWeight: r.status !== 'active' ? 600 : 400 }}>
+            { title: 'RCN',     dataIndex: 'rcn',       width: 160, render: v => <antd.Typography.Text code style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+            { title: 'Scheme',  dataIndex: 'scheme',    width: 90,  render: s => <SchemeBadge scheme={s} /> },
+            { title: 'Product', width: 220, render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.product}</div><div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.brand} · {r.model}</div></div> },
+            { title: 'Label',   dataIndex: 'labelType', width: 90,  render: v => <antd.Tag>{v === 'e-label' ? 'e-Label' : 'Physical'}</antd.Tag> },
+            { title: 'Issued',  dataIndex: 'issued',    width: 120, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span> },
+            { title: 'Expires', dataIndex: 'expires',   width: 120, render: (v, r) => (
+              <span style={{ color: r.status === 'expiring' ? 'var(--color-warning)' : r.status === 'expired' ? 'var(--color-danger)' : 'inherit', fontWeight: r.status !== 'active' ? 600 : 400, whiteSpace: 'nowrap' }}>
                 {new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
               </span>
             ) },
-            { title: 'Status', dataIndex: 'status', render: statusTag },
-            { title: '', render: (_, r) => (
+            { title: 'Status',  dataIndex: 'status',   width: 110, render: statusTag },
+            { title: '',        width: 110, render: (_, r) => (
               <antd.Space>
                 <antd.Tooltip title="Download PDF"><antd.Button size="small" icon={<DownloadOutlined />} /></antd.Tooltip>
                 {r.status === 'expiring' && <antd.Button size="small" type="primary">Renew</antd.Button>}
@@ -238,14 +239,15 @@ SCREENS.payments = function Payments({ nav, currentUser }) {
               rowKey="id"
               dataSource={pays}
               pagination={false}
+              scroll={{ x: 'max-content' }}
               columns={[
-                { title: 'Date', dataIndex: 'date', render: v => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
-                { title: 'Payment ID', dataIndex: 'id', render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
-                { title: 'Application', dataIndex: 'app', render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
-                { title: 'Method', dataIndex: 'method', render: v => <antd.Space size={6}>{methodIcon(v)}<span>{v}</span></antd.Space> },
-                { title: 'Amount', dataIndex: 'amount', align: 'right', render: v => <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>RM {v.toLocaleString('en-MY')}.00</span> },
-                { title: 'Status', dataIndex: 'status', render: s => s === 'paid' ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>Paid</antd.Tag> : <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Pending</antd.Tag> },
-                { title: '', render: () => <antd.Space><antd.Tooltip title="Download invoice"><antd.Button size="small" icon={<DownloadOutlined />} /></antd.Tooltip><antd.Tooltip title="Download receipt"><antd.Button size="small" icon={<FilePdfOutlined />} /></antd.Tooltip></antd.Space> },
+                { title: 'Date',        dataIndex: 'date',   width: 120, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span> },
+                { title: 'Payment ID',  dataIndex: 'id',     width: 150, render: v => <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+                { title: 'Application', dataIndex: 'app',    width: 150, render: v => <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+                { title: 'Method',      dataIndex: 'method', width: 160, render: v => <antd.Space size={6}>{methodIcon(v)}<span>{v}</span></antd.Space> },
+                { title: 'Amount',      dataIndex: 'amount', width: 130, align: 'right', render: v => <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>RM {v.toLocaleString('en-MY')}.00</span> },
+                { title: 'Status',      dataIndex: 'status', width: 100, render: s => s === 'paid' ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>Paid</antd.Tag> : <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Pending</antd.Tag> },
+                { title: '',            width: 90,  render: () => <antd.Space><antd.Tooltip title="Download invoice"><antd.Button size="small" icon={<DownloadOutlined />} /></antd.Tooltip><antd.Tooltip title="Download receipt"><antd.Button size="small" icon={<FilePdfOutlined />} /></antd.Tooltip></antd.Space> },
               ]}
             />
           </antd.Card>
@@ -608,8 +610,9 @@ function TeamTab({ onInvite }) {
         rowKey="id"
         dataSource={team}
         pagination={false}
+        scroll={{ x: 'max-content' }}
         columns={[
-          { title: 'Name', render: (_, m) => (
+          { title: 'Name', width: 240, render: (_, m) => (
             <antd.Space>
               <antd.Avatar style={{ background: 'var(--color-primary)' }}>{m.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</antd.Avatar>
               <div>
@@ -618,11 +621,11 @@ function TeamTab({ onInvite }) {
               </div>
             </antd.Space>
           ) },
-          { title: 'Role', dataIndex: 'role', render: r => <antd.Tag color={roleColor[r] || 'default'}>{r}</antd.Tag> },
-          { title: 'Status', dataIndex: 'status', render: s => s === 'active' ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>Active</antd.Tag> : <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Invite Sent</antd.Tag> },
-          { title: 'Joined', dataIndex: 'joined', render: v => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
-          { title: 'Last Active', dataIndex: 'lastActive', render: v => v ? new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : <antd.Typography.Text type="secondary">—</antd.Typography.Text> },
-          { title: '', render: (_, m) => (
+          { title: 'Role',        dataIndex: 'role',       width: 160, render: r => <antd.Tag color={roleColor[r] || 'default'}>{r}</antd.Tag> },
+          { title: 'Status',      dataIndex: 'status',     width: 120, render: s => s === 'active' ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>Active</antd.Tag> : <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Invite Sent</antd.Tag> },
+          { title: 'Joined',      dataIndex: 'joined',     width: 120, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span> },
+          { title: 'Last Active', dataIndex: 'lastActive', width: 160, render: v => v ? <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span> : <antd.Typography.Text type="secondary">—</antd.Typography.Text> },
+          { title: '', width: 60, render: (_, m) => (
             <antd.Dropdown menu={{ items: [
               { key: 'edit', icon: <EditOutlined />, label: 'Edit role' },
               { key: 'reset', icon: <KeyOutlined />, label: 'Reset password' },

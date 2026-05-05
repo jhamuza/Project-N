@@ -191,15 +191,15 @@ SCREENS['post-monitoring'] = function PostMonitoring({ nav, currentUser }) {
           description="Central knowledge base of communications equipment identified in the Malaysian market through complaints and officer intelligence. Updated by officers via the MCMC IntelliGenCE programme."
         />
         <antd.Input placeholder="Search by brand, model, category, RCN…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />} value={kbQ} onChange={e => setKbQ(e.target.value)} style={{ maxWidth: 380, marginBottom: 16 }} />
-        <antd.Table rowKey="id" dataSource={kb} pagination={false} columns={[
-          { title: 'Equipment', render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.brand} {r.model}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.category}</div></div> },
-          { title: 'IMEI / SN', render: (_, r) => r.serials?.length ? <antd.Typography.Text code style={{ fontSize: 11 }}>{r.serials[0]}</antd.Typography.Text> : <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>Not captured</antd.Typography.Text> },
-          { title: 'RCN', dataIndex: 'rcn', render: v => v && v !== 'RCN-?' ? <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> : <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>None</antd.Typography.Text> },
-          { title: 'Status', dataIndex: 'status', render: s => <antd.Tag color={kbStatusColor[s]}>{kbStatusLabel[s]}</antd.Tag> },
-          { title: 'Complaints', dataIndex: 'complaints', align: 'center', render: v => <antd.Tag color={v >= 3 ? 'red' : v >= 1 ? 'orange' : 'default'}>{v}</antd.Tag> },
-          { title: 'First Seen', dataIndex: 'firstSeen', render: v => new Date(v).toLocaleDateString('en-GB') },
-          { title: 'Last Seen', dataIndex: 'lastSeen', render: v => new Date(v).toLocaleDateString('en-GB') },
-          { title: 'Notes', dataIndex: 'notes', render: v => <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
+        <antd.Table rowKey="id" dataSource={kb} pagination={false} scroll={{ x: 'max-content' }} columns={[
+          { title: 'Equipment',  width: 200, render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.brand} {r.model}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.category}</div></div> },
+          { title: 'IMEI / SN', width: 160, render: (_, r) => r.serials?.length ? <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{r.serials[0]}</antd.Typography.Text> : <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>Not captured</antd.Typography.Text> },
+          { title: 'RCN',       dataIndex: 'rcn',        width: 150, render: v => v && v !== 'RCN-?' ? <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> : <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>None</antd.Typography.Text> },
+          { title: 'Status',    dataIndex: 'status',     width: 120, render: s => <antd.Tag color={kbStatusColor[s]}>{kbStatusLabel[s]}</antd.Tag> },
+          { title: 'Complaints', dataIndex: 'complaints', width: 100, align: 'center', render: v => <antd.Tag color={v >= 3 ? 'red' : v >= 1 ? 'orange' : 'default'}>{v}</antd.Tag> },
+          { title: 'First Seen', dataIndex: 'firstSeen', width: 110, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB')}</span> },
+          { title: 'Last Seen',  dataIndex: 'lastSeen',  width: 110, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB')}</span> },
+          { title: 'Notes',      dataIndex: 'notes',     width: 200, ellipsis: true, render: v => <antd.Typography.Text type="secondary" style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
         ]} />
       </div>
     );

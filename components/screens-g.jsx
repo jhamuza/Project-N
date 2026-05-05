@@ -414,20 +414,20 @@ SCREENS['importation'] = function Importation({ nav }) {
         ))}
       </antd.Row>
 
-      <antd.Card bordered>
-        <antd.Table rowKey="id" dataSource={permits} pagination={false}
+      <antd.Card bordered style={{ overflowX: 'auto' }}>
+        <antd.Table rowKey="id" dataSource={permits} pagination={false} scroll={{ x: 'max-content' }}
           onRow={r => ({ onClick: () => setSelected(r), style: { cursor: 'pointer' } })}
           columns={[
-            { title: 'App ID',     dataIndex: 'id',      render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
-            { title: 'Type',       dataIndex: 'type',    render: v => <antd.Tag>{v}</antd.Tag> },
-            { title: 'Reference',  render: (_, r) => r.rcn ? <antd.Typography.Text code style={{ fontSize: 11 }}>{r.rcn}</antd.Typography.Text> : <antd.Typography.Text code style={{ fontSize: 11 }}>{r.saRef}</antd.Typography.Text> },
-            { title: 'Product',    dataIndex: 'product', render: (v, r) => <div><div style={{ fontWeight: 600 }}>{v}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.consignor}</div></div> },
-            { title: 'Quantity',   dataIndex: 'quantity', align: 'right', render: v => v.toLocaleString() },
-            { title: 'Port',       dataIndex: 'port' },
-            { title: 'Submitted',  dataIndex: 'submitted', render: v => new Date(v).toLocaleDateString('en-GB') },
-            { title: 'RMCD Ref',   dataIndex: 'rmcdRef',  render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
-            { title: 'Status',     dataIndex: 'status',   render: s => { const m = statusMeta[s] || { label: s, color: 'default' }; return <antd.Tag color={m.color}>{m.label}</antd.Tag>; } },
-            { title: 'CoA',        dataIndex: 'coaRef',   render: v => v ? <antd.Space size="small"><antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text><antd.Button size="small" icon={<DownloadOutlined />} /></antd.Space> : <antd.Typography.Text type="secondary">—</antd.Typography.Text> },
+            { title: 'App ID',     dataIndex: 'id',      width: 120, render: v => <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+            { title: 'Type',       dataIndex: 'type',    width: 80,  render: v => <antd.Tag style={{ whiteSpace: 'nowrap' }}>{v}</antd.Tag> },
+            { title: 'Reference',  width: 140, render: (_, r) => r.rcn ? <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{r.rcn}</antd.Typography.Text> : <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{r.saRef}</antd.Typography.Text> },
+            { title: 'Product',    dataIndex: 'product', width: 220, render: (v, r) => <div><div style={{ fontWeight: 600 }}>{v}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.consignor}</div></div> },
+            { title: 'Qty',        dataIndex: 'quantity', width: 70, align: 'right', render: v => v.toLocaleString() },
+            { title: 'Port',       dataIndex: 'port',    width: 150 },
+            { title: 'Submitted',  dataIndex: 'submitted', width: 110, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB')}</span> },
+            { title: 'RMCD Ref',   dataIndex: 'rmcdRef',  width: 130, render: v => <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+            { title: 'Status',     dataIndex: 'status',   width: 180, render: s => { const m = statusMeta[s] || { label: s, color: 'default' }; return <antd.Tag color={m.color} style={{ whiteSpace: 'nowrap' }}>{m.label}</antd.Tag>; } },
+            { title: 'CoA',        dataIndex: 'coaRef',   width: 130, render: v => v ? <antd.Space size="small"><antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text><antd.Button size="small" icon={<DownloadOutlined />} /></antd.Space> : <antd.Typography.Text type="secondary">—</antd.Typography.Text> },
           ]}
         />
       </antd.Card>
