@@ -250,9 +250,13 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks }) {
 
 // ============ APPLICATIONS LIST ============
 SCREENS.applications = function Applications({ nav }) {
+  const FilterOutlined = icons.FilterOutlined || icons.SearchOutlined;
   const [typeTab, setTypeTab] = React.useState('all');
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [search, setSearch] = React.useState('');
+  const [schemeFilter, setSchemeFilter] = React.useState([]);
+  const [aiFilter, setAiFilter] = React.useState('all');
+  const [showAdv, setShowAdv] = React.useState(false);
   const all = MOCK.assessments;
 
   function appType(a) {
@@ -262,31 +266,37 @@ SCREENS.applications = function Applications({ nav }) {
     return 'sdoc';
   }
 
-  const byType = typeTab === 'all' ? all : all.filter(a => appType(a) === typeTab);
+  const byType   = typeTab === 'all' ? all : all.filter(a => appType(a) === typeTab);
   const byStatus = statusFilter === 'all' ? byType : byType.filter(a => a.status === statusFilter);
+  const byScheme = schemeFilter.length ? byStatus.filter(a => schemeFilter.includes(a.scheme)) : byStatus;
+  const byAi     = aiFilter === 'all'     ? byScheme
+                 : aiFilter === 'ok'      ? byScheme.filter(a => a.aiScore >= 90)
+                 : aiFilter === 'review'  ? byScheme.filter(a => a.aiScore != null && a.aiScore < 90)
+                 : byScheme.filter(a => a.aiScore == null);
   const filtered = search
-    ? byStatus.filter(a => [a.id, a.product, a.brand, a.model].join(' ').toLowerCase().includes(search.toLowerCase()))
-    : byStatus;
+    ? byAi.filter(a => [a.id, a.product, a.brand, a.model].join(' ').toLowerCase().includes(search.toLowerCase()))
+    : byAi;
 
   const sdocCount = all.filter(a => appType(a) === 'sdoc').length;
   const saCount   = all.filter(a => appType(a) === 'sa').length;
   const iterCount = all.filter(a => a.status === 'iteration_required').length;
   const draftCount = all.filter(a => a.status === 'draft').length;
+  const advCount  = schemeFilter.length + (aiFilter !== 'all' ? 1 : 0);
 
   const statusOptions = [
     { label: 'All statuses', value: 'all' },
-    { label: `Draft (${draftCount})`,     value: 'draft' },
-    { label: 'Under Review',              value: 'under_review' },
+    { label: `Draft (${draftCount})`,       value: 'draft' },
+    { label: 'Under Review',                value: 'under_review' },
     { label: `Needs action (${iterCount})`, value: 'iteration_required' },
-    { label: 'Approved',                  value: 'approved' },
-    { label: 'Rejected',                  value: 'rejected' },
+    { label: 'Approved',                    value: 'approved' },
+    { label: 'Rejected',                    value: 'rejected' },
   ];
 
   const cols = [
     { title: 'App ID', dataIndex: 'id', width: 160, render: v => <Text code style={{ fontSize: 12 }}>{v}</Text> },
     { title: 'Type / Scheme', width: 130, render: (_, r) => (
       <antd.Space direction="vertical" size={2}>
-        <SchemeBadge scheme={r.scheme} />
+        <Tag style={{ fontSize: 11 }}>{r.scheme === 'SA' ? 'Special Approval' : r.scheme === 'REN' ? 'Renewal' : r.scheme === 'IMEI' ? 'IMEI' : `Scheme ${r.scheme}`}</Tag>
         <Text style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
           {appType(r) === 'sa' ? 'Special Approval' : appType(r) === 'renewal' ? 'Renewal' : 'SDoC'}
         </Text>
@@ -329,18 +339,57 @@ SCREENS.applications = function Applications({ nav }) {
 
   return (
     <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
         <div>
           <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Applications</div>
           <Title level={3} style={{ margin: '4px 0 0' }}>My Applications</Title>
         </div>
-        <Space>
-          <Input.Search placeholder="Search by ID, product, model…" style={{ width: 260 }}
+        <Space wrap>
+          <Input.Search placeholder="Search by ID, product, model…" style={{ width: 240 }}
             value={search} onChange={e => setSearch(e.target.value)} allowClear />
-          <antd.Select value={statusFilter} onChange={setStatusFilter} style={{ width: 180 }} options={statusOptions} />
+          <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 170 }} options={statusOptions} />
+          <antd.Badge count={advCount} size="small">
+            <Button icon={<FilterOutlined />} type={advCount > 0 ? 'primary' : 'default'}
+              onClick={() => setShowAdv(v => !v)}>
+              Filters
+            </Button>
+          </antd.Badge>
           <Button type="primary" onClick={() => nav('sdoc-wizard')}>+ New SDoC</Button>
         </Space>
       </div>
+
+      {showAdv && (
+        <Card size="small" bordered style={{ marginBottom: 16, background: 'var(--color-bg-elevated)' }}>
+          <Space wrap size={[24, 8]} align="center">
+            <Space size={8} align="center">
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)' }}>Scheme</span>
+              <antd.Checkbox.Group value={schemeFilter} onChange={setSchemeFilter}
+                options={[
+                  { label: 'Scheme A', value: 'A' },
+                  { label: 'Scheme B', value: 'B' },
+                  { label: 'Scheme C', value: 'C' },
+                  { label: 'Special Approval', value: 'SA' },
+                ]}
+              />
+            </Space>
+            <Space size={8} align="center">
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)' }}>Validation</span>
+              <Select value={aiFilter} onChange={setAiFilter} size="small" style={{ width: 160 }} options={[
+                { label: 'All', value: 'all' },
+                { label: 'No issues (≥90)', value: 'ok' },
+                { label: 'Items to review', value: 'review' },
+                { label: 'Pending', value: 'pending' },
+              ]} />
+            </Space>
+            {advCount > 0 && (
+              <Button size="small" type="link" style={{ padding: 0 }}
+                onClick={() => { setSchemeFilter([]); setAiFilter('all'); }}>
+                Clear filters
+              </Button>
+            )}
+          </Space>
+        </Card>
+      )}
 
       {iterCount > 0 && (
         <antd.Alert type="warning" showIcon style={{ marginBottom: 16 }}

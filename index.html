@@ -64,8 +64,9 @@ const {
   SendOutlined, PaperClipOutlined, ReloadOutlined, IdcardOutlined, ExclamationCircleOutlined,
   LeftOutlined, RightOutlined, PlusCircleOutlined, MoreOutlined, HistoryOutlined, KeyOutlined,
   ApartmentOutlined, ContainerOutlined, WalletOutlined, RiseOutlined,
-  SwapOutlined, CrownOutlined, ZoomInOutlined, ZoomOutOutlined,
+  SwapOutlined, CrownOutlined, ZoomInOutlined, ZoomOutOutlined, FilterOutlined,
 } = icons;
+const FilterOutlinedIcon = FilterOutlined || icons.SearchOutlined;
 const FormOutlined        = icons.FormOutlined        || icons.EditOutlined;
 const ImportOutlined      = icons.ImportOutlined      || icons.ArrowRightOutlined;
 const AlertOutlined       = icons.AlertOutlined       || icons.WarningOutlined;
@@ -210,13 +211,34 @@ function OfficerQueue({ nav, currentUser }) {
   const [filter, setFilter]         = React.useState('mine');
   const [assignOpen, setAssignOpen] = React.useState(false);
   const [assignTarget, setAssignTarget] = React.useState(null);
-  const list = React.useMemo(() => {
+
+  // Advanced filter state
+  const [qSearch,   setQSearch]   = React.useState('');
+  const [qScheme,   setQScheme]   = React.useState([]);
+  const [qPriority, setQPriority] = React.useState('all');
+  const [qAi,       setQAi]       = React.useState('all');
+  const [showAdv,   setShowAdv]   = React.useState(false);
+
+  const baseList = React.useMemo(() => {
     if (!isLead) return resolved.filter(x => x.assignedTo === myId);
     if (filter === 'mine')       return resolved.filter(x => x.assignedTo === myId);
     if (filter === 'team')       return resolved.filter(x => x.assignedTo != null);
     if (filter === 'unassigned') return resolved.filter(x => x.assignedTo == null);
     return resolved;
   }, [isLead, filter, myId, resolved]);
+
+  const list = React.useMemo(() => {
+    let r = baseList;
+    if (qSearch)           r = r.filter(x => [x.id, x.applicant, x.product].join(' ').toLowerCase().includes(qSearch.toLowerCase()));
+    if (qScheme.length)    r = r.filter(x => qScheme.includes(x.scheme));
+    if (qPriority !== 'all') r = r.filter(x => x.priority === qPriority);
+    if (qAi === 'good')    r = r.filter(x => x.aiScore >= 90);
+    else if (qAi === 'warn') r = r.filter(x => x.aiScore >= 70 && x.aiScore < 90);
+    else if (qAi === 'poor') r = r.filter(x => x.aiScore < 70);
+    return r;
+  }, [baseList, qSearch, qScheme, qPriority, qAi]);
+
+  const advCount = qScheme.length + (qPriority !== 'all' ? 1 : 0) + (qAi !== 'all' ? 1 : 0);
   const myPerf = officerById[myId] || {};
   const kpis = isLead ? [
     { l: 'In My Queue',           v: myCount,         d: myCount ? '1 urgent (SLA < 12h)' : 'All clear', warn: myCount > 0 },
@@ -249,36 +271,90 @@ function OfficerQueue({ nav, currentUser }) {
         ))}
       </antd.Row>
       <antd.Card bordered>
-        {isLead && (
-          <antd.Segmented value={filter} onChange={setFilter} style={{ marginBottom: 16 }} options={[
-            { label: `My queue (${myCount})`, value: 'mine' },
-            { label: `Team queue (${teamAssigned})`, value: 'team' },
-            { label: `Unassigned (${unassignedCount})`, value: 'unassigned' },
-          ]} />
-        )}
-        {!isLead && (
-          <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--color-text-secondary)' }}>
-            Showing <b>{myCount}</b> applications assigned to you. Need help? Ask your Team Lead to reassign.
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+          {isLead ? (
+            <antd.Segmented value={filter} onChange={v => { setFilter(v); setQSearch(''); setQScheme([]); setQPriority('all'); setQAi('all'); }} options={[
+              { label: `My queue (${myCount})`, value: 'mine' },
+              { label: `Team queue (${teamAssigned})`, value: 'team' },
+              { label: `Unassigned (${unassignedCount})`, value: 'unassigned' },
+            ]} />
+          ) : (
+            <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+              Showing <b>{myCount}</b> application{myCount !== 1 ? 's' : ''} assigned to you.
+            </div>
+          )}
+          <antd.Space wrap>
+            <antd.Input placeholder="Search ID, applicant, product…" prefix={<SearchOutlined style={{ color: 'var(--color-text-muted)' }} />}
+              value={qSearch} onChange={e => setQSearch(e.target.value)} allowClear style={{ width: 240 }} />
+            <antd.Badge count={advCount} size="small">
+              <Button icon={<FilterOutlinedIcon />} type={advCount > 0 ? 'primary' : 'default'}
+                onClick={() => setShowAdv(v => !v)}>
+                Filters
+              </Button>
+            </antd.Badge>
+          </antd.Space>
+        </div>
+
+        {showAdv && (
+          <div style={{ padding: '12px 16px', background: 'var(--color-bg-elevated)', borderRadius: 8, marginBottom: 16, border: '1px solid var(--color-border)' }}>
+            <antd.Space wrap size={[24, 8]} align="center">
+              <antd.Space size={8} align="center">
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)' }}>Scheme</span>
+                <antd.Checkbox.Group value={qScheme} onChange={setQScheme}
+                  options={[
+                    { label: 'Scheme A', value: 'A' },
+                    { label: 'Scheme B', value: 'B' },
+                    { label: 'Scheme C', value: 'C' },
+                    { label: 'Special Approval', value: 'SA' },
+                  ]}
+                />
+              </antd.Space>
+              <antd.Space size={8} align="center">
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)' }}>Priority</span>
+                <antd.Select value={qPriority} onChange={setQPriority} size="small" style={{ width: 130 }} options={[
+                  { label: 'All', value: 'all' },
+                  { label: 'High', value: 'high' },
+                  { label: 'Normal', value: 'normal' },
+                  { label: 'Low', value: 'low' },
+                ]} />
+              </antd.Space>
+              <antd.Space size={8} align="center">
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)' }}>AI Score</span>
+                <antd.Select value={qAi} onChange={setQAi} size="small" style={{ width: 150 }} options={[
+                  { label: 'All', value: 'all' },
+                  { label: 'Good (≥90)', value: 'good' },
+                  { label: 'Warning (70–89)', value: 'warn' },
+                  { label: 'Poor (<70)', value: 'poor' },
+                ]} />
+              </antd.Space>
+              {advCount > 0 && (
+                <Button size="small" type="link" style={{ padding: 0 }}
+                  onClick={() => { setQScheme([]); setQPriority('all'); setQAi('all'); }}>
+                  Clear filters
+                </Button>
+              )}
+            </antd.Space>
           </div>
         )}
-        <antd.Table rowKey="id" dataSource={list} pagination={false}
+
+        <antd.Table rowKey="id" dataSource={list} pagination={false} scroll={{ x: 'max-content' }}
           onRow={row => ({ onClick: e => { if (e.target.closest('.assign-btn')) return; nav('officer-review'); }, style: { cursor: 'pointer' } })}
           columns={[
-            { title: 'App ID',    dataIndex: 'id',       render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
-            { title: 'Scheme',    dataIndex: 'scheme',   render: s => <SchemeBadge scheme={s} /> },
-            { title: 'Applicant', dataIndex: 'applicant' },
-            { title: 'Product',   dataIndex: 'product' },
-            { title: 'AI Score',  dataIndex: 'aiScore',  render: s => <antd.Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{s}</antd.Tag> },
-            { title: 'Priority',  dataIndex: 'priority', render: p => <antd.Tag color={p === 'high' ? 'red' : p === 'low' ? 'default' : 'blue'}>{p}</antd.Tag> },
-            { title: 'SLA',       dataIndex: 'slaHours', render: h => <antd.Tag color={h < 12 ? 'red' : h < 24 ? 'orange' : 'default'}>{h}h left</antd.Tag> },
+            { title: 'App ID',    dataIndex: 'id',       width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+            { title: 'Scheme',    dataIndex: 'scheme',   width: 130, render: s => <antd.Tag style={{ fontSize: 11 }}>{s === 'SA' ? 'Special Approval' : `Scheme ${s}`}</antd.Tag> },
+            { title: 'Applicant', dataIndex: 'applicant', width: 200 },
+            { title: 'Product',   dataIndex: 'product',  width: 220 },
+            { title: 'AI Score',  dataIndex: 'aiScore',  width: 90,  render: s => <antd.Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{s}</antd.Tag> },
+            { title: 'Priority',  dataIndex: 'priority', width: 90,  render: p => <antd.Tag color={p === 'high' ? 'red' : p === 'low' ? 'default' : 'blue'}>{p}</antd.Tag> },
+            { title: 'SLA',       dataIndex: 'slaHours', width: 90,  render: h => <antd.Tag color={h < 12 ? 'red' : h < 24 ? 'orange' : 'default'} style={{ whiteSpace: 'nowrap' }}>{h}h left</antd.Tag> },
             ...(isLead ? [{
-              title: 'Assigned', dataIndex: 'assignedTo',
+              title: 'Assigned', dataIndex: 'assignedTo', width: 130,
               render: (id, row) => id
                 ? <antd.Tooltip title={officerById[id]?.name}><antd.Tag>{officerById[id]?.name?.split(' ').slice(-1)[0] || id}</antd.Tag></antd.Tooltip>
                 : <antd.Button className="assign-btn" size="small" type="primary" icon={<TeamOutlined />}
                     onClick={e => { e.stopPropagation(); setAssignTarget(row.id); setAssignOpen(true); }}>Assign…</antd.Button>,
             }] : []),
-            { title: 'Submitted', dataIndex: 'submitted', render: v => new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) },
+            { title: 'Submitted', dataIndex: 'submitted', width: 140, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span> },
           ]}
         />
       </antd.Card>
