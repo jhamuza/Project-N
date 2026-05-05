@@ -24,12 +24,10 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
     { k: 'confirm', t: 'Confirm' },
   ];
 
-  // Base fee per year per scheme (excl. SST)
-  const baseRates = { A: 324.07, B: 231.48, C: 138.89 };
-  const sstRate = 0.08;
+  // Base fee per year per scheme
+  const baseRates = { A: 350, B: 250, C: 150 };
   const baseFee = Math.round(baseRates[scheme] * period);
-  const sstAmt = Math.round(baseFee * sstRate);
-  const totalFee = baseFee + sstAmt;
+  const totalFee = baseFee;
 
   React.useEffect(() => {
     if (step === 3 && !aiDone) {
@@ -114,7 +112,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
               <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 6, lineHeight: 1.6 }}>{s.d}</div>
               <Divider style={{ margin: '14px 0' }} />
               <div style={{ fontSize: 12, display: 'grid', gap: 6 }}>
-                <div><b>Fee:</b> <span style={{ color: 'var(--color-text-secondary)' }}>{s.basePerYear} (excl. SST)</span></div>
+                <div><b>Fee:</b> <span style={{ color: 'var(--color-text-secondary)' }}>{s.basePerYear}</span></div>
                 <div><b>SLA:</b> <span style={{ color: 'var(--color-text-secondary)' }}>{s.sla}</span></div>
                 <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>{s.note}</div>
               </div>
@@ -365,8 +363,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
           <Card size="small" bordered>
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600, marginBottom: 6 }}>Fee Summary</div>
             <div style={{ display: 'grid', gap: 4, fontSize: 12, marginBottom: 8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--color-text-muted)' }}>Scheme {scheme} base ({period} yr)</span><span>RM {baseFee.toLocaleString('en-MY')}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--color-text-muted)' }}>SST (8%)</span><span>RM {sstAmt.toLocaleString('en-MY')}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--color-text-muted)' }}>Scheme {scheme} ({period} yr)</span><span>RM {baseFee.toLocaleString('en-MY')}</span></div>
             </div>
             <Divider style={{ margin: '8px 0' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -398,7 +395,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
               ['Brand / Model', 'Samsung / SM-S928B (Galaxy S24 Ultra)'],
               ['Category', 'Mobile Phone / Smartphone'],
               ['Registration Period', `${period} year${period > 1 ? 's' : ''}`],
-              ['Total Fee (incl. SST)', `RM ${totalFee.toLocaleString('en-MY')}`],
+              ['Total Fee', `RM ${totalFee.toLocaleString('en-MY')}`],
             ].map(([k, v], i) => (
               <Col span={12} key={i}>
                 <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>{k}</div>
@@ -488,7 +485,7 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
       <Card bordered>
         <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Amount Due</div>
         <div style={{ fontSize: 36, fontWeight: 700 }}>RM {totalFee.toLocaleString('en-MY')}.00</div>
-        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 20 }}>Scheme {scheme} · {period} yr · APP-0426-00088 · Incl. SST 8%</div>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 20 }}>Scheme {scheme} · {period} yr · APP-0426-00088</div>
         <Divider />
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Payment Method</div>
         <Radio.Group defaultValue="fpx" style={{ display: 'grid', gap: 8, width: '100%' }}>

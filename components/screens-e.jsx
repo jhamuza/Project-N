@@ -20,20 +20,20 @@ const AimOut_e         = window.icons.AimOutlined     || window.icons.Thunderbol
 // ─── Mock data for admin config ───────────────────────────────────────────────
 Object.assign(window.MOCK, {
   feeStructure: [
-    { id: 'fee-01', category: 'SDoC Registration',   scheme: 'Scheme A', type: 'Per year per model',   baseFee: 324.07, sstEnabled: true,  sstPct: 8 },
-    { id: 'fee-02', category: 'SDoC Registration',   scheme: 'Scheme B', type: 'Per year per model',   baseFee: 231.48, sstEnabled: true,  sstPct: 8 },
-    { id: 'fee-03', category: 'SDoC Registration',   scheme: 'Scheme C', type: 'Per year per model',   baseFee: 138.89, sstEnabled: true,  sstPct: 8 },
-    { id: 'fee-04', category: 'Special Approval',    scheme: 'Low/Med Risk', type: 'Per application',  baseFee: 500.00, sstEnabled: true,  sstPct: 8 },
-    { id: 'fee-05', category: 'Special Approval',    scheme: 'High Risk',    type: 'Per application',  baseFee: 1000.00,sstEnabled: true,  sstPct: 8 },
-    { id: 'fee-06', category: 'Special Approval',    scheme: 'Prohibited',   type: 'Per application',  baseFee: 2000.00,sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-01', category: 'SDoC Registration',   scheme: 'Scheme A', type: 'Per year per model',   baseFee: 350.00, sstEnabled: false, sstPct: 0 },
+    { id: 'fee-02', category: 'SDoC Registration',   scheme: 'Scheme B', type: 'Per year per model',   baseFee: 250.00, sstEnabled: false, sstPct: 0 },
+    { id: 'fee-03', category: 'SDoC Registration',   scheme: 'Scheme C', type: 'Per year per model',   baseFee: 150.00, sstEnabled: false, sstPct: 0 },
+    { id: 'fee-04', category: 'Special Approval',    scheme: 'Low/Med Risk', type: 'Per application',  baseFee: 500.00, sstEnabled: false, sstPct: 0 },
+    { id: 'fee-05', category: 'Special Approval',    scheme: 'High Risk',    type: 'Per application',  baseFee: 1000.00,sstEnabled: false, sstPct: 0 },
+    { id: 'fee-06', category: 'Special Approval',    scheme: 'Prohibited',   type: 'Per application',  baseFee: 2000.00,sstEnabled: false, sstPct: 0 },
     { id: 'fee-07', category: 'IMEI Registration',   scheme: 'All',          type: 'Per IMEI number',  baseFee: 0.50,   sstEnabled: false, sstPct: 0 },
     { id: 'fee-08', category: 'Serial Number Reg.',  scheme: 'All',          type: 'Per serial number', baseFee: 0.15,  sstEnabled: false, sstPct: 0 },
-    { id: 'fee-09', category: 'Account Registration',scheme: 'Category A',   type: 'Per year',         baseFee: 300.00, sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-09', category: 'Account Registration',scheme: 'Category A',   type: 'Per year',         baseFee: 300.00, sstEnabled: false, sstPct: 0 },
     { id: 'fee-10', category: 'Account Registration',scheme: 'Category B/C', type: 'Per year',         baseFee: 0.00,   sstEnabled: false, sstPct: 0 },
-    { id: 'fee-11', category: 'Account Registration',scheme: 'Category D',   type: 'Per year',         baseFee: 200.00, sstEnabled: true,  sstPct: 8 },
-    { id: 'fee-12', category: 'Renewal',             scheme: 'Scheme A',     type: 'Per year per model',baseFee: 324.07, sstEnabled: true,  sstPct: 8 },
-    { id: 'fee-13', category: 'Renewal',             scheme: 'Scheme B',     type: 'Per year per model',baseFee: 231.48, sstEnabled: true,  sstPct: 8 },
-    { id: 'fee-14', category: 'Renewal',             scheme: 'Scheme C',     type: 'Per year per model',baseFee: 138.89, sstEnabled: true,  sstPct: 8 },
+    { id: 'fee-11', category: 'Account Registration',scheme: 'Category D',   type: 'Per year',         baseFee: 200.00, sstEnabled: false, sstPct: 0 },
+    { id: 'fee-12', category: 'Renewal',             scheme: 'Scheme A',     type: 'Per year per model',baseFee: 350.00, sstEnabled: false, sstPct: 0 },
+    { id: 'fee-13', category: 'Renewal',             scheme: 'Scheme B',     type: 'Per year per model',baseFee: 250.00, sstEnabled: false, sstPct: 0 },
+    { id: 'fee-14', category: 'Renewal',             scheme: 'Scheme C',     type: 'Per year per model',baseFee: 150.00, sstEnabled: false, sstPct: 0 },
   ],
   workflowChainConfig: [
     { id: 'wf-01', step: 1, roleLabel: 'OIC / CPPG Officer', roleKey: 'officer',      actions: ['Escalate', 'Return for iteration'], canReject: false, mandatory: true  },
@@ -157,7 +157,7 @@ SCREENS['admin-config'] = function AdminConfig({ nav, currentUser }) {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <antd.Typography.Text type="secondary" style={{ fontSize: 13 }}>
-            All fees in MYR. Total = Actual Fee + SST Amount. Changes take effect from the next billing cycle.
+            All fees in MYR. No SST applicable. Changes take effect from the next billing cycle.
           </antd.Typography.Text>
           <antd.Space>
             {saved && <antd.Tag color="green" icon={<CheckCircleOutlined />}>Saved</antd.Tag>}

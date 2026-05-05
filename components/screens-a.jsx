@@ -1006,8 +1006,8 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
   const TODAY = new Date('2026-04-19');
   const steps = ['Select Certificate', 'Review Documents', 'Document Re-check', 'Declaration', 'Payment', 'Confirmation'];
   const expiringCerts = MOCK.certificates.filter(c => c.status === 'expiring' || c.status === 'active');
-  const baseRateMap = { A: 324.07, B: 231.48, C: 138.89, SA: 324.07 };
-  const baseRate = baseRateMap[selectedCert?.scheme] || 324.07;
+  const baseRateMap = { A: 350, B: 250, C: 150, SA: 350 };
+  const baseRate = baseRateMap[selectedCert?.scheme] || 350;
 
   // Max years the applicant may renew:
   //   - Hard cap: 5 years total. Years already used = full years between issued date and today.
@@ -1032,8 +1032,7 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
   const maxYears = maxRenewYears(selectedCert);
   const safeRenewPeriod = Math.min(renewPeriod, maxYears);
   const baseFee = Math.round(baseRate * safeRenewPeriod);
-  const sstAmt = Math.round(baseFee * 0.08);
-  const fee = baseFee + sstAmt;
+  const fee = baseFee;
   const daysLeft = selectedCert ? Math.ceil((new Date(selectedCert.expires) - TODAY) / 864e5) : 0;
   const cocExpiryDate = selectedCert?.scheme === 'A' ? COC_EXPIRY[selectedCert.rcn] : null;
 
@@ -1231,7 +1230,7 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
                     ['Scheme', `Scheme ${selectedCert?.scheme}`],
                     ['Renewal Period', `${renewPeriod} year${renewPeriod > 1 ? 's' : ''}`],
                     ['New Expiry', newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })],
-                    ['Total Fee (incl. SST)', `RM ${fee.toLocaleString('en-MY')}`],
+                    ['Total Fee', `RM ${fee.toLocaleString('en-MY')}`],
                   ].map(([k, v], i) => (
                     <Col span={12} key={i}>
                       <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>{k}</div>
@@ -1321,7 +1320,7 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
             <Card bordered>
               <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Renewal Fee</div>
               <div style={{ fontSize: 36, fontWeight: 700 }}>RM {fee.toLocaleString('en-MY')}.00</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 20 }}>Scheme {selectedCert?.scheme} · {renewPeriod} yr · {selectedCert?.rcn} · Incl. SST 8%</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 20 }}>Scheme {selectedCert?.scheme} · {renewPeriod} yr · {selectedCert?.rcn}</div>
               <Divider />
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Payment Method</div>
               <Radio.Group value={payMethod} onChange={e => setPayMethod(e.target.value)} style={{ display: 'grid', gap: 8, width: '100%' }}>
