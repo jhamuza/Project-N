@@ -1738,7 +1738,7 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | 2 | Remove compliance score from supplier view; replace with doc status | `shared.jsx`, `screens-a.jsx`, `screens-b.jsx` | S | 1 | **Done** |
 | 3 | Document validation: surface specific findings per document | `screens-b.jsx` DocsStep + ValidationStep | S–M | 1 | **Done** |
 | 4 | SDoC: scheme-specific documents, Part C/D, eSignature (Part E) | `screens-b.jsx` DocsStep, ProductStep, ReviewStep | M | 2 | **Done** |
-| 5 | Special Approval: risk-tier split, SA Letter editor, prohibited rules | `screens-b.jsx` special-approval | L | 6 | Pending |
+| 5 | Special Approval: risk-tier split, SA Letter editor, prohibited rules | `screens-b.jsx` special-approval | L | 6 | **Done** |
 | 6 | Importation: RCN auto-populate device details + block-on-error | `screens-g.jsx` | S–M | 4 | **Done** |
 | 7 | Renewal: max period cap enforcer, expiry clarity, Scheme A CoC warning | `screens-a.jsx` cert-renewal, `screens-c.jsx` | S–M | 3 | **Done** |
 | 8 | Supplier multi-user accounts: invite / join-request / admin approval | `screens-c.jsx` Profile Team tab, `mock.js` | M | 4 | **Done** |
@@ -1847,6 +1847,24 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 - Officer SLA chart title and height adapt to scope: height = `max(200, officers.length × 32)` so all bars are legible
 - "All CPPG" view adds an informational Alert showing total officer count and offering hint to switch back to team scope
 - Page subtitle appended with team name or "All CPPG teams"
+
+#### Sprint 6 Completion Notes (2026-05-05)
+
+**Initiative #5 - Special Approval full (screens-b.jsx):**
+- **6 purposes** (up from 4): Personal Use, PoC, Trial/Market Survey, Demonstration, R&D, Prohibited Equipment — each carries an explicit `tier` field
+- **4 risk tiers** with full metadata: Low Risk (3 wd, CPPG Officer only), Medium Risk (7 wd, + Recommender), High Risk (14 wd, + Verifier), Restricted/Prohibited (30-45 wd, + Head of Cert + DG MCMC)
+- **Dynamic tier escalation**: selecting a jammer/SDR/scanner equipment type in step 1 auto-escalates any base tier to Restricted; custom RF device escalates to High Risk
+- **TierBadge** rendered in the page header alongside the SA tag — updates live as user selects purpose and equipment type
+- **Step 0**: purpose cards now show risk tier tag (green/orange/red) and RESTRICTED label per option
+- **Step 1**: live approval chain alert shows colour-coded chain of role tags and expected SLA; tier-escalation notice shown when equipment type triggers escalation
+- **Step 2**: manufacturer, model, quantity, frequency range wired to state (used in SA Letter); Prohibited tier shows additional operating conditions list inline
+- **Step 3**: tier-specific document list (`DOC_LISTS` object keyed by tier) — 3 docs for Low, 4 for Medium, 7 for High, 10 for Restricted; each list shows Required/Optional tags and tier-specific notes
+- **Step 4 (Declaration)**: approval chain alert replaces the old hard-coded prohibited-only alert; extra prohibited checkboxes added (unannounced inspection acknowledgement)
+- **Step 5 (Confirm)**: redesigned with three sub-tabs:
+  - *Application Summary*: Descriptions table with purpose, tier, equipment, manufacturer/model, applicant, signer
+  - *Draft SA Letter*: styled MCMC letterhead mockup with "DRAFT" watermark, filled equipment block, numbered conditions (Restricted tier adds shielding condition), signature block stub
+  - *Approval Chain*: Timeline component showing each sequential approval step with available actions per step
+- Continue button gated: step 0 requires purpose, step 1 requires equipment type selection
 
 ### 12.4 Key Design Decisions (from session)
 

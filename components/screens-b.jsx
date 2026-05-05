@@ -624,21 +624,91 @@ function WaiverCodeInput() {
 }
 
 SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
-  const [step, setStep] = React.useState(0);
-  const [purpose, setPurpose] = React.useState(null);
-  const [isProhibited, setIsProhibited] = React.useState(false);
+  const [step, setStep]           = React.useState(0);
+  const [purpose, setPurpose]     = React.useState(null);
+  const [equipType, setEquipType] = React.useState(null);
+  const [riskTier, setRiskTier]   = React.useState(null);
   const [mcmcApproved, setMcmcApproved] = React.useState(null);
-  const [saSigned, setSaSigned] = React.useState(false);
+  const [manufacturer, setManufacturer] = React.useState('');
+  const [model, setModel]         = React.useState('');
+  const [quantity, setQuantity]   = React.useState('1');
+  const [freqRange, setFreqRange] = React.useState('');
+  const [orgName]                 = React.useState('Axiata Digital Sdn Bhd');
+  const [saSigned, setSaSigned]   = React.useState(false);
   const [saSigName, setSaSigName] = React.useState('');
-  const [saSigIc, setSaSigIc] = React.useState('');
+  const [saSigIc, setSaSigIc]     = React.useState('');
   const [saChecked, setSaChecked] = React.useState([]);
+  const [saLetterTab, setSaLetterTab] = React.useState('summary');
 
-  const purposes = [
-    { k: 'rd', t: 'Research & Development', d: 'Internal prototype testing, lab evaluation, non-commercial R&D', prohibited: false },
-    { k: 'demo', t: 'Demonstration / Exhibition', d: 'Trade show, conference demo — limited duration and venue', prohibited: false },
-    { k: 'personal', t: 'Personal Use', d: 'Individual importing one unit for non-commercial use', prohibited: false },
-    { k: 'prohibited', t: 'Prohibited Equipment (R&D only)', d: 'Jammers, scanners, SDR transmitters — requires MCMC head approval', prohibited: true },
+  const PURPOSES = [
+    { k: 'personal', t: 'Personal Use',              d: 'Individual importing one unit for non-commercial use',              tier: 'low',       tierLabel: 'Low Risk',    tierColor: 'green'  },
+    { k: 'poc',      t: 'Proof of Concept (PoC)',    d: 'Internal PoC evaluation — non-commercial, limited scope',          tier: 'low',       tierLabel: 'Low Risk',    tierColor: 'green'  },
+    { k: 'trial',    t: 'Trial / Market Survey',     d: 'Commercial trial or market research — limited scope and duration', tier: 'medium',    tierLabel: 'Medium Risk', tierColor: 'orange' },
+    { k: 'demo',     t: 'Demonstration / Exhibition',d: 'Trade show or conference demo — limited duration and venue',       tier: 'medium',    tierLabel: 'Medium Risk', tierColor: 'orange' },
+    { k: 'rd',       t: 'Research & Development',    d: 'Internal prototype testing, lab evaluation, non-commercial R&D',  tier: 'high',      tierLabel: 'High Risk',   tierColor: 'red'    },
+    { k: 'prohibited', t: 'Prohibited Equipment',    d: 'Jammers, scanners, SDR transmitters — requires DG MCMC approval', tier: 'prohibited',tierLabel: 'Restricted',  tierColor: 'red', prohibited: true },
   ];
+
+  const HIGH_RISK_EQUIP = ['jammer', 'sdr', 'scanner'];
+  const isProhibited = riskTier === 'prohibited';
+
+  const TIER_META = {
+    low:        { color: 'green',  label: 'Low Risk',   sla: '3 working days',     chain: ['CPPG Officer'] },
+    medium:     { color: 'orange', label: 'Medium Risk',sla: '7 working days',     chain: ['CPPG Officer', 'Recommender'] },
+    high:       { color: 'red',    label: 'High Risk',  sla: '14 working days',    chain: ['CPPG Officer', 'Recommender', 'Verifier'] },
+    prohibited: { color: 'red',    label: 'Restricted', sla: '30 to 45 working days', chain: ['CPPG Officer', 'Head of Certification', 'Director General MCMC'] },
+  };
+
+  function selectPurpose(p) { setPurpose(p.k); setRiskTier(p.tier); setEquipType(null); }
+  function selectEquipType(v) {
+    setEquipType(v);
+    if (riskTier !== 'prohibited') {
+      const base = PURPOSES.find(p => p.k === purpose)?.tier || 'low';
+      setRiskTier(HIGH_RISK_EQUIP.includes(v) ? 'prohibited' : v === 'custom_rf' ? 'high' : base);
+    }
+  }
+
+  const tierMeta = TIER_META[riskTier] || {};
+
+  const DOC_LISTS = {
+    low: [
+      { t: 'Letter of Justification (Company Letterhead)', req: true },
+      { t: 'Equipment Specification / Datasheet', req: true },
+      { t: 'Proof of Purchase or Proforma Invoice', req: true },
+    ],
+    medium: [
+      { t: 'Letter of Justification (Company Letterhead)', req: true },
+      { t: 'Equipment Specification / Datasheet', req: true },
+      { t: 'Trial / Demo Programme (dates, venues, participants)', req: true },
+      { t: 'Undertaking Letter — Equipment Return After Use', req: true },
+    ],
+    high: [
+      { t: 'Letter of Justification (Company Letterhead)', req: true },
+      { t: 'Equipment Specification / Datasheet', req: true },
+      { t: 'Research Proposal / Project Brief', req: true },
+      { t: 'Safety & Shielding Assessment', req: true },
+      { t: 'Proof of Lab Accreditation', req: true },
+      { t: 'Responsible Engineer / PI Credentials', req: true },
+      { t: 'MCMC Pre-approval Ticket (if applicable)', req: false },
+    ],
+    prohibited: [
+      { t: 'Letter of Justification (Company Letterhead)', req: true },
+      { t: 'Equipment Specification / Datasheet', req: true },
+      { t: 'Research Proposal / Project Brief', req: true },
+      { t: 'Safety & Shielding Assessment', req: true },
+      { t: 'Proof of Lab Accreditation', req: true },
+      { t: 'Responsible Engineer / PI Credentials', req: true },
+      { t: 'Import Permit Application', req: true },
+      { t: 'Ministry of Science, Technology & Innovation (MOSTI) Sponsorship Letter', req: true, extra: 'Must be on MOSTI letterhead, signed by Grade JUSA C or above' },
+      { t: 'Institutional Ethics / Safety Board Approval', req: true, extra: 'Required for jammers and active-intercept devices' },
+      { t: 'MCMC Pre-approval Ticket (if applicable)', req: false },
+    ],
+  };
+
+  const docList = DOC_LISTS[riskTier] || DOC_LISTS.low;
+  const TierBadge = () => riskTier ? <Tag color={tierMeta.color} style={{ fontWeight: 600, fontSize: 11 }}>{tierMeta.label} · {tierMeta.sla}</Tag> : null;
+
+  const purposes = PURPOSES;
 
   const steps = ['Purpose', 'Equipment', 'Details', 'Documents', 'Declaration', 'Confirm'];
 
@@ -650,7 +720,7 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
           <Title level={3} style={{ margin: 0 }}>Special Approval Application</Title>
           <Text type="secondary">Communications & Multimedia Act 1998 · Section 126</Text>
         </div>
-        <Tag color="purple" style={{ fontWeight: 600 }}>SCHEME SA</Tag>
+        <Space><TierBadge /><Tag color="purple" style={{ fontWeight: 600 }}>SCHEME SA</Tag></Space>
       </div>
 
       <div style={{ marginBottom: 24 }}>
@@ -661,13 +731,17 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
         {step === 0 && (
           <div>
             <Title level={4} style={{ marginTop: 0 }}>What is the purpose of this equipment?</Title>
-            <Text type="secondary">Select one. Prohibited-equipment R&D involves an additional multi-level escalation workflow.</Text>
+            <Text type="secondary">Your selection determines the risk tier, required documents, and approval chain.</Text>
             <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
-              {purposes.map(p => (
-                <div key={p.k} onClick={() => { setPurpose(p.k); setIsProhibited(p.prohibited); }} style={{ padding: 16, border: `2px solid ${purpose === p.k ? (p.prohibited ? 'var(--color-danger)' : 'var(--color-primary)') : 'var(--color-border)'}`, borderRadius: 12, cursor: 'pointer', background: purpose === p.k ? (p.prohibited ? 'var(--color-danger-bg)' : 'var(--color-primary-soft)') : '#fff', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              {PURPOSES.map(p => (
+                <div key={p.k} onClick={() => selectPurpose(p)} style={{ padding: 16, border: `2px solid ${purpose === p.k ? (p.prohibited ? 'var(--color-danger)' : 'var(--color-primary)') : 'var(--color-border)'}`, borderRadius: 12, cursor: 'pointer', background: purpose === p.k ? (p.prohibited ? 'var(--color-danger-bg)' : 'var(--color-primary-soft)') : '#fff', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                   <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid', borderColor: purpose === p.k ? (p.prohibited ? 'var(--color-danger)' : 'var(--color-primary)') : 'var(--color-border-strong)', background: purpose === p.k ? (p.prohibited ? 'var(--color-danger)' : 'var(--color-primary)') : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, flexShrink: 0, marginTop: 2 }}>{purpose === p.k && '✓'}</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{p.t} {p.prohibited && <Tag color="red" style={{ marginLeft: 6, fontSize: 10 }}>RESTRICTED</Tag>}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600 }}>{p.t}</span>
+                      <Tag color={p.tierColor} style={{ fontSize: 10, margin: 0 }}>{p.tierLabel}</Tag>
+                      {p.prohibited && <Tag color="red" style={{ fontSize: 10, margin: 0 }}>RESTRICTED</Tag>}
+                    </div>
                     <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>{p.d}</div>
                   </div>
                 </div>
@@ -678,39 +752,45 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
         {step === 1 && (
           <div>
             <Title level={4} style={{ marginTop: 0 }}>Equipment Classification</Title>
-            <Text type="secondary">Help us identify the correct review path.</Text>
-            {isProhibited && (
-              <Alert
-                type="error"
-                showIcon
-                style={{ marginTop: 16 }}
-                message="Prohibited Equipment Disclosure"
+            {riskTier && (
+              <Alert type={isProhibited ? 'error' : riskTier === 'high' ? 'warning' : 'info'} showIcon style={{ marginBottom: 20 }}
+                message={<span>Current risk tier: <Tag color={tierMeta.color} style={{ fontWeight: 700 }}>{tierMeta.label}</Tag>{HIGH_RISK_EQUIP.includes(equipType) && <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--color-danger)' }}> Escalated by equipment type</span>}</span>}
                 description={
-                  <>
-                    <p style={{ margin: 0 }}>Prohibited equipment (radio jammers, SDR transmitters operating outside licensed bands, receivers that intercept private communications) is restricted under the Communications & Multimedia Act 1998.</p>
-                    <p style={{ margin: '8px 0 0' }}>Import for R&D purposes requires <b>sequential approval</b> from: (1) the assigned officer, (2) the Head of Certification, (3) the Director General of MCMC.</p>
-                  </>
+                  <div>
+                    <div>Approval chain: {tierMeta.chain?.map((c, i, arr) => (<React.Fragment key={i}><Tag color={tierMeta.color} style={{ fontSize: 11 }}>{c}</Tag>{i < arr.length - 1 && <span style={{ margin: '0 4px', color: 'var(--color-text-muted)' }}>→</span>}</React.Fragment>))}</div>
+                    <div style={{ marginTop: 4, fontSize: 12 }}>Expected processing: <b>{tierMeta.sla}</b></div>
+                    {isProhibited && <div style={{ marginTop: 6, fontSize: 12, color: 'var(--color-danger)', fontWeight: 600 }}>Requires Director General of MCMC approval and a MOSTI Sponsorship Letter.</div>}
+                  </div>
                 }
               />
             )}
-            <Form layout="vertical" style={{ marginTop: 24, maxWidth: 600 }}>
+            <Form layout="vertical" style={{ maxWidth: 600 }}>
               <Form.Item label="Equipment Type" required>
-                <Select placeholder="Select…" options={[
-                  { value: 'jammer', label: 'Radio Frequency Jammer' },
-                  { value: 'sdr', label: 'Software Defined Radio (unlicensed bands)' },
-                  { value: 'scanner', label: 'Wideband Receiver / Scanner' },
-                  { value: 'custom', label: 'Custom RF Device (specify)' },
+                <Select value={equipType || undefined} placeholder="Select equipment type…" onChange={selectEquipType} options={[
+                  { value: 'prototype',    label: 'R&D Prototype / Experimental Device' },
+                  { value: 'custom_rf',    label: 'Custom RF Device (specify in Details)' },
+                  { value: 'commercial_mod', label: 'Modified Commercial Device' },
+                  { value: 'jammer',       label: 'Radio Frequency Jammer' },
+                  { value: 'sdr',          label: 'Software Defined Radio (unlicensed bands)' },
+                  { value: 'scanner',      label: 'Wideband Receiver / Intercept Scanner' },
+                  { value: 'other',        label: 'Other — specify in Details step' },
                 ]} />
               </Form.Item>
-              <Form.Item label="Is the equipment from an MCMC pre-approved vendor?" required>
-                <Radio.Group onChange={e => setMcmcApproved(e.target.value)}>
-                  <Radio value="yes">Yes — from list</Radio>
+              {HIGH_RISK_EQUIP.includes(equipType) && (
+                <Alert type="error" showIcon style={{ marginBottom: 16 }}
+                  message="Tier escalated to Restricted"
+                  description="This equipment type is classified as prohibited under CMA 1998. Your application has been escalated to the Restricted tier requiring DG MCMC approval."
+                />
+              )}
+              <Form.Item label="Is the equipment from an MCMC pre-approved vendor?">
+                <Radio.Group value={mcmcApproved} onChange={e => setMcmcApproved(e.target.value)}>
+                  <Radio value="yes">Yes — listed vendor</Radio>
                   <Radio value="no">No</Radio>
                   <Radio value="unknown">Unknown</Radio>
                 </Radio.Group>
               </Form.Item>
               {mcmcApproved === 'no' && (
-                <Alert type="warning" showIcon message="Non-listed vendor" description="Additional vendor due-diligence documentation required in the next step." />
+                <Alert type="warning" showIcon message="Non-listed vendor" description="Additional vendor due-diligence documentation will be required in the Documents step." />
               )}
             </Form>
           </div>
@@ -719,36 +799,50 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
           <Form layout="vertical">
             <Title level={4} style={{ marginTop: 0 }}>Equipment & Research Details</Title>
             <Row gutter={16}>
-              <Col span={12}><Form.Item label="Manufacturer" required><Input placeholder="Keysight Technologies" /></Form.Item></Col>
-              <Col span={12}><Form.Item label="Model" required><Input placeholder="N5182B MXG" /></Form.Item></Col>
-              <Col span={12}><Form.Item label="Quantity" required><Input type="number" placeholder="1" /></Form.Item></Col>
-              <Col span={12}><Form.Item label="Frequency Range" required><Input placeholder="100 kHz – 6 GHz" /></Form.Item></Col>
+              <Col span={12}><Form.Item label="Manufacturer" required><Input placeholder="Keysight Technologies" value={manufacturer} onChange={e => setManufacturer(e.target.value)} /></Form.Item></Col>
+              <Col span={12}><Form.Item label="Model" required><Input placeholder="N5182B MXG" value={model} onChange={e => setModel(e.target.value)} /></Form.Item></Col>
+              <Col span={12}><Form.Item label="Quantity" required><Input type="number" min={1} placeholder="1" value={quantity} onChange={e => setQuantity(e.target.value)} /></Form.Item></Col>
+              <Col span={12}><Form.Item label="Frequency Range" extra="Leave blank if not applicable"><Input placeholder="100 kHz – 6 GHz" value={freqRange} onChange={e => setFreqRange(e.target.value)} /></Form.Item></Col>
               <Col span={12}><Form.Item label="Import Date" required><DatePicker style={{ width: '100%' }} /></Form.Item></Col>
               <Col span={12}><Form.Item label="Intended Duration in Malaysia" required><Select options={[{value:'3m',label:'3 months'},{value:'6m',label:'6 months'},{value:'1y',label:'1 year'},{value:'2y',label:'2 years'}]} /></Form.Item></Col>
-              <Col span={24}><Form.Item label="Research Purpose (detailed)" required><TextArea rows={4} placeholder="We intend to evaluate 5G mmWave transmission characteristics in a shielded anechoic chamber at our KL Sentral R&D lab…" /></Form.Item></Col>
+              <Col span={24}><Form.Item label="Research Purpose (detailed)" required extra="Describe the specific use case, lab environment, and safeguards in place"><TextArea rows={4} placeholder="We intend to evaluate 5G mmWave transmission characteristics in a shielded anechoic chamber at our KL Sentral R&D lab…" /></Form.Item></Col>
               <Col span={24}><Form.Item label="Operating Location" required><Input placeholder="Shielded Lab 3F, Axiata R&D Centre, Cyberjaya" /></Form.Item></Col>
               <Col span={24}><Form.Item label="Responsible Engineer / PI" required><Input placeholder="Dr. Siti Hajar binti Mohd Nor (PhD, MIET)" /></Form.Item></Col>
+              {isProhibited && (
+                <Col span={24}><Alert type="error" showIcon style={{ marginBottom: 8 }}
+                  message="Prohibited Equipment — Additional Conditions"
+                  description={<ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12 }}>
+                    <li>Equipment must remain in a shielded, access-controlled environment at all times.</li>
+                    <li>No transmission outside the declared frequency range and location.</li>
+                    <li>MCMC officers may conduct unannounced spot-checks.</li>
+                    <li>Equipment must be surrendered or re-exported within 14 days of permit expiry.</li>
+                    <li>Any breach is an offence under CMA 1998 §232 — penalty up to RM 500,000 or 5 years imprisonment.</li>
+                  </ul>}
+                /></Col>
+              )}
             </Row>
           </Form>
         )}
         {step === 3 && (
           <div>
             <Title level={4} style={{ marginTop: 0 }}>Required Documents</Title>
-            <Text type="secondary">All special-approval submissions require these attachments. {isProhibited && <b>Prohibited-equipment R&D requires an additional Ministry sponsorship letter.</b>}</Text>
-            <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
-              {[
-                { t: 'Letter of Justification (Company Letterhead)', req: true },
-                { t: 'Equipment Specification / Datasheet', req: true },
-                { t: 'Import Permit Application', req: true },
-                { t: 'Safety & Shielding Assessment', req: true },
-                { t: 'Proof of Lab Accreditation', req: true },
-                ...(isProhibited ? [{ t: 'Ministry of Science, Technology & Innovation (MOSTI) Sponsorship Letter', req: true, extra: 'Prohibited equipment only' }] : []),
-                { t: 'MCMC Pre-approval Ticket (if applicable)', req: false },
-              ].map((d, i) => (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <Text type="secondary">Documents required for</Text>
+              <Tag color={tierMeta.color} style={{ fontWeight: 700 }}>{tierMeta.label}</Tag>
+              <Text type="secondary">tier — {docList.filter(d => d.req).length} required, {docList.filter(d => !d.req).length} optional</Text>
+            </div>
+            {isProhibited && (
+              <Alert type="error" showIcon style={{ marginBottom: 16 }}
+                message="Restricted equipment document requirements"
+                description="The MOSTI Sponsorship Letter must be on official MOSTI letterhead, signed by a Grade JUSA C or above officer. The Institutional Ethics Board approval must reference the specific equipment model and approved location."
+              />
+            )}
+            <div style={{ display: 'grid', gap: 10 }}>
+              {docList.map((d, i) => (
                 <div key={i} className="doc-tile">
                   <div className="icon">📄</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{d.t} {d.req && <Tag color="red" style={{ fontSize: 10, margin: '0 0 0 6px' }}>Required</Tag>}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{d.t} {d.req && <Tag color="red" style={{ fontSize: 10, margin: '0 0 0 6px' }}>Required</Tag>}{!d.req && <Tag style={{ fontSize: 10, margin: '0 0 0 6px' }}>Optional</Tag>}</div>
                     {d.extra && <div style={{ fontSize: 11, color: 'var(--color-danger)', marginTop: 2 }}>{d.extra}</div>}
                   </div>
                   <Upload><Button size="small">+ Upload</Button></Upload>
@@ -763,7 +857,10 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
             'I understand misrepresentation is an offence under the CMA 1998 and may result in prosecution.',
             'I agree not to use the equipment outside the declared purpose, location, or duration.',
             'I will surrender the equipment to MCMC upon completion of the approved activity.',
-            ...(isProhibited ? ['I accept that prohibited equipment may not be transferred, sold, or exhibited to any third party without explicit written MCMC approval.'] : []),
+            ...(isProhibited ? [
+              'I accept that prohibited equipment may not be transferred, sold, or exhibited to any third party without explicit written MCMC approval.',
+              'I acknowledge that MCMC officers may conduct unannounced inspections of the declared operating location.',
+            ] : []),
           ];
           const allChecked = saChecked.length === declItems.length;
           const canSaSign = allChecked && saSigName.trim().length > 3 && saSigIc.trim().length >= 6;
@@ -773,24 +870,20 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
                 message="Important: This action is irreversible"
                 description="Once you sign this declaration, you will not be able to go back to amend your application. Please review all information carefully before proceeding."
                 style={{ marginBottom: 16 }} />
-              {isProhibited && (
-                <Alert type="warning" showIcon message="Multi-level approval notice" style={{ marginBottom: 16 }}
-                  description={
-                    <div>
-                      Your application will route sequentially through:
-                      <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                        {['Officer (CPPG)', 'Head of Certification', 'Director General MCMC'].map((p, i, arr) => (
-                          <React.Fragment key={i}>
-                            <Tag color="purple" style={{ padding: '4px 10px', fontWeight: 600 }}>{p}</Tag>
-                            {i < arr.length - 1 && <span style={{ color: 'var(--color-text-muted)' }}>→</span>}
-                          </React.Fragment>
-                        ))}
-                      </div>
-                      <div style={{ marginTop: 10, fontSize: 12 }}>Expected decision time: 10–15 working days</div>
-                    </div>
-                  }
-                />
-              )}
+              <Alert type="info" showIcon style={{ marginBottom: 16 }}
+                message={<span>Approval chain for <Tag color={tierMeta.color} style={{ fontWeight: 700, margin: '0 2px' }}>{tierMeta.label}</Tag> tier</span>}
+                description={
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 6 }}>
+                    {tierMeta.chain?.map((c, i, arr) => (
+                      <React.Fragment key={i}>
+                        <Tag color={tierMeta.color} style={{ padding: '4px 10px', fontWeight: 600 }}>{c}</Tag>
+                        {i < arr.length - 1 && <span style={{ color: 'var(--color-text-muted)' }}>→</span>}
+                      </React.Fragment>
+                    ))}
+                    <span style={{ fontSize: 12, color: 'var(--color-text-muted)', marginLeft: 8 }}>Expected: {tierMeta.sla}</span>
+                  </div>
+                }
+              />
               <Title level={4} style={{ marginTop: 0, marginBottom: 16 }}>Declaration & Undertaking</Title>
               <div style={{ display: 'grid', gap: 12, marginBottom: 20 }}>
                 {declItems.map((t, i) => (
@@ -854,16 +947,121 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
           );
         })()}
         {step === 5 && (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: isProhibited ? '#EDE7F6' : 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: isProhibited ? '#5E35B1' : 'var(--color-success)' }}>{isProhibited ? '⏳' : '✓'}</div>
-            <Title level={3} style={{ marginTop: 16 }}>Special Approval Submitted</Title>
-            <Text type="secondary">{isProhibited ? 'Routed to multi-level approval queue' : 'Routed to CPPG officer for review'}</Text>
-            <div style={{ marginTop: 24, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12, display: 'inline-block' }}>
-              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Application ID</div>
-              <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)' }}>APP-SA-0426-00012</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 8 }}>Expected decision: {isProhibited ? '10–15 working days' : '3–5 working days'}</div>
+          <div>
+            <div style={{ textAlign: 'center', padding: '24px 20px 16px' }}>
+              <div style={{ display: 'inline-flex', width: 72, height: 72, borderRadius: '50%', background: isProhibited ? '#EDE7F6' : 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 36, color: isProhibited ? '#5E35B1' : 'var(--color-success)' }}>{isProhibited ? '⏳' : '✓'}</div>
+              <Title level={3} style={{ marginTop: 12, marginBottom: 4 }}>Special Approval Submitted</Title>
+              <Text type="secondary">{isProhibited ? 'Routed to multi-level restricted-equipment approval queue' : `Routed to ${tierMeta.chain?.[0] || 'CPPG officer'} for review`}</Text>
+              <div style={{ marginTop: 20, display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <div style={{ padding: '16px 24px', background: 'var(--color-primary-soft)', borderRadius: 12, textAlign: 'left', minWidth: 180 }}>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Application ID</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', marginTop: 4 }}>APP-SA-0426-00012</div>
+                </div>
+                <div style={{ padding: '16px 24px', background: 'var(--color-bg-subtle)', borderRadius: 12, textAlign: 'left', minWidth: 180, border: `2px solid ${isProhibited ? 'var(--color-danger)' : riskTier === 'high' ? 'var(--color-warning)' : 'var(--color-success)'}` }}>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Risk Tier</div>
+                  <Tag color={tierMeta.color} style={{ marginTop: 6, fontSize: 13, padding: '4px 10px', fontWeight: 700 }}>{tierMeta.label}</Tag>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 6 }}>Expected: {tierMeta.sla}</div>
+                </div>
+              </div>
             </div>
-            <div style={{ marginTop: 28 }}>
+
+            <Divider>SA Letter Preview</Divider>
+
+            <antd.Tabs activeKey={saLetterTab} onChange={setSaLetterTab} size="small"
+              items={[
+                { key: 'summary', label: 'Application Summary' },
+                { key: 'letter',  label: 'Draft SA Letter' },
+                { key: 'chain',   label: 'Approval Chain' },
+              ]}
+            />
+
+            {saLetterTab === 'summary' && (
+              <antd.Descriptions bordered column={2} size="small" style={{ marginTop: 16 }}>
+                <antd.Descriptions.Item label="Purpose">{PURPOSES.find(p => p.k === purpose)?.t || purpose}</antd.Descriptions.Item>
+                <antd.Descriptions.Item label="Risk Tier"><Tag color={tierMeta.color} style={{ fontWeight: 700 }}>{tierMeta.label}</Tag></antd.Descriptions.Item>
+                <antd.Descriptions.Item label="Equipment Type">{equipType ? equipType.replace(/_/g,' ') : '-'}</antd.Descriptions.Item>
+                <antd.Descriptions.Item label="Manufacturer / Model">{manufacturer || 'Keysight Technologies'} / {model || 'N5182B MXG'}</antd.Descriptions.Item>
+                <antd.Descriptions.Item label="Quantity">{quantity} unit{quantity !== '1' ? 's' : ''}</antd.Descriptions.Item>
+                {freqRange && <antd.Descriptions.Item label="Frequency Range">{freqRange}</antd.Descriptions.Item>}
+                <antd.Descriptions.Item label="Applicant" span={2}>{orgName}</antd.Descriptions.Item>
+                <antd.Descriptions.Item label="Signed By" span={2}>{saSigName} · {saSigIc}</antd.Descriptions.Item>
+                <antd.Descriptions.Item label="Documents Submitted">{docList.filter(d => d.req).length} required documents</antd.Descriptions.Item>
+                <antd.Descriptions.Item label="Submitted">{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</antd.Descriptions.Item>
+              </antd.Descriptions>
+            )}
+
+            {saLetterTab === 'letter' && (
+              <div style={{ marginTop: 16 }}>
+                <Alert type="info" showIcon style={{ marginBottom: 16 }}
+                  message="Draft SA Letter — pending MCMC officer review and approval"
+                  description="The letter below is pre-populated with your submitted data. The assigned officer may edit unlocked fields before issuing. The final signed letter will be emailed to your registered address."
+                />
+                <div style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: '32px 40px', background: '#fff', maxWidth: 680, margin: '0 auto', position: 'relative', fontFamily: 'Georgia, serif' }}>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-35deg)', fontSize: 48, fontWeight: 900, color: 'rgba(200,0,0,0.07)', userSelect: 'none', whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0 }}>DRAFT</div>
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 16, borderBottom: '3px double #0B4F91' }}>
+                      <div style={{ width: 52, height: 52, background: '#0B4F91', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 14, flexShrink: 0 }}>MCMC</div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: '#0B4F91' }}>SURUHANJAYA KOMUNIKASI DAN MULTIMEDIA MALAYSIA</div>
+                        <div style={{ fontSize: 11, color: '#555' }}>Malaysian Communications and Multimedia Commission</div>
+                        <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>MCMC Tower 1, Jalan Impact, Cyberjaya 63000 · www.mcmc.gov.my</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, fontSize: 12 }}>
+                      <div><span style={{ color: '#888' }}>Ref:</span> <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>MCMC/CPPG/SA/2026/0012</span></div>
+                      <div><span style={{ color: '#888' }}>Date:</span> <span style={{ fontWeight: 600 }}>{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</span></div>
+                    </div>
+                    <div style={{ marginBottom: 20, fontSize: 12 }}>
+                      <div style={{ fontWeight: 700 }}>The Director / Authorised Signatory</div>
+                      <div>{orgName}</div>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 16, textDecoration: 'underline', textAlign: 'center' }}>
+                      SPECIAL APPROVAL — {(PURPOSES.find(p => p.k === purpose)?.t || '').toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: 12, lineHeight: 1.8 }}>
+                      <p style={{ margin: '0 0 12px' }}>With reference to your application dated {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}, MCMC hereby grants <b>Special Approval</b> under Section 126 of the Communications and Multimedia Act 1998 for:</p>
+                      <div style={{ background: '#f8f8f8', border: '1px solid #e0e0e0', borderRadius: 6, padding: '12px 16px', marginBottom: 12, fontSize: 11 }}>
+                        <div><b>Equipment:</b> {manufacturer || 'Keysight Technologies'} {model || 'N5182B MXG'}</div>
+                        {freqRange && <div><b>Frequency Range:</b> {freqRange}</div>}
+                        <div><b>Quantity:</b> {quantity} unit{quantity !== '1' ? 's' : ''}</div>
+                        <div><b>Purpose:</b> {PURPOSES.find(p => p.k === purpose)?.t}</div>
+                      </div>
+                      <p style={{ margin: '0 0 8px' }}>This approval is granted subject to the following conditions:</p>
+                      <ol style={{ paddingLeft: 20, margin: '0 0 12px', fontSize: 12 }}>
+                        <li style={{ marginBottom: 5 }}>The equipment shall be used solely for the declared purpose at the declared location.</li>
+                        <li style={{ marginBottom: 5 }}>The approval is valid for the approved duration and must not be extended without prior written MCMC consent.</li>
+                        <li style={{ marginBottom: 5 }}>The equipment shall be surrendered, re-exported, or disposed of as directed by MCMC upon expiry.</li>
+                        {isProhibited && <li style={{ marginBottom: 5, color: '#c00' }}>The equipment must remain within a shielded, access-controlled facility. MCMC officers reserve the right to conduct unannounced inspections.</li>}
+                        <li style={{ marginBottom: 5 }}>Any misuse, transfer, or sale without prior written MCMC approval constitutes an offence under CMA 1998.</li>
+                      </ol>
+                    </div>
+                    <div style={{ marginTop: 28, paddingTop: 16, borderTop: '1px solid #e0e0e0', fontSize: 12 }}>
+                      <div style={{ fontStyle: 'italic', color: '#aaa', marginBottom: 16 }}>[Signature — appended upon final approval]</div>
+                      <div style={{ fontWeight: 700 }}>___________________________</div>
+                      <div style={{ marginTop: 4 }}><b>{isProhibited ? 'Director General, MCMC' : tierMeta.chain?.slice(-1)[0] || 'Approver'}</b></div>
+                      <div style={{ color: '#888', marginTop: 2 }}>Malaysian Communications and Multimedia Commission</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {saLetterTab === 'chain' && (
+              <div style={{ marginTop: 16 }}>
+                <antd.Timeline items={[
+                  { color: 'green', children: <div><b>Application Submitted</b><div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} · {orgName}</div></div> },
+                  ...(tierMeta.chain || []).map((c, i, arr) => ({
+                    color: 'blue',
+                    children: <div><b>Step {i + 2}: {c}</b>
+                      <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Pending · Actions: {i < arr.length - 1 ? 'Approve and escalate, Return for clarification' : 'Issue SA Letter, Reject with reasons'}</div>
+                    </div>,
+                  })),
+                  { color: 'gray', children: <div><b>SA Letter Issued</b><div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Pending final sign-off — letter emailed to {orgName}</div></div> },
+                ]} />
+              </div>
+            )}
+
+            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
               <Button size="large" type="primary" onClick={() => nav('applications')}>View My Applications</Button>
             </div>
           </div>
@@ -871,7 +1069,8 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--color-divider)' }}>
           <Button disabled={step === 0 || saSigned} onClick={() => setStep(step - 1)}>← Back</Button>
           {step < steps.length - 1 && (
-            <Button type="primary" onClick={() => setStep(step + 1)} disabled={step === 4 && !saSigned}>
+            <Button type="primary" onClick={() => setStep(step + 1)}
+              disabled={(step === 0 && !purpose) || (step === 1 && !equipType) || (step === 4 && !saSigned)}>
               {step === 4 ? 'Submit Application →' : 'Continue →'}
             </Button>
           )}
