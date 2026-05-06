@@ -437,7 +437,7 @@ All applications must be concluded with a **digital signature compliant with the
 
 ### 5.3 Special Approval Module
 
-> **PROTOTYPE STATUS: ⚠️ PARTIAL** — 6-step wizard implemented (purpose selection → equipment classification → research details → document upload → declaration → confirmation), including prohibited equipment extra-doc flow. Multi-level approval chain routing (OIC → Recommender → Verifier → Approver), SA Letter draft/download, and waiver/reclassification flows are not yet built.
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — 6-step wizard fully reworked (Sprint 6): 6 purpose categories with risk tiers; 4 risk tiers (Low/Medium/High/Restricted) with live `TierBadge` in header; dynamic tier escalation by equipment type; tier-specific document lists (3–10 docs); multi-level approval chain Timeline in ConfirmStep; Draft SA Letter with MCMC letterhead mockup and "DRAFT" watermark; prohibited equipment extra conditions. Waiver code input with mock validation. Real Recommender/Verifier/Approver routing, offline meeting minutes upload flow (§5.3.3 step 2–3), and SA Letter PDF download remain mock.
 
 #### Purpose
 Dedicated workflow for importing communications equipment for **specific non-commercial purposes**:
@@ -589,7 +589,7 @@ Register unique equipment identifiers — **IMEI** (cellular devices) and **Seri
 
 ### 5.6 Modification of Registration Module
 
-> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No screen, wizard, or mock data exists for modification requests. To build: modification request form, document re-upload, officer review routing, and approval/rejection flow. Reference spec §5.6 for full requirements.
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — Modification request screen (`screens-f.jsx`): request list view; 4-step wizard (find cert → select modification type → upload docs → review); officer split-panel with document viewer, Accept / Not Accept decision buttons; version history drawer per certificate; mock audit trail updated on acceptance.
 
 #### Purpose
 Formal process for applicants to submit modification requests for existing equipment registrations, with complete audit trail.
@@ -625,7 +625,7 @@ Formal process for applicants to submit modification requests for existing equip
 
 ### 5.7 Importation Module
 
-> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No screen exists. To build: import permit application form (Permit Type selector, goods details, HS code, port of entry), RMCD MyOGA mock integration, permit status tracking, and officer review. Reference spec §5.7 for full requirements.
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — Import permit screen (`screens-g.jsx`): permit list with status/CoA columns; 6-step wizard (permit type → RCN/SA reference validation → trader/consignor → consignee/agent → logistics → review); inline validation error blocking on bad RCN; scheme + brand populated on success; permit detail drawer; CoA status badge. RMCD payment redirect and real MyOGA API remain mocked.
 
 #### Purpose
 Streamlines import permit acquisition by integrating with **RMCD MyOGA System**, allowing applicants to initiate the permit process directly from NCEF.
@@ -674,7 +674,7 @@ Streamlines import permit acquisition by integrating with **RMCD MyOGA System**,
 
 ### 5.8 Post-Market Surveillance (PMS) Module
 
-> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No screen exists. To build: audit case management (sampling plans, on-site audit scheduling, non-conformance reports), supplier compliance tracking dashboard, enforcement action logging, and regulatory authority integration. Reference spec §5.8 for full requirements.
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — PMS screen (`screens-h.jsx`): AI-generated audit cards with risk score breakdown per supplier; sampling proposal flow with officer adjustments; AI weights configuration modal; notify-supplier modal with editable template preview; findings checklist (Pass/Fail/N/A per criterion); non-conformance record panel. AI risk scoring is mock; real sampling trigger and MCMC enforcement integration not wired.
 
 #### Purpose
 Supports MCMC in monitoring ongoing compliance of registered equipment and suppliers after market entry. Enables end-to-end audit management, product sampling, and compliance verification.
@@ -756,7 +756,7 @@ Data captured per record:
 
 ### 5.10 Compliance Status Management Module
 
-> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No screen exists. To build: compliance status dashboard, status override controls (Compliant / Non-Compliant / Suspended / Revoked), enforcement action logging, supplier/equipment status timeline, and bulk status updates. Reference spec §5.10 for full requirements.
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — Compliance screen (`screens-j.jsx`): two tabs — Supplier Compliance (table with bulk-select, compliance timeline drawer, Change Status modal with reason input) and Certificate Compliance (same pattern). Enforcement Actions tab with case list and action logging. Real status propagation to ESB not wired.
 
 #### Purpose
 Provides MCMC officers with direct capability to govern and update the **compliance status** of registered equipment and suppliers based on audit findings, intelligence, or enforcement decisions.
@@ -795,7 +795,7 @@ Status records support:
 
 ### 5.11 Public Module
 
-> **PROTOTYPE STATUS: ❌ NOT YET IMPLEMENTED** — No public-facing screen exists. To build: unauthenticated product registry search (by brand/model/RCN), certificate validity lookup, public announcements page, and downloadable standards/fee schedule. Reference spec §5.11 for full requirements.
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — Public Search Portal (`screens-k.jsx`): bilingual hero section; advanced search (Brand / Model / IMEI / SN / RCN); certificate detail card with QR code placeholder; How-to-Register guide with step timeline; Documents tab (downloadable standards); FAQ section (searchable); Contact tab; MINA public chatbot (19-pair QA engine, quick-pick tags). Unauthenticated entry — no login required.
 
 #### Purpose
 Public-facing portal providing transparent access to information for the general public and serving as the central repository for official NCEF content.
@@ -996,7 +996,7 @@ Both internal and external users can monitor application status across the full 
 
 ### 5.16 Notification Module
 
-> **PROTOTYPE STATUS: ⚠️ PARTIAL** — Notification preferences matrix (email / SMS / in-app toggles for 6 event categories) is in Profile & Settings. A notifications widget appears on the supplier Dashboard. No dedicated Notifications centre screen, no real email/SMS/push delivery, and no in-app notification bell/dropdown are implemented.
+> **PROTOTYPE STATUS: ✅ IMPLEMENTED** — Dedicated Notifications page (`screens-l.jsx`) with 4 tabs (All / Unread / Action Required / System); in-app bell dropdown in header showing 5 most recent items with mark-all-read; notification preferences matrix (email/SMS/in-app toggles for 6 categories) in Profile & Settings; session timeout modal with 60-second countdown. Real email/SMS/push delivery and template management remain mock.
 
 #### Purpose
 Keeps all stakeholders informed of key events, status changes, and required actions throughout the application lifecycle.
@@ -1204,8 +1204,9 @@ Populates: `USERS`, `COMPANIES`, `EQUIPMENT`, `CERTIFICATES`, and associated tab
 |---|---|---|---|
 | 1 | **External User Onboarding** — account creation → email verification → category selection → profile + document submission → MCMC acceptance | ✅ Implemented | 6-step wizard in `screens-a.jsx`; email verification step is UI-only |
 | 2 | **SDoC Application Submission** — scheme selection → product details → document upload → AI validation → review → payment → confirmation | ✅ Implemented | 7-step wizard in `screens-b.jsx`; all 3 schemes; AI score display |
-| 3 | **Special Approval Submission** — purpose selector → equipment classification → research details → document upload → declaration → confirmation | ⚠️ Partial | 6-step wizard done; multi-level approval chain and SA Letter not built |
+| 3 | **Special Approval Submission** — purpose selector → equipment classification → research details → document upload → declaration → confirmation + prohibited offline upload simulation | ✅ Implemented | `screens-b.jsx`; all risk tiers; Draft SA Letter; offline meeting panel (Sprint 9) |
 | 4 | **Certificate Renewal** — select cert → review docs (reuse/re-upload) → AI re-validation → payment → new RCN confirmation | ✅ Implemented | 5-step wizard in `screens-a.jsx`; document age and reusability rules shown |
+| 4b | **Account Registration Renewal** — review profile → AI revalidation → payment → confirmation; period 1–5 yr; grace-period banner on dashboard | ✅ Implemented | `screens-a.jsx` `SCREENS['account-renewal']`; triggered from dashboard banner and quick action |
 | 5 | **IMEI / SN Registration** — select cert → enter/CSV serials → validation → receipt | ✅ Implemented | 4-step wizard in `screens-c.jsx`; bulk upload and duplicate detection |
 | 6 | **Applicant Dashboard** — KPI cards, recent applications, renewal alerts, quick actions | ✅ Implemented | `screens-a.jsx`; notifications widget included |
 | 7 | **Officer Review (Active Review)** — document viewer + extracted fields + audit trail ↔ AI score + decision panel + SLA timer | ✅ Implemented | Split-view in `screens-b.jsx`; Reassign (TL only); access guard for unassigned apps |
@@ -1218,12 +1219,12 @@ Populates: `USERS`, `COMPANIES`, `EQUIPMENT`, `CERTIFICATES`, and associated tab
 | 14 | **Consultant Management** — link/unlink Category D consultants, scheme assignment | ✅ Implemented | `screens-c.jsx` |
 | 15 | **Profile & Settings** — personal, org, team members, security, notifications, API | ✅ Implemented | `screens-c.jsx`; 6 tabs |
 | 16 | **Login / Switch Profile** — demo account selector, role login, switch-profile modal, sign out | ✅ Implemented | `screens-a.jsx` + `NCEF Portal.html` |
-| 17 | **Modification of Registration** | ❌ Not built | See §5.6 |
-| 18 | **Importation Permit Application** | ❌ Not built | See §5.7 |
-| 19 | **Post-Market Surveillance (PMS)** | ❌ Not built | See §5.8 |
-| 20 | **Post Monitoring / IntelliGenCE** | ❌ Not built | See §5.9 |
-| 21 | **Compliance Status Management** | ❌ Not built | See §5.10 |
-| 22 | **Public Search** — real-time lookup by Brand/Model/IMEI/SN/RCN (unauthenticated) | ❌ Not built | See §5.11 |
+| 17 | **Modification of Registration** — find cert → select type (Major/Minor/Other) → docs → review; officer split-panel Accept/Not Accept | ✅ Implemented | `screens-f.jsx`; version history drawer per cert |
+| 18 | **Importation Permit Application** — permit type → RCN/SA validation → trader/consignor → consignee/agent → logistics → review | ✅ Implemented | `screens-g.jsx`; CoA status; RMCD payment redirect is mock |
+| 19 | **Post-Market Surveillance (PMS)** — AI audit proposals, sampling, supplier notification, findings checklist, non-conformance | ✅ Implemented | `screens-h.jsx`; AI risk scoring is mock |
+| 20 | **Post Monitoring / IntelliGenCE** — complaint intake, severity triage, investigation timeline, Knowledge Base | ✅ Implemented | `screens-i.jsx`; AI web crawl removed by design |
+| 21 | **Compliance Status Management** — supplier/cert compliance tables, bulk-select, status change modal, enforcement actions | ✅ Implemented | `screens-j.jsx`; ESB propagation is mock |
+| 22 | **Public Search** — bilingual hero, advanced search by Brand/Model/IMEI/SN/RCN, certificate detail, FAQ, chatbot | ✅ Implemented | `screens-k.jsx`; unauthenticated entry |
 
 ### 6.3 Wireframes
 Detailed wireframes and high-fidelity mockups to be created in a separate UI/UX design phase. Design adheres to MCMC branding and style guidelines.
@@ -1600,9 +1601,9 @@ AI scoring is applied to:
 
 ## 11. Prototype Mapping
 
-> **Last updated: 28 Apr 2026**  
+> **Last updated: 05 May 2026**  
 > Deployment: `jhamuza.github.io/Project-N` — GitHub Pages, branch `main`.  
-> Recent changes: Full App shell restored in `index.html` (AssignOfficerModal, OfficerQueue, Reports, Audit, SwitchProfileModal, interactive MINA QA engine, notification bell dropdown, session timeout, MCMC logo sidebar, full header). GitHub Pages path fix (`<base href="/Project-N/">` + `.nojekyll`). MCMC user profile data corrected in Profile & Payments screens. **Plotly.js integration** (`plotly-2.35.2.min.js` CDN): replaced all SVG chart stubs in `SCREENS.reports` with 4 interactive Plotly charts — (1) grouped bar + overlay line for 12-month volume trend with forecast shading and Apr/May separator, (2) donut for scheme distribution with centre count, (3) horizontal bar for processing time vs target per scheme, (4) horizontal bar for officer SLA compliance with 95% target line. Mock data expanded: `monthlyTrend` extended to 12 months with `forecast` flag; new `schemeDistribution` and `processingTime` arrays; `officerPerformance` grown to 5 officers; `topApplicants` to 7 entries.
+> Recent changes: Full App shell restored in `index.html` (AssignOfficerModal, OfficerQueue, Reports, Audit, SwitchProfileModal, interactive MINA QA engine, notification bell dropdown, session timeout, MCMC logo sidebar, full header). GitHub Pages path fix (`<base href="/Project-N/">` + `.nojekyll`). MCMC user profile data corrected in Profile & Payments screens. **Plotly.js integration** (`plotly-2.35.2.min.js` CDN): replaced all SVG chart stubs in `SCREENS.reports` with 4 interactive Plotly charts — (1) grouped bar + overlay line for 12-month volume trend with forecast shading and Apr/May separator, (2) donut for scheme distribution with centre count, (3) horizontal bar for processing time vs target per scheme, (4) horizontal bar for officer SLA compliance with 95% target line. Mock data expanded: `monthlyTrend` extended to 12 months with `forecast` flag; new `schemeDistribution` and `processingTime` arrays; `officerPerformance` grown to 5 officers; `topApplicants` to 7 entries. **SST zeroed** across all fee entries (`sstEnabled: false`, `sstPct: 0`); base fees set to round values per Appendix B (350/250/150). **Table overflow** fixed on all 21 `antd.Table` instances (explicit column widths + `scroll={{ x: 'max-content' }}`). **Advanced filters** added to supplier Applications screen (Scheme + AI Score) and Officer Queue (Scheme + Priority + AI Score + Search). **Scheme colour coding removed** — neutral `<Tag>` replaces coloured `SchemeBadge` in both table columns.
 
 This section maps the specification to the current prototype (`jhamuza/Project-N`).
 
@@ -1614,7 +1615,7 @@ This section maps the specification to the current prototype (`jhamuza/Project-N
 | System Administrator | `team-lead` | En. Faisal Rahman · MCMC System Administrator | `officer-queue` |
 | OIC / Recommender / Verifier | `officer` | Pn. Rosnah Idris · MCMC Officer | `officer-queue` |
 
-> Approver and Content Manager roles are not yet split in the prototype — both fall under `team-lead` for demo purposes.
+> All 7 roles are implemented: supplier, team-lead, officer, recommender, verifier, approver, content-manager — each with distinct nav, landing screen, and role-specific UI behaviour.
 
 ### Screen-to-Module Index
 
@@ -1648,8 +1649,10 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | **Profile & Settings** | ✅ Done | 6 tabs: personal, org, team, security (with 2FA enrollment modals for TOTP/SMS/MyDigital ID), notifications, API | Real API key generation |
 | **Switch Profile / Sign Out** | ✅ Done | Switch Profile modal (6 role cards with MCMC org info); sign out → login | — |
 | **SDoC Registration** | ✅ Done | 7-step wizard; all 3 schemes; CA multi-select (8 agencies); AI score; payment step | Reclassification modal for prohibited; real payment gateway |
-| **Special Approval** | ✅ Done | 6-step wizard; prohibited equipment extra docs; waiver code input (WaiverCodeInput with mock validation); SA Letter multi-level approval chain | Real waiver code backend; real SA PDF |
+| **Special Approval** | ✅ Done | 6-step wizard; 4 risk tiers; TierBadge; tier-specific docs; approval chain Timeline; Draft SA Letter; prohibited offline meeting upload simulation (Recommender panel + Timeline unlock) | Real waiver code backend; real SA PDF |
+| **SA Letter Field Config (Admin)** | ✅ Done | "SA Letter Config" tab in Admin Config: 14 fields across 5 sections; Editable/Locked toggle; Publish | — |
 | **Certificate Renewal** | ✅ Done | 5-step wizard; document reuse logic; AI re-validation; payment | Automated renewal reminder trigger |
+| **Account Registration Renewal** | ✅ Done | 4-step wizard (review profile → AI revalidation → payment → confirmation); period 1–5 yr cap; grace-period alert on dashboard | — |
 | **IMEI / SN Registration** | ✅ Done | 4-step wizard; manual + CSV; format validation; receipt | Real uniqueness check against NCEF DB |
 | **Modification of Registration** | ✅ Done | Request list; version history drawer; 4-step wizard (find cert → type → docs → review); officer split-panel with Accept/Not Accept (`screens-f.jsx`) | — |
 | **Importation Module** | ✅ Done | Import permit list; 6-step wizard (type → validate → trader/consignor → consignee/agent → logistics → review); CoA status; detail drawer (`screens-g.jsx`) | Real RMCD MyOGA call |
@@ -1658,13 +1661,14 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | **Compliance Status Management** | ✅ Done | Suppliers tab with bulk-select; compliance timeline drawer; Change Status modal; Certificates tab; Enforcement Actions tab (`screens-j.jsx`) | Real status propagation to ESB |
 | **Public Search Portal** | ✅ Done | Bilingual hero; Advanced Search; certificate detail with QR; How-to-Register guide; Documents tab; FAQ; Contact tab; MINA public chatbot (`screens-k.jsx`) | — |
 | **Mobile Apps (Android/iOS/HW)** | 🚫 Out of scope | — | Native Flutter apps — production deliverable only |
-| **Officer Queue** | ✅ Done | My / Team / Unassigned tabs; assign modal; SLA circles; KPI row | — |
-| **Active Review (Officer)** | ✅ Done | Split view: styled PDF viewer mockup (dark toolbar + page frame) + decision panel; audit trail; access guard; TL Reassign | Real PDF rendering |
+| **Officer Queue** | ✅ Done | My / Team / Unassigned tabs; assign modal; SLA circles; KPI row; advanced filters (Scheme / Priority / AI Score / Search); scheme column neutral tag | — |
+| **Active Review (Officer)** | ✅ Done | Split view: styled PDF viewer + decision panel; audit trail; access guard; TL Reassign; Reclassify modal; Extension Requests tab (approve/deny with new deadline display) | Real PDF rendering |
 | **Suppliers Management** | ✅ Done | Add / bulk CSV / soft-delete / restore; MCMC-added flag | — |
 | **Reports & Analytics** | ✅ Done | Monthly trend chart; top applicants; officer performance (TL only) | Real data export (CSV/PDF); live chart data |
+| **All Applications (Officer)** | ✅ Done | Cross-supplier master table; applicant + supplierId columns; status/scheme filters; bulk-select with bulk-assign modal + flag + export (TL/approver only) | — |
 | **Audit Log** | ✅ Done | Searchable, role-filtered, expandable rows (TL only) | Real immutable server-side log |
-| **Certificates List** | ✅ Done | Filter by status; detail drawer; renew/IMEI shortcuts | — |
-| **Payments & Invoices** | ✅ Done | Transaction history; payment methods; Fee Offset & Refunds card (credit balance, pending refund, offset policy) | Standalone payment portal; real MCMC Pay gateway; SIFS reconciliation |
+| **Certificates List** | ✅ Done | Filter by status; detail drawer with download certificate + print label (real Blob downloads); renew/IMEI shortcuts | — |
+| **Payments & Invoices** | ✅ Done | Transaction history; payment methods; billing information; invoice/receipt drawer per transaction (Blob CSV export) | Standalone payment portal; real MCMC Pay gateway; SIFS reconciliation |
 | **Consultant Management** | ✅ Done | Link/unlink from directory; scheme assignment; notes | — |
 | **AI Score Display** | ✅ Done | Gauge / bar / verdict visualisations; 8 sub-scores; threshold commentary | Real Qwen2.5-VL API call; auto-accept routing |
 | **MINA Chatbot** | ✅ Done | Interactive drawer; 19-pair QA engine; typing indicator; quick-pick tags; live input with Enter-to-send | Real LLM backend |
@@ -1696,7 +1700,7 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 1. **MCMC Admin/Officer cannot access supplier-only screens** — `SUPPLIER_ONLY` set + `RestrictedScreen` (403) guard
 2. **Normal Officer nav limited** — no Reports, Audit, All Applications (not in `NAV_OFFICER`)
 3. **IMEI fees:** RM 0.50/IMEI, RM 0.15/SN — displayed in `imei-register`
-4. **Scheme fees:** A RM 350/yr, B RM 250/yr, C RM 150/yr — displayed in `sdoc-wizard`
+4. **Scheme fees:** A RM 350/yr, B RM 250/yr, C RM 150/yr (no SST) — displayed in `sdoc-wizard` and `cert-renewal`
 5. **User reg fee:** RM 100 + RM 50/yr, max 5 years — shown in renewal flow
 6. **Soft-delete suppliers:** `deletedAt` set rather than physical delete; restorable by admin
 7. **AI confidence score** displayed in officer review; 90%/70% threshold commentary shown
@@ -1705,7 +1709,7 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 
 ## 12. User Engagement Findings & Initiatives
 
-> **Last updated: 29 Apr 2026** — Compiled from user engagement session feedback, cross-referenced against URS §5.2 (SDoC), §5.3 (Special Approval), §5.4 (Renewal), §5.5 (IMEI), §5.7 (Importation), §5.13 (Payment), §5.18 (Admin Config).
+> **Last updated: 05 May 2026** — Compiled from user engagement session feedback, cross-referenced against URS §5.2 (SDoC), §5.3 (Special Approval), §5.4 (Renewal), §5.5 (IMEI), §5.7 (Importation), §5.13 (Payment), §5.18 (Admin Config).
 
 ### 12.1 Confirmed URS Gaps (SDoC)
 
@@ -1745,6 +1749,43 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | 9 | Fee editor: full inline edit with SST toggle, SST%, SST amount, total | `screens-e.jsx` FeeTab, `mock.js` feeStructure | S | 2 | **Done** |
 | 10 | Admin workflow visualiser: flow diagram per application type, stage roles | `screens-e.jsx` WorkflowTab, `mock.js` | M | 5 | **Done** |
 | 11 | Reports: team-level scope filter | `index.html` SCREENS.reports | S | 5 | **Done** |
+| 12 | SST zeroing: all fee entries reset to round values; no SST applied in wizards | `screens-e.jsx`, `screens-a.jsx`, `screens-b.jsx` | S | 7 | **Done** |
+| 13 | Table overflow: explicit column widths + horizontal scroll on all 21 tables | 7 component files | S | 7 | **Done** |
+| 14 | Advanced filters: Scheme + AI Score on supplier Applications; Scheme + Priority + AI Score on Officer Queue | `screens-a.jsx`, `index.html` | M | 7 | **Done** |
+| 15 | Scheme colour coding removed from table columns; neutral Tag replaces SchemeBadge | `screens-a.jsx`, `index.html` | S | 7 | **Done** |
+| 16 | Account Registration Renewal wizard (Supplier/Principal/Consultant account renewal, 1–5 yr, grace period) | `screens-a.jsx` (new flow) | M | 8 | **Done** |
+| 17 | Reclassification modal in Active Review — OIC reclassifies Scheme B↔A↔C with reason; sends back to applicant | `screens-b.jsx` officer-review | S | 8 | **Done** |
+| 18 | SA Prohibited offline upload — Recommender uploads meeting minutes to unlock digital chain (§5.3.3 steps 2–3) | `screens-b.jsx` SA wizard | S | 9 | **Done** |
+| 19 | SA Letter field-lock config tab in Admin Config — OIC-editable fields toggle per letter block | `screens-e.jsx` AdminConfig | S | 9 | **Done** |
+| 20 | Iteration extension request — applicant requests extra time; officer approve/deny in Active Review | `screens-a.jsx`, `screens-b.jsx` | S–M | 9 | **Done** |
+| 21 | Officer Calendar Blocking — mark unavailable dates; group lead transfer-assignments modal | `screens-c.jsx` profile | M | 10 | **Done** |
+| 22 | Principal Management tab — supplier adds/removes Principals; LoU + LoA upload per principal | `screens-c.jsx` profile new tab | M | 10 | **Done** |
+| 23 | Report & All-Applications export — CSV/XLSX download via browser Blob; mock data only | `index.html` reports, `screens-a.jsx` | S | 11 | **Done** |
+| 24 | Application expiry lapse display — 60-day draft countdown; "Lapses in Nd" tag on drafts ≤30d; alert banner for ≤14d drafts | `screens-a.jsx` applications | S | 11 | **Done** |
+| 25 | Admin config: Equipment Type & Technical Code master list tab | `screens-e.jsx` AdminConfig | S | 11 | **Done** |
+| 26 | Admin config: Notification template editor tab (email/SMS HTML templates) | `screens-e.jsx` AdminConfig | S | 11 | **Done** |
+| 27 | Content Manager role: Switch Profile card; announcements-only nav; cm-dashboard / cm-announcements / cm-faq screens | `index.html`, `screens-e.jsx`, `mock.js` | S | 12 | **Done** |
+| 28 | Bilingual BM toggle — EN/BM language switch in header; BM string coverage for external + public portals | All screens | L | 12 | **Done** |
+| 29 | Applicant grace-period account status — dashboard error banner + blocked new-app buttons + Profile Account Status row | `screens-a.jsx`, `screens-c.jsx`, `index.html` | S | 13 | **Done** |
+| 30 | Role-aware officer decision panel — Recommender / Verifier / Approver get distinct decision options + approval chain position badge | `screens-b.jsx` | S | 13 | **Done** |
+| 31 | Application status timeline — new "Status Timeline" tab in ApplicationDetail showing all stages (Draft → Submitted → AI Validation → Review → Decision) with actor, role badge, and notes | `screens-a.jsx` | S | 13 | **Done** |
+| 32 | Payments invoice/receipt drawer — click any transaction row to open a styled MCMC invoice with PAID stamp, line items, SST-exempt note; real Blob `.txt` download; Export CSV wired | `screens-c.jsx` | S | 14 | **Done** |
+| 33 | Role-aware All Applications — team-lead/officer navigating to "All Applications" sees cross-supplier master table with bulk-select, bulk assign modal, status/scheme filters, export; supplier sees own list unchanged | `screens-a.jsx` | S–M | 14 | **Done** |
+| 34 | Certificate Blob download — "Download Certificate" generates formatted mock certificate `.txt` via Blob; "Print Label" downloads ASCII label template with RCN, brand, model, expiry | `screens-c.jsx` | S | 14 | **Done** |
+
+#### Sprint Roadmap (Planned)
+
+| Sprint | Theme | Initiatives | Size | Goal |
+|---|---|---|---|---|
+| **8** | Applicant workflow completeness | #16 Account Renewal · #17 Reclassification modal | M + S | Close the two highest-visibility applicant-side gaps; both demoed from supplier login |
+| **9** | Special Approval + iteration | #18 Prohibited offline upload · #19 SA Letter config · #20 Iteration extension | S + S + S–M | Complete the SA prohibited flow end-to-end; add iteration extension for all scheme types |
+| **10** | Officer & principal management | #21 Officer Calendar Blocking · #22 Principal Management tab | M + M | Round out officer admin and supplier profile; needed for realistic TL/officer demos |
+| **11** | Reporting & admin polish | #23 Export CSV/XLSX · #24 App expiry lapse · #25 Equipment Type master list · #26 Notification templates | S × 4 | Small-effort items that complete the admin config and add export capability |
+| **12** | Roles & bilingual | #27 Content Manager role · #28 Bilingual BM toggle | S + L | Content Manager completes role coverage; BM toggle implemented for supplier-facing screens and public portal |
+| **13** | Polish & workflow fidelity | #29 Grace-period status · #30 Role-aware decision panel · #31 App status timeline | S × 3 | Close last URS gaps; differentiate officer-tier decision flows; add per-application progression view |
+| **14** | Payments, certificates & officer views | #32 Invoice drawer · #33 Officer All-Applications · #34 Certificate download | S + S–M + S | Full invoice/receipt experience; split supplier vs officer app list; real certificate/label download |
+
+---
 
 #### Sprint 1 Completion Notes (2026-05-04)
 
@@ -1764,9 +1805,9 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 
 **SDoC Wizard — Scheme-specific flows aligned to URS:**
 - Scheme descriptions corrected per URS §5.2: Scheme A = "SDoC with Certification" (High Risk), Scheme B = "SDoC with Verification" (Medium Risk), Scheme C = "SDoC (Self-Declaration)" (Low Risk)
-- Registration fees corrected to RM 350/250/150 per year (excl. SST) per Appendix B; total fee = base × period + 8% SST
+- Registration fees set to RM 350/250/150 per year per Appendix B (no SST — see Sprint 7 note); total fee = base × period
 - Part C (Labelling) fields added to Product step: Labelling ID (Supplier/Principal), Label Type (Physical/Electronic), Label Location (Product/Packaging/User Manual)
-- Part D (Registration Period) Segmented control (1-5 years) added to Review step sidebar; fee breakdown shows base + SST amount + total dynamically
+- Part D (Registration Period) Segmented control (1-5 years) added to Review step sidebar; fee breakdown shows base × period = total dynamically
 - Document list is now scheme-aware: Scheme A and B require Certificate of Conformity (CoC); Scheme C uses a Standards Declaration letter only (no CoC required); CoC number and date fields shown conditionally
 - Scheme C ConfirmStep shows auto-acceptance eligible alert with "decision within 1 working day" message
 - SLA dates in ConfirmStep differ by scheme (A: 5 wd, B: 3 wd, C: 1 wd)
@@ -1789,11 +1830,11 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 #### Sprint 2 (remaining) + Sprint 3 Completion Notes (2026-05-04)
 
 **Initiative #9 - Fee editor (screens-e.jsx FeeTab):**
-- Fee data corrected to match URS Appendix B: Scheme A = RM 324.07/yr base (total RM 350 incl. SST), Scheme B = RM 231.48/yr, Scheme C = RM 138.89/yr; same rates apply to Renewal
-- `feeStructure` schema updated: `baseFee` (numeric), `sstEnabled` (bool), `sstPct` (number, e.g. 8)
-- FeeTab now shows 6 columns: Scheme/Type, Basis, Actual Fee (editable), SST toggle + SST% (editable when enabled), SST Amount (auto-calculated), Total (auto-calculated, highlighted)
+- `feeStructure` schema introduced: `baseFee` (numeric), `sstEnabled` (bool), `sstPct` (number)
+- FeeTab shows 6 columns: Scheme/Type, Basis, Actual Fee (editable), SST toggle + SST% (editable when enabled), SST Amount (auto-calculated), Total (auto-calculated, highlighted)
 - Inline edit mode per row: click pencil icon to enter, Save/Cancel per row, Publish button activates only after unsaved changes exist
 - SST toggle disables SST% and zeroes SST amount when off; SST% field only visible when SST is enabled
+- Note: Initial implementation used back-calculated bases (324.07/231.48/138.89) to arrive at RM 350/250/150 incl. SST — superseded by Sprint 7 (all SST zeroed, bases reset to 350/250/150)
 
 **Initiative #1 - My Applications categorised list (screens-a.jsx):**
 - Applications screen upgraded from a Segmented status filter to a tabbed layout: All | SDoC | Special Approval | Renewals — each tab shows a count badge
@@ -1865,6 +1906,333 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
   - *Draft SA Letter*: styled MCMC letterhead mockup with "DRAFT" watermark, filled equipment block, numbered conditions (Restricted tier adds shielding condition), signature block stub
   - *Approval Chain*: Timeline component showing each sequential approval step with available actions per step
 - Continue button gated: step 0 requires purpose, step 1 requires equipment type selection
+
+#### Sprint 7 Completion Notes (2026-05-05)
+
+**SST Zeroing — all fee structures (`screens-e.jsx`, `screens-a.jsx`, `screens-b.jsx`):**
+- All 14 `feeStructure` entries in `mock.js` updated: `sstEnabled: false`, `sstPct: 0`
+- `baseFee` values corrected to round Appendix B figures: Scheme A RM 350, Scheme B RM 250, Scheme C RM 150 (was back-calculated 324.07/231.48/138.89)
+- Same correction applied to Renewal rows (fee-12/13/14)
+- SDoC wizard (`screens-b.jsx`): `baseRates = { A: 350, B: 250, C: 150 }`; removed `sstRate`, `sstAmt`; `totalFee = baseFee`; removed SST line item, "(excl. SST)" and "Incl. SST 8%" labels
+- Renewal wizard (`screens-a.jsx`): `baseRateMap = { A: 350, B: 250, C: 150, SA: 350 }`; same removal of SST from fee breakdown display
+- Fee Structure admin screen retains SST columns (toggle + %) for future use when SST policy is confirmed
+
+**Table overflow fixes — all `antd.Table` instances across platform:**
+- Problem: long App IDs and status text wrapping across multiple lines in narrow columns
+- Fix applied globally: `scroll={{ x: 'max-content' }}` on every table + explicit `width` on every column
+- Long-text columns (Product, Company, Notes, Reason): `ellipsis: true` with tooltip on hover
+- Code/ID columns: `render: v => <span style={{ whiteSpace: 'nowrap' }}>...</span>`
+- Files updated: `screens-a.jsx` (Applications), `screens-b.jsx` (Supplier Directory), `screens-c.jsx` (Certificates, Payments, Team Members), `screens-d.jsx` (Suppliers Onboarding, Past Permits, PMS Audit), `screens-g.jsx` (Import Permits), `screens-i.jsx` (Knowledge Base), `screens-j.jsx` (Supplier Compliance, Certificate Compliance)
+
+**Advanced filters — supplier Applications screen (`screens-a.jsx`):**
+- New collapsible "Filters" panel below the search row, toggled by a badge-button showing active filter count
+- Scheme filter: `antd.Checkbox.Group` (All / Scheme A / Scheme B / Scheme C / Special Approval / Renewal / IMEI)
+- AI Score filter: `antd.Select` (All / Validated (≥90%) / Needs Review (<90%) / Not scored)
+- Filter chain: typeTab → statusFilter → schemeFilter → aiFilter → search
+- Active count badge on trigger uses `advCount = schemeFilter.length + (aiFilter !== 'all' ? 1 : 0)`
+- `FilterOutlined` icon added to imports; fallback to `SearchOutlined` if unavailable
+
+**Advanced filters — Officer Queue (`index.html` OfficerQueue):**
+- Same collapsible Filters panel pattern added to queue header
+- Scheme filter: `antd.Checkbox.Group` (Scheme A / Scheme B / Scheme C / Special Approval)
+- Priority filter: `antd.Select` (All / High / Medium / Low)
+- AI Score filter: `antd.Select` (All / Validated / Needs Review / Not scored)
+- Search field moved into card header alongside the Filters button
+- Filter chain: segmented-tab base list → qScheme → qPriority → qAi → qSearch
+- Switching the segmented tab (My / Team / Unassigned) resets all advanced filter state
+- `advCount = qScheme.length + (qPriority !== 'all' ? 1 : 0) + (qAi !== 'all' ? 1 : 0)`
+
+**Scheme colour coding removed — both table columns:**
+- `SchemeBadge` with colour classes (red/orange/green/purple) replaced by plain `antd.Tag` (neutral) in:
+  - Applications list type/scheme column (`screens-a.jsx`)
+  - Officer Queue scheme column (`index.html`)
+- `SchemeBadge` component and its colour CSS classes retained for non-table use (wizard steps, detail drawers)
+
+#### Sprint 8 Completion Notes (2026-05-05)
+
+**Initiative #16 — Account Registration Renewal (`screens-a.jsx`):**
+- New `SCREENS['account-renewal']` — 4-step wizard: Review Account → AI Revalidation → Payment → Confirmation
+- Step 0: Descriptions table shows all profile fields with "Verified" tags; Segmented period selector (1–5 yr, capped to `5 − yearsUsed`); live fee breakdown (RM 100 reg + RM 50 × period = total) with new expiry date
+- Grace period alert at top: dynamic warning (error if ≤30 days) showing expiry date and grace-period cutoff
+- Step 1: 2.2 s AI spin → success result with 5-item document checklist (SSM doc, address, PIC, nature of business, PDPA) all showing "✓ OK"; confidence score 96% shown
+- Step 2: Same 4-method payment radio group (FPX / Card / DuitNow / Invoice) as cert-renewal
+- Step 3: `antd.Result` success with Descriptions (Supplier ID, period, new expiry, amount, reference); confirmation email alert
+- Dashboard: "Account Expiring" `antd.Alert` banner (warning/error based on days left) rendered when `daysLeft ≤ 90`; "Renew Account" CTA button in banner; `+ Account Registration Renewal` quick action added to Quick Actions card
+- `account-renewal` added to `SUPPLIER_ONLY` set in `index.html` (officer/admin access blocked)
+
+**Initiative #17 — Reclassification Modal in Active Review (`screens-b.jsx`):**
+- `decision` Radio.Group extended with 4th option: `reclassify` (purple, `#7B3FA0`) — "Reclassify · Change scheme — applicant must resubmit"
+- When `reclassify` selected: inline panel renders below radio group showing: current scheme badge, "Reclassify to" `antd.Select` (A/B/C with current scheme disabled), dynamic upgrade/downgrade `antd.Alert`, reason `TextArea` (min 10 chars to enable confirm)
+- "Confirm Reclassification" button opens `antd.Modal` with summary `Descriptions` (From / To / Reason) + warning about applicant notification
+- On modal OK: `reclassDone = true`; success message toast; radio group replaced with green success alert; Submit Decision button disabled for reclassify path (reclassify has its own action)
+- State vars added: `reclassScheme`, `reclassReason`, `reclassConfirmOpen`, `reclassDone`
+
+#### Sprint 9 Completion Notes (2026-05-05)
+
+**Initiative #18 — SA Prohibited Offline Meeting Upload (`screens-b.jsx` SA Wizard ConfirmStep):**
+- State added: `minutesUploaded`, `minutesUploading`
+- For `isProhibited === true`, the Confirm step (step 5) renders an inline panel above "SA Letter Preview" with two states:
+  - **Before upload:** amber bordered panel — explains §5.3.3 offline meeting requirement; embedded "Officer Simulation" sub-panel showing meeting metadata (date, venue, attendees, outcome) and an "Upload Meeting Minutes (PDF)" button with loading state
+  - **After upload:** green bordered panel — confirms Recommender identity and upload timestamp; renders a 6-step `antd.Timeline` (Offline Meeting → Minutes Uploaded → Recommender Review → Head of Certification → DG MCMC → SA Letter Issued) with first two steps green, third blue, remainder grey
+- Upload button: 1.5 s simulated upload → `minutesUploaded = true` + success toast "digital approval chain unlocked"
+- Non-prohibited tiers: panel is not rendered (conditional on `isProhibited`)
+
+**Initiative #19 — SA Letter Field-Lock Config (`screens-e.jsx` AdminConfig):**
+- New `SALetterConfigTab` component added between AI Thresholds and Announcements tabs
+- Tab label: `<FileTextOutlined /> SA Letter Config`
+- 14 letter fields across 5 sections (Header, Addressee, Body, Conditions, Signature) — each with `editable` bool and a note explaining the lock reason
+- Renders as one `antd.Card` per section; each row: `antd.Switch` (Editable/Locked) + field label + descriptive note + `antd.Tag` ("OIC editable" / "System locked")
+- Toggling any switch sets `dirty = true`; "Publish Changes" button activates only when `dirty`; on click: `dirty = false` + success toast
+- Informational `antd.Alert`: changes apply to new SA applications only; in-progress applications retain existing permissions
+
+**Initiative #20 — Iteration Extension Request:**
+
+*Applicant side (`screens-a.jsx`):*
+- States added: `extModal`, `extReason`, `extDays`, `extSent` (map of `appId → true`)
+- Applications table actions column: for `iteration_required` rows, "Request Extension" button appears alongside "Respond" (hidden after a request is already sent — replaced by "Extension Requested" blue tag)
+- Request Extension modal: application ID in alert; "Additional days needed" Select (7/14/21/30); reason TextArea (min 10 chars required to enable OK); on submit: `extSent[id] = true` + success toast
+
+*Officer side (`screens-b.jsx` Active Review left panel):*
+- New "Extension Requests" tab added to left panel `Tabs` (with `antd.Badge count={1}` indicator)
+- Shows a mock pending request (14 days, submitted by Nurul Aisyah): current deadline 12 May, new deadline 26 May if approved; reason text
+- Approve / Deny buttons; on action: status tag updates (green/red) and inline `antd.Alert` confirms new deadline or states original deadline stands
+
+#### Sprint 10 Completion Notes (2026-05-05)
+
+**Initiative #21 — Officer Calendar Blocking (`screens-c.jsx` Profile → Calendar Blocking tab):**
+- New `CalendarTab({ cu })` function in `screens-c.jsx`, rendered for non-supplier users only
+- Pre-seeded with 2 blocked periods (Annual Leave 19–22 May; Training 8–9 Jun)
+- **Add Blocked Period Modal:** Block Type Select (Annual Leave / Medical Leave / Training / Public Holiday / Non-Working Day) + native date pickers + Notes TextArea; OK disabled until both dates filled; on save: new row added + toast "queue manager notified"
+- Each blocked row shows type-coloured Tag, date range, notes, "Upcoming" status tag, and danger delete button with immediate toast
+- **Team Lead additional panel:** amber warning card "Assignments pending during upcoming leave" listing 2 mock apps (owner, blocked dates); each row has "Transfer" button → Transfer Modal with `antd.Radio.Group` of up to 4 other officers (queue count + SLA shown) → confirm toast `{appId} transferred to {name}`
+- Profile tabs array extended: `calendar` tab (ClockCircleOutlined) added for `!isSupplier` users; render section wired: `{tab === 'calendar' && !isSupplier && <CalendarTab cu={cu} />}`
+- `CalendarOutlined` icon added to destructure block at top of `screens-c.jsx`
+
+**Initiative #22 — Principal Management Tab (`screens-c.jsx` Profile → Principals tab):**
+- New `PrincipalsTab()` function in `screens-c.jsx`, rendered for supplier users only
+- Initializes from `MOCK.myPrincipals` joined with `MOCK.principalDirectory` (2 entries: Samsung verified, Sony pending LoA)
+- Each linked principal card: Avatar (initials), name, category & country tags, linked date, LoU/LoA status tags (green Verified / orange Pending)
+- **Add Principal — 2-step Modal:**
+  - Step 0 — Select Company: `antd.Radio.Group` list from available (unlinked) directory principals with company name, country, category, ID; Next disabled until a selection is made
+  - Step 1 — Upload Documents: amber alert for selected company; LoU and LoA upload rows (styled border changes green on upload); "Add Principal" disabled until both uploaded; simulated upload (instant click → tag turns green); on confirm: principal added to state + success toast
+  - Back button in Step 1 returns to Step 0
+- **Remove Principal Modal:** warning Alert + confirmation text with principal name; on confirm: removed from state + info toast "Principal unlinked"
+- Profile tabs array extended: `principals` tab (IdcardOutlined) added for `isSupplier` users; render section wired: `{tab === 'principals' && isSupplier && <PrincipalsTab />}`
+- Syntax error fixed: `React.parameter = React.useState(false)` → `React.useState(false)`
+
+#### Sprint 11 Completion Notes (2026-05-05)
+
+**Removals (housekeeping):**
+- Removed suggestion infotip `antd.Alert` from SDoC `SchemeStep` (`screens-b.jsx:102`) — "Your product suggests Scheme A…" was hardcoded and misleading; scheme selection now starts unprimed
+- Removed "Fee Offset & Refunds" card from the Payments screen (`screens-c.jsx`) — feature not in URS scope
+- Removed `Public Portal` nav item from `NAV_TEAM_LEAD` (`index.html:106`) — officer/admin roles have no reason to navigate to the applicant-facing public portal
+
+**URL Hash Routing (`index.html`):**
+- Added `parseHash(hash)` + `buildHash(screenKey, sub)` utilities
+- `App` state initialiser reads `window.location.hash` first (falling back to localStorage → default)
+- `useEffect([screen])` writes `history.pushState(null, '', buildHash(screen))` on every screen change (skips `login` to keep URL clean)
+- `useEffect([])` adds `popstate` listener so browser Back/Forward works
+- `nav` prop passed to `ScreenComp` extended to accept optional `sub` param: `nav(screenKey, sub?)` — sub writes a sub-path `#/screen/subtab` for deep-linking into specific tabs
+- "Copy link" icon button (`CopyOutlined`) added to header (before bell) — copies `window.location.href` to clipboard with success toast
+- `CopyOutlined`, `LinkOutlined` added to icon destructure in `index.html`
+
+**Initiative #23 — Export CSV/XLSX:**
+- *Reports screen (`index.html`):* "Export PDF" stub replaced with `antd.Dropdown` (Export ▾) with two menu items: "Export CSV" and "Export XLSX". CSV: builds 2D array from `trend` data → `Blob` → anchor click → downloads `ncef-report-{period}.csv`. XLSX: same data as tab-separated → `application/vnd.ms-excel` mime → `.xls` file.
+- *Audit Log screen (`index.html`):* "Export CSV" stub replaced with the same Dropdown pattern → exports filtered log rows (Timestamp, Actor, Role, Event, Application, Detail) with proper CSV quoting; XLSX variant same
+- *Applications screen (`screens-a.jsx`):* Added Export ▾ dropdown button in header row → CSV of filtered application rows (ID, Scheme, Product, Brand, Model, Status, Updated)
+
+**Initiative #24 — Application Expiry Lapse Display (`screens-a.jsx`):**
+- Added `TODAY_APPS = new Date('2026-05-05')` and `DRAFT_LAPSE_DAYS = 60`
+- `draftDaysLeft(a)` helper: computes `(lapseDate − today) / 86400s` where lapseDate = `updated + 60d`; returns `null` for non-drafts
+- `expiringDrafts` = drafts with ≤14 days remaining
+- Status column updated: draft rows with ≤30 days remaining show a coloured "Lapses in Nd" `antd.Tag` below the status pill (red ≤7d, orange ≤14d, gold ≤30d)
+- Error-type `antd.Alert` banner at top of Applications list (above iteration alert) when `expiringDrafts.length > 0`: "N drafts will auto-lapse soon" with "View Drafts" action button that filters to draft status
+
+**Initiative #25 — Equipment Type Master List (`screens-e.jsx` AdminConfig new tab):**
+- `EquipmentTypeTab` component: `antd.Table` with 10 pre-seeded equipment types (code, name, eligible schemes, active toggle)
+- Inline edit mode per row: code `antd.Input`, name `antd.Input`, scheme `antd.Select`, active `antd.Switch` — Save/Cancel buttons per row
+- Delete row with immediate removal; dirty state gates "Publish Changes" primary button
+- "Add Type" → Modal with code, name, scheme fields; OK disabled until code+name filled
+- Tab label: `<TagOutlined /> Equipment Types`; added to `tabs` array between SA Letter Config and Announcements
+
+**Initiative #26 — Notification Template Editor (`screens-e.jsx` AdminConfig new tab):**
+- `NotifTemplateTab` component: left panel `antd.List` of 10 event templates (Application Submitted, Under Review, Iteration Required × 2, Approved, Rejected, Certificate Expiring, Payment Received, Account Expiring, Draft Auto-Lapse Warning); right panel editor
+- Each list item: event name, channel tag (Email/In-App), `antd.Switch` active toggle (inline, without selecting that template)
+- Editor panel: subject line `antd.Input` + email body `antd.Input.TextArea` (monospaced, 14 rows); variable hint (`{{appId}}`, `{{name}}`, etc.)
+- "Preview" button → `antd.Modal` 620px with branded MCMC email mockup (blue header, pre-filled preview body with sample values)
+- Dirty state per template; "Save" button appears when modified
+- Tab label: `<BellOutlined /> Notification Templates`; Announcements tab icon changed to `<EyeOutlined />` to avoid duplication
+
+#### Sprint 12 Completion Notes (2026-05-06)
+
+**Layout fix (fixed chrome, scrollable content):**
+- Outer `<Layout>` changed to `height:'100vh', overflow:'hidden'`; inner `<Layout>` same
+- `<Sider>` restructured as flex column (`display:'flex', flexDirection:'column'`): logo div `flexShrink:0`, scrollable `<Menu>` div `flex:1, overflowY:'auto'`, MINA widget `flexShrink:0` at bottom
+- `<Header>` given `flexShrink:0, zIndex:10` so it never scrolls away
+- `<Content>` given `flex:1, overflowY:'auto', overflowX:'hidden'` — only content area scrolls
+- CSS block updated: `html,body,#root {height:100%}`, `.ant-layout-sider,.ant-layout-header,.ant-layout-content` overrides for overflow and flex
+- MINA widget moved from `position:absolute` to natural flex child with `padding:'0 16px 16px'`
+
+**URL Hash Routing:**
+- `parseHash(hash)` + `buildHash(screenKey, sub)` utilities added before `App()`
+- App state initialiser reads `window.location.hash` → localStorage → default
+- `history.pushState` on every screen change (skips `login`)
+- `popstate` listener for browser Back/Forward
+- "Copy link" header button (`CopyOutlined`) copies current URL to clipboard
+- `nav(screenKey, sub?)` extended to write `#/screen/subtab` for deep-linking
+
+**Initiative #27 — Content Manager role (`screens-e.jsx`, `index.html`, `mock.js`):**
+- New profile in `MOCK.profiles['content-manager']`: Cik Siti Nabilah binti Roslan · Content Manager · `OFF-007` · `siti.nabilah@mcmc.gov.my`
+- New `NAV_CONTENT_MANAGER`: Content Dashboard · Public Portal · Announcements · FAQ & Help · Profile & Settings
+- `NAV_BY_ROLE` and `DEFAULT_SCREEN_BY_ROLE` extended: `'content-manager' → 'cm-dashboard'`
+- Switch Profile modal and Tweaks panel radio extended to include content-manager; roleAccentColor `'#00796B'`
+- `SCREENS['cm-dashboard']`: 4 stat cards (Published items / Drafts / Announcements / Help requests), recent activity list, quick actions, content health panel — all in `screens-e.jsx`
+- `SCREENS['cm-announcements']`: list with publish/unpublish/pin/edit/delete; Add/Edit modal (title, body, language EN/BM/both, pin toggle)
+- `SCREENS['cm-faq']`: category filter buttons, list with edit/publish/delete; Add/Edit modal (category, language, Q&A fields)
+
+**Initiative #28 — Bilingual BM toggle (`index.html`, `screens-a.jsx`, `screens-k.jsx`, `shared.jsx`):**
+- `window.STRINGS` EN/BM dictionary (100+ keys) added before `App()`: nav, dashboard, applications, login, status pills, public portal labels
+- `window.t(lang, key)` convenience helper
+- `lang` state (`'en'|'bm'`) added to `App`; language dropdown in header wires `setLang('en'/'bm')`
+- `lang` prop passed to all `ScreenComp` renders
+- Supplier-facing screens updated: `Dashboard` (KPI labels, welcome, quick actions, card titles), `Applications` (status filter, column headers, type tabs, action buttons, export), `Login` (form labels, submit button, demo hint)
+- `StatusPill` in `shared.jsx` updated to accept `lang` prop; uses `window.t(lang, 'status_*')` keys; all callers pass `lang`
+- Missing status keys added to STRINGS: `status_submitted`, `status_expired`, `status_priority` (EN + BM)
+- `PublicPortal` (`screens-k.jsx`) updated to accept `lang` prop; hero title/subtitle, search placeholder/button, advanced search toggle, nav tabs, register button, cert status tags, FAQ title all use `T()` via new `pub_*` string keys
+
+---
+
+#### Sprint 13 Completion Notes (2026-05-06)
+
+**Initiative #29 — Applicant grace-period account status (`screens-a.jsx`, `screens-c.jsx`, `index.html`):**
+- `TWEAK_DEFAULTS` extended: added `graceMode: false`
+- Tweaks panel: added "Supplier grace period (§5.1.10)" `antd.Checkbox` (visible only when role = supplier)
+- Dashboard: when `graceMode`, shows `type="error"` `antd.Alert` — "Account is in grace period — expires 05 Jul 2026. New applications are blocked." with "Renew Account" action button (replaces the existing 41-day account-expiry warning)
+- Dashboard quick actions: "New SDoC" + "Special Approval" buttons wrapped in `antd.Tooltip` + `disabled={!!graceMode}`; IMEI Register button unaffected (IMEI/SN registration is permitted during grace period per §5.1.10)
+- Profile: `SCREENS.profile` now accepts `tweaks` prop; passes `graceMode` to `ProfileTab`
+- `ProfileTab`: "Account Status" description row added — Active (green ✓) vs Grace Period (orange tag + "Expires 05 Jul 2026 — renew to resume new applications") based on `graceMode`; grace-period `antd.Tag` also shown beside name in the avatar header row
+
+**Initiative #30 — Role-aware officer decision panel (`screens-b.jsx`):**
+- Approval chain position badge added above Decision heading — visible only for recommender/verifier/approver/team-lead roles; shows "APPROVAL CHAIN — STAGE N of 3", actor label, and escalation target (e.g. "Approving here escalates to the Verifier")
+- Decision radio options now vary by role:
+  - **Recommender**: Recommend · Return for Revision · Do Not Recommend
+  - **Verifier**: Verify & Escalate · Request Clarification · Refer Back to Recommender · Reject
+  - **Approver / Team Lead**: Approve · Request Iteration · Return to Verifier · Reject
+  - **Officer (generic)**: unchanged original four options (Approve / Request Iteration / Reclassify / Reject)
+- Submit button label changes by role: "Submit Recommendation" / "Submit Verification" / "Submit Final Decision" / "Submit Decision"
+- Reclassify option in Recommender role excluded (Recommenders cannot reclassify scheme)
+
+**Initiative #31 — Application status timeline tab (`screens-a.jsx`):**
+- New `key: 'timeline'` tab added to ApplicationDetail `antd.Tabs` — label: "Status Timeline"
+- Renders `antd.Timeline` with up to 7 entries depending on `a.status`: Draft → Submitted → AI Validation (with score note) → Auto-assigned → Under Review → Iteration Requested (if status=iteration_required) → Approved/Decision Pending
+- Each item shows: stage name · role `antd.Tag` (Supplier/System/Team Lead) · date + actor · descriptive note
+- Future (pending) stages rendered at 60% opacity with "Pending" tag
+- Timeline colour codes: blue = supplier action, cyan = system/AI, purple = officer, orange = iteration, green = approved, gray = pending
+
+**Spec fixes:**
+- Notification Template Management gap table entry corrected — marked ✅ Done (Sprint 11 #26 was already implemented)
+- Applicant grace-period gap table entry updated to ✅ Done (Sprint 13 #29)
+- Summary table updated; role-coverage and admin-config rows fully resolved
+
+---
+
+#### Sprint 14 Completion Notes (2026-05-06)
+
+**Spec fix — Fee Offset & Refunds:**
+- Removed from Sprint 11 code (`screens-c.jsx`) but prototype mapping and completion notes still referenced it. Corrected the "Payments & Invoices" row in the prototype mapping to accurately reflect current state: invoice/receipt drawer, export CSV, billing info — no Fee Offset card.
+
+**Initiative #32 — Payments invoice/receipt drawer (`screens-c.jsx`):**
+- `selectedPay` state added; clicking any transaction row or the eye icon opens a right-side `antd.Drawer` (520px)
+- Drawer shows a styled mock invoice: MCMC logo letterhead, receipt number, date, application ID, payer, payment method; itemised fee row (NCEF Registration Fee) + SST Exempt line; coloured total (green=paid, orange=pending)
+- "PAID" watermark overlaid at 20° rotation when `status === 'paid'`; `antd.Alert` confirms payment or warns pending
+- "Download Receipt" drawer button → `downloadReceipt()` Blob of formatted `.txt` file → `MCMC-Receipt-{id}.txt`
+- Row-level download icon also calls `downloadReceipt()`; eye icon opens drawer
+- "Export CSV" header button now wired to `exportCsv()` — real Blob download of all transactions
+
+**Initiative #33 — Role-aware All Applications (`screens-a.jsx`):**
+- `SCREENS.applications` now accepts `currentUser`; if role is not `supplier`, renders new `OfficerAllApplications` component instead of the supplier's own list
+- `OfficerAllApplications`: expands `MOCK.assessments` with 4 additional cross-supplier mock rows (OPPO, Xiaomi, TP-Link, Huawei) each carrying `applicant` + `supplierId`
+- Table columns: App ID · Applicant (with supplier ID sub-line) · Product · Scheme · Status · AI Score (coloured tag) · Submitted · Review button
+- Filters: free-text search (app ID, product, applicant, supplierId), Status dropdown, Scheme multi-select
+- Pagination: 10 rows/page with "N–M of total" summary
+- Bulk-select checkboxes (team-lead/approver only): Dropdown with "Export selected", "Bulk assign…" (opens `antd.Modal` with officer picker + note), "Flag for priority review"
+- Export CSV works on selected rows or all filtered rows
+- Supplier view unchanged — same experience when role = supplier
+
+**Initiative #34 — Certificate Blob download (`screens-c.jsx`):**
+- `downloadCertPdf()` in `CertificateDetail`: generates formatted ASCII certificate mockup with MCMC header box, RCN, product details, scheme, dates, issuing officer, legal reference (CMA 1998 Act 588), verify URL → Blob download `NCEF-Certificate-{rcn}.txt`
+- `downloadLabel()`: generates compact ASCII label template (8 rows, 40 chars wide) with RCN, brand, model, expiry, QR reference → Blob download `NCEF-Label-{rcn}.txt`
+- Both buttons in `CertificateDetail` wired; "Download PDF" renamed "Download Certificate"; `antd.message.success` confirms each download
+- Table-level download icon now opens the detail drawer (consistent — download from within drawer)
+
+---
+
+### 12.5 URS Gap Analysis — Remaining Prototype Gaps (as of 06 May 2026)
+
+Cross-referencing the URS v1.7 requirements against the current prototype state. Items below are URS-mandated flows not yet fully prototyped. Items marked 🚫 are out-of-scope for the prototype (production-only).
+
+#### A. High-Priority Gaps (directly visible in user demos)
+
+| Gap | URS Reference | Affected Screen | Priority |
+|---|---|---|---|
+| ~~**Account Registration Renewal**~~ | §5.4.2 | ✅ Done — Sprint 8 | — |
+| ~~**Reclassification modal (SDoC officer review)**~~ | §5.2.2–5.2.4 | ✅ Done — Sprint 8 | — |
+| ~~**Prohibited Equipment offline acceptance upload (§5.3.3 step 2–3)**~~ | §5.3.3 | ✅ Done — Sprint 9 | — |
+| ~~**Iteration period extension request**~~ | §5.1.2, §5.2.2 | ✅ Done — Sprint 9 | — |
+
+#### B. Admin / Configuration Gaps
+
+| Gap | URS Reference | Affected Screen | Priority |
+|---|---|---|---|
+| ~~**Officer Calendar Blocking**~~ — officers block leave/off-duty dates; group lead can transfer assignments during blocked period. | §5.18 | ✅ Done — Sprint 10 | — |
+| ~~**Notification Template Management**~~ — System Admin edits HTML/text email templates via admin interface. | §5.16 | ✅ Done — Sprint 11 (#26) | — |
+| ~~**Equipment Type & Technical Code master list**~~ | §5.18 | ✅ Done — Sprint 11 | — |
+| ~~**Application expiry auto-lapse display**~~ — 60-day lapse countdown in Applications | §5.20.5 | ✅ Done — Sprint 11 | — |
+
+#### C. Reporting & Export Gaps
+
+| Gap | URS Reference | Affected Screen | Priority |
+|---|---|---|---|
+| ~~**Report export (CSV / XLSX)**~~ — Reports, Audit Log, and Applications all now export real CSV/XLSX via browser Blob | §5.15 | ✅ Done — Sprint 11 | — |
+
+#### D. Flow / Role Gaps
+
+| Gap | URS Reference | Affected Screen | Priority |
+|---|---|---|---|
+| ~~**Principal Management tab**~~ — Suppliers can add, remove, and manage linked Principals with LoU + LoA upload. | §5.1.4 | ✅ Done — Sprint 10 | — |
+| ~~**Content Manager role**~~ — Manages announcements, FAQs, and documents on the Public Portal. Admin Config has Announcements but no Content Manager-specific role or login path in Switch Profile. | §5.1, §5.11 | ✅ Done — Sprint 12 | — |
+| ~~**Applicant grace-period account status**~~ — After account expiry, a 6-month Grace status blocks new applications. | §5.1.10, §5.4.2 | ✅ Done — Sprint 13 (#29) | — |
+
+#### E. AI & Automation Gaps (low demo impact, noted for completeness)
+
+| Gap | URS Reference | Notes |
+|---|---|---|
+| **Fraud detection** — AI flags forged documents, duplicate applications, suspicious patterns for officer investigation. | §5.14 | No visual in prototype; real AI call out-of-scope |
+| **Scheme C auto-accept routing** — Score ≥ 90 should skip the queue entirely and immediately issue RCN. Prototype shows "expedited review" but officer queue still receives it. | §5.2.4 | Mock data limitation — no conditional routing |
+| **AI confidence feeds PMS** — Non-conformance records from PMS auto-adjust AI risk scoring thresholds. | §5.8 | Requires live AI backend; out-of-scope for prototype |
+| **Real waiver code validation** — WaiverCodeInput accepts any 8-char code starting with `WVR-` (mock). | §5.13 | Backend out-of-scope |
+| ~~**SA Letter editable fields**~~ | §5.3.3, §5.3.5 | ✅ Done — Sprint 9 (SALetterConfigTab in AdminConfig) |
+
+#### F. Bilingual / Accessibility Gaps
+
+| Gap | URS Reference | Notes |
+|---|---|---|
+| ~~**Bilingual UI (EN/BM)**~~ — URS §6.1 requires full English + Malay support on External and Public portals. | §6.1 | ✅ Done — Sprint 12 (supplier-facing screens + public portal; officer screens remain EN-only by design) |
+| **WCAG 2.1 Level AA** — Accessibility compliance not verified in prototype. | §7.2 | Out-of-scope for prototype phase |
+
+#### Summary Table
+
+| Category | Open Gaps | Critical for Demo |
+|---|---|---|
+| Applicant workflow | ~~Account renewal~~, ~~iteration extension~~, ~~reclassification~~, ~~principal management~~, ~~draft expiry lapse~~, ~~grace-period status~~ — all resolved | — |
+| Officer workflow | ~~Prohibited offline upload~~, ~~calendar blocking~~, ~~export CSV/XLSX~~, ~~role-aware decision panel~~, ~~application status timeline~~ — all resolved | — |
+| Admin config | ~~Notification templates~~, ~~equipment type master list~~, ~~application expiry~~ — all resolved | — |
+| Reporting | ~~Export CSV/XLSX~~ — resolved | — |
+| Role coverage | ~~Content Manager~~ — resolved Sprint 12 | — |
+| AI / automation | Auto-accept routing, fraud detection, waiver backend | Out-of-scope for prototype |
+| Bilingual / A11y | ~~BM translation~~ (supplier + public portal) — resolved Sprint 12; WCAG out-of-scope | — |
+
+---
 
 ### 12.4 Key Design Decisions (from session)
 

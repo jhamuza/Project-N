@@ -19,12 +19,18 @@
 <script src="data/mock.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <style>
-  body { margin: 0; font-family: var(--font-family, 'Inter', sans-serif); }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: var(--font-family, 'Inter', sans-serif); }
+  #root { height: 100%; }
   #loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #F5F8FB; gap: 16px; }
   .spinner { width: 40px; height: 40px; border: 4px solid #E5EAF0; border-top: 4px solid #0B4F91; border-radius: 50%; animation: spin 0.9s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes pulse { 0%,100% { opacity:.3; transform:scale(.8); } 50% { opacity:1; transform:scale(1); } }
   .error-message { color: #C62828; padding: 20px; text-align: center; font-size: 14px; }
+  /* Fixed chrome: sidebar and header stay put; only content scrolls */
+  .ant-layout { overflow: hidden; }
+  .ant-layout-sider { flex-shrink: 0 !important; overflow: hidden !important; }
+  .ant-layout-header { flex-shrink: 0 !important; }
+  .ant-layout-content { overflow-y: auto !important; overflow-x: hidden !important; }
 </style>
 </head>
 <body>
@@ -65,6 +71,7 @@ const {
   LeftOutlined, RightOutlined, PlusCircleOutlined, MoreOutlined, HistoryOutlined, KeyOutlined,
   ApartmentOutlined, ContainerOutlined, WalletOutlined, RiseOutlined,
   SwapOutlined, CrownOutlined, ZoomInOutlined, ZoomOutOutlined, FilterOutlined,
+  CopyOutlined, LinkOutlined,
 } = icons;
 const FilterOutlinedIcon = FilterOutlined || icons.SearchOutlined;
 const FormOutlined        = icons.FormOutlined        || icons.EditOutlined;
@@ -76,7 +83,7 @@ const ThunderboltOutlined = icons.ThunderboltOutlined || icons.StarOutlined;
 const SafetyOutlined      = icons.SafetyOutlined      || icons.SafetyCertificateOutlined;
 Object.assign(window, { icons, AntIcons: icons });
 
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{ aiViz: 'bar', wizardPattern: 'horizontal', role: 'supplier', denseTables: true }/*EDITMODE-END*/;
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{ aiViz: 'bar', wizardPattern: 'horizontal', role: 'supplier', denseTables: true, graceMode: false }/*EDITMODE-END*/;
 
 const NAV_SUPPLIER = [
   { key: 'dashboard',        label: 'Dashboard',             icon: <DashboardOutlined /> },
@@ -103,7 +110,6 @@ const NAV_TEAM_LEAD = [
   { key: 'post-monitoring',  label: 'Post Monitoring',           icon: <AlertOutlined /> },
   { key: 'compliance-status',label: 'Compliance Status',         icon: <SafetyOutlined /> },
   { key: 'sa-letter',        label: 'SA Letter',                 icon: <FileTextOutlined /> },
-  { key: 'public-portal',    label: 'Public Portal',             icon: <GlobalOutlined /> },
   { key: 'integrations',     label: 'Integrations',              icon: <ApartmentOutlined /> },
   { key: 'admin-config',     label: 'Configuration',             icon: <SettingOutlined /> },
   { key: 'reports',          label: 'Reports & Analytics',       icon: <BarChartOutlined /> },
@@ -140,8 +146,15 @@ const NAV_APPROVER = [
   { key: 'reports',        label: 'Reports & Analytics', icon: <BarChartOutlined /> },
   { key: 'profile',        label: 'Profile & Settings',  icon: <SettingOutlined /> },
 ];
-const NAV_BY_ROLE = { supplier: NAV_SUPPLIER, 'team-lead': NAV_TEAM_LEAD, officer: NAV_OFFICER, recommender: NAV_RECOMMENDER, verifier: NAV_VERIFIER, approver: NAV_APPROVER };
-const DEFAULT_SCREEN_BY_ROLE = { supplier: 'dashboard', 'team-lead': 'officer-queue', officer: 'officer-queue', recommender: 'officer-queue', verifier: 'officer-queue', approver: 'officer-queue' };
+const NAV_CONTENT_MANAGER = [
+  { key: 'cm-dashboard',    label: 'Content Dashboard',   icon: <DashboardOutlined /> },
+  { key: 'public-portal',   label: 'Public Portal',       icon: <GlobalOutlined /> },
+  { key: 'cm-announcements',label: 'Announcements',       icon: <BellOutlined /> },
+  { key: 'cm-faq',          label: 'FAQ & Help',          icon: <QuestionCircleOutlined /> },
+  { key: 'profile',         label: 'Profile & Settings',  icon: <SettingOutlined /> },
+];
+const NAV_BY_ROLE = { supplier: NAV_SUPPLIER, 'team-lead': NAV_TEAM_LEAD, officer: NAV_OFFICER, recommender: NAV_RECOMMENDER, verifier: NAV_VERIFIER, approver: NAV_APPROVER, 'content-manager': NAV_CONTENT_MANAGER };
+const DEFAULT_SCREEN_BY_ROLE = { supplier: 'dashboard', 'team-lead': 'officer-queue', officer: 'officer-queue', recommender: 'officer-queue', verifier: 'officer-queue', approver: 'officer-queue', 'content-manager': 'cm-dashboard' };
 
 // ──── ASSIGN OFFICER MODAL ────────────────────────────────────────────────────
 function AssignOfficerModal({ open, onClose, onAssign, applicationId, currentAssigneeId }) {
@@ -538,7 +551,23 @@ SCREENS.reports = function Reports({ nav, currentUser }) {
             options={[{ label: `My Team (${myTeam})`, value: 'team' }, { label: 'All CPPG', value: 'all' }]}
           />
           <antd.Segmented value={period} onChange={setPeriod} options={[{ label: 'This Month', value: 'month' }, { label: 'Last 3M', value: '3m' }, { label: 'Full Year', value: 'ytd' }]} />
-          <Button icon={<DownloadOutlined />}>Export PDF</Button>
+          <antd.Dropdown menu={{ items: [
+            { key: 'csv',  label: 'Export CSV',  icon: <DownloadOutlined />, onClick: () => {
+              const rows = [['Month','Submitted','Approved','AI Auto-Accepted'],...trend.map(d=>[d.month,d.submitted,d.approved,d.aiAutoAccepted])];
+              const blob = new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+              const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`ncef-report-${period}.csv`});
+              a.click(); antd.message.success('CSV exported');
+            }},
+            { key: 'xlsx', label: 'Export XLSX', icon: <DownloadOutlined />, onClick: () => {
+              const rows = [['Month','Submitted','Approved','AI Auto-Accepted'],...trend.map(d=>[d.month,d.submitted,d.approved,d.aiAutoAccepted])];
+              const ws = rows.map(r=>r.join('\t')).join('\n');
+              const blob = new Blob([ws],{type:'application/vnd.ms-excel'});
+              const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`ncef-report-${period}.xls`});
+              a.click(); antd.message.success('Excel exported');
+            }},
+          ]}} trigger={['click']}>
+            <Button icon={<DownloadOutlined />}>Export <span style={{fontSize:10,marginLeft:2}}>▾</span></Button>
+          </antd.Dropdown>
         </Space>
       </div>
 
@@ -654,7 +683,24 @@ SCREENS.audit = function AuditLog({ nav, currentUser }) {
           <antd.Typography.Title level={3} style={{ margin:'4px 0 0' }}>Audit Log</antd.Typography.Title>
           <antd.Typography.Text type="secondary">All system events · PDPA-compliant · Retained 7 years</antd.Typography.Text>
         </div>
-        <Button icon={<DownloadOutlined />}>Export CSV</Button>
+        <antd.Dropdown menu={{ items:[
+          { key:'csv', label:'Export CSV', icon:<DownloadOutlined />, onClick:() => {
+            const header=['Timestamp','Actor','Role','Event','Application','Detail'];
+            const rows=[header,...filtered.map(e=>[new Date(e.ts).toISOString(),e.actor,e.actorRole,e.event,e.appId||'',e.detail||''].map(v=>`"${String(v).replace(/"/g,'""')}"`)  )];
+            const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+            const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'ncef-audit.csv'});
+            a.click(); antd.message.success('Audit log exported as CSV');
+          }},
+          { key:'xlsx', label:'Export XLSX', icon:<DownloadOutlined />, onClick:() => {
+            const header=['Timestamp','Actor','Role','Event','Application','Detail'];
+            const rows=[header,...filtered.map(e=>[new Date(e.ts).toISOString(),e.actor,e.actorRole,e.event,e.appId||'',e.detail||''])];
+            const blob=new Blob([rows.map(r=>r.join('\t')).join('\n')],{type:'application/vnd.ms-excel'});
+            const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'ncef-audit.xls'});
+            a.click(); antd.message.success('Audit log exported as Excel');
+          }},
+        ]}} trigger={['click']}>
+          <Button icon={<DownloadOutlined />}>Export <span style={{fontSize:10,marginLeft:2}}>▾</span></Button>
+        </antd.Dropdown>
       </div>
       <antd.Card bordered style={{ marginBottom:16 }}>
         <antd.Row gutter={[12,12]} align="middle">
@@ -709,12 +755,12 @@ SCREENS.audit = function AuditLog({ nav, currentUser }) {
 // ──── SWITCH PROFILE MODAL ────────────────────────────────────────────────────
 function SwitchProfileModal({ open, currentRole, onClose, onSwitch }) {
   const profiles = MOCK.profiles || {};
-  const order = ['supplier','team-lead','officer','recommender','verifier','approver'];
+  const order = ['supplier','team-lead','officer','recommender','verifier','approver','content-manager'];
   const [pick, setPick] = React.useState(currentRole);
   React.useEffect(() => { if (open) setPick(currentRole); }, [open, currentRole]);
-  const roleAccent = { supplier:'var(--color-primary)', 'team-lead':'#7B3FA0', officer:'#0F6ABF', recommender:'#2E7D32', verifier:'#E65100', approver:'#B71C1C' };
-  const roleLabel  = { supplier:'Supplier', 'team-lead':'MCMC Team Lead', officer:'MCMC Officer', recommender:'Recommender (P5/P6)', verifier:'Verifier (P7)', approver:'Approver (P8)' };
-  const tagColor   = { supplier:'geekblue', 'team-lead':'purple', officer:'blue', recommender:'green', verifier:'orange', approver:'red' };
+  const roleAccent = { supplier:'var(--color-primary)', 'team-lead':'#7B3FA0', officer:'#0F6ABF', recommender:'#2E7D32', verifier:'#E65100', approver:'#B71C1C', 'content-manager':'#00796B' };
+  const roleLabel  = { supplier:'Supplier', 'team-lead':'MCMC Team Lead', officer:'MCMC Officer', recommender:'Recommender (P5/P6)', verifier:'Verifier (P7)', approver:'Approver (P8)', 'content-manager':'Content Manager' };
+  const tagColor   = { supplier:'geekblue', 'team-lead':'purple', officer:'blue', recommender:'green', verifier:'orange', approver:'red', 'content-manager':'cyan' };
   return (
     <antd.Modal open={open} onCancel={onClose} title={<Space><SwapOutlined /> Switch Profile</Space>}
       width={520} okText="Switch" okButtonProps={{ disabled: pick === currentRole }}
@@ -846,14 +892,155 @@ function MinaDrawer({ open, onClose, currentUser }) {
 }
 
 // ──── APP ─────────────────────────────────────────────────────────────────────
+// ── Bilingual string table (EN/BM) — external + public portal strings only ──
+window.STRINGS = {
+  en: {
+    // Nav labels
+    nav_dashboard: 'Dashboard', nav_applications: 'My Applications', nav_certificates: 'Certificates',
+    nav_payments: 'Payments', nav_imei: 'IMEI / S/N Register', nav_renewal: 'Cert Renewal',
+    nav_sa: 'Special Approval', nav_importation: 'Importation', nav_onboarding: 'Onboarding',
+    nav_profile: 'Profile & Settings', nav_consultants: 'Consultants',
+    // Dashboard
+    dash_title: 'Dashboard',
+    dash_welcome: 'Welcome back',
+    dash_kpi_pending: 'Pending Applications',
+    dash_kpi_approved: 'Approved This Month',
+    dash_kpi_expiring: 'Expiring Soon',
+    dash_kpi_renewal: 'Renewals Due',
+    dash_quick_actions: 'Quick Actions',
+    dash_new_sdoc: '+ New SDoC Application',
+    dash_new_sa: '+ Special Approval',
+    dash_new_renewal: '+ Certificate Renewal',
+    dash_new_account_renewal: '+ Account Registration Renewal',
+    dash_recent: 'Recent Applications',
+    dash_view_all: 'View all',
+    // Applications
+    apps_title: 'My Applications',
+    apps_search: 'Search by ID, product, model…',
+    apps_new_sdoc: '+ New SDoC',
+    apps_export: 'Export',
+    apps_status_all: 'All statuses',
+    apps_status_draft: 'Draft',
+    apps_status_review: 'Under Review',
+    apps_status_iteration: 'Needs action',
+    apps_status_approved: 'Approved',
+    apps_status_rejected: 'Rejected',
+    apps_col_id: 'App ID',
+    apps_col_type: 'Type / Scheme',
+    apps_col_product: 'Product',
+    apps_col_validation: 'Validation',
+    apps_col_status: 'Status',
+    apps_col_updated: 'Updated',
+    apps_open: 'Open',
+    apps_respond: 'Respond',
+    apps_ext_request: 'Request Extension',
+    // Login
+    login_title: 'Sign in',
+    login_subtitle: 'Use your MCMC credentials or supplier account',
+    login_email: 'Email',
+    login_password: 'Password',
+    login_remember: 'Remember me',
+    login_forgot: 'Forgot password?',
+    login_submit: 'Sign in',
+    login_demo: 'DEMO ACCOUNTS',
+    login_demo_hint: 'Click a card to prefill demo credentials',
+    // Status pills
+    status_draft: 'Draft', status_under_review: 'Under Review', status_iteration: 'Iteration Required',
+    status_approved: 'Approved', status_rejected: 'Rejected', status_payment: 'Payment Pending',
+    status_submitted: 'Submitted', status_expired: 'Expired', status_priority: 'Priority Review',
+    // Public portal
+    pub_hero_title: 'Verify Equipment Certification', pub_hero_subtitle: 'Check if communications equipment is registered with MCMC before import, sale, or use in Malaysia.',
+    pub_search_ph: 'Search by brand, model, RCN, IMEI, or serial number…', pub_search_btn: 'Search',
+    pub_adv_show: '▸ Advanced search (filter by brand, model, IMEI, Supplier ID)', pub_adv_hide: '▾ Hide advanced search',
+    pub_nav_search: 'Equipment Search', pub_nav_process: 'How to Register', pub_nav_docs: 'Documents', pub_nav_faq: 'FAQ', pub_nav_contact: 'Contact',
+    pub_register_supplier: 'Register as Supplier', pub_status_active: 'Registered & Active', pub_status_expiring: 'Expiring Soon', pub_status_expired: 'Expired',
+  },
+  bm: {
+    // Nav labels
+    nav_dashboard: 'Papan Pemuka', nav_applications: 'Permohonan Saya', nav_certificates: 'Sijil',
+    nav_payments: 'Pembayaran', nav_imei: 'Daftar IMEI / S/N', nav_renewal: 'Pembaharuan Sijil',
+    nav_sa: 'Kelulusan Khas', nav_importation: 'Importasi', nav_onboarding: 'Pendaftaran',
+    nav_profile: 'Profil & Tetapan', nav_consultants: 'Perunding',
+    // Dashboard
+    dash_title: 'Papan Pemuka',
+    dash_welcome: 'Selamat kembali',
+    dash_kpi_pending: 'Permohonan Tertunda',
+    dash_kpi_approved: 'Diluluskan Bulan Ini',
+    dash_kpi_expiring: 'Hampir Tamat Tempoh',
+    dash_kpi_renewal: 'Pembaharuan Perlu',
+    dash_quick_actions: 'Tindakan Pantas',
+    dash_new_sdoc: '+ Permohonan SDoC Baharu',
+    dash_new_sa: '+ Kelulusan Khas',
+    dash_new_renewal: '+ Pembaharuan Sijil',
+    dash_new_account_renewal: '+ Pembaharuan Pendaftaran Akaun',
+    dash_recent: 'Permohonan Terkini',
+    dash_view_all: 'Lihat semua',
+    // Applications
+    apps_title: 'Permohonan Saya',
+    apps_search: 'Cari mengikut ID, produk, model…',
+    apps_new_sdoc: '+ SDoC Baharu',
+    apps_export: 'Eksport',
+    apps_status_all: 'Semua status',
+    apps_status_draft: 'Draf',
+    apps_status_review: 'Sedang Disemak',
+    apps_status_iteration: 'Tindakan diperlukan',
+    apps_status_approved: 'Diluluskan',
+    apps_status_rejected: 'Ditolak',
+    apps_col_id: 'ID Permohonan',
+    apps_col_type: 'Jenis / Skim',
+    apps_col_product: 'Produk',
+    apps_col_validation: 'Pengesahan',
+    apps_col_status: 'Status',
+    apps_col_updated: 'Dikemaskini',
+    apps_open: 'Buka',
+    apps_respond: 'Balas',
+    apps_ext_request: 'Mohon Lanjutan',
+    // Login
+    login_title: 'Log masuk',
+    login_subtitle: 'Gunakan kelayakan MCMC atau akaun pembekal anda',
+    login_email: 'E-mel',
+    login_password: 'Kata laluan',
+    login_remember: 'Ingat saya',
+    login_forgot: 'Lupa kata laluan?',
+    login_submit: 'Log masuk',
+    login_demo: 'AKAUN DEMO',
+    login_demo_hint: 'Klik kad untuk pra-isi kelayakan demo',
+    // Status pills
+    status_draft: 'Draf', status_under_review: 'Sedang Disemak', status_iteration: 'Pindaan Diperlukan',
+    status_approved: 'Diluluskan', status_rejected: 'Ditolak', status_payment: 'Menunggu Pembayaran',
+    status_submitted: 'Diserahkan', status_expired: 'Tamat Tempoh', status_priority: 'Semakan Keutamaan',
+    // Public portal
+    pub_hero_title: 'Semak Sijil Peralatan', pub_hero_subtitle: 'Semak sama ada peralatan komunikasi berdaftar dengan MCMC sebelum import, jualan, atau penggunaan di Malaysia.',
+    pub_search_ph: 'Cari mengikut jenama, model, RCN, IMEI, atau nombor siri…', pub_search_btn: 'Cari',
+    pub_adv_show: '▸ Carian lanjutan (tapis mengikut jenama, model, IMEI, ID pembekal)', pub_adv_hide: '▾ Sembunyikan carian lanjutan',
+    pub_nav_search: 'Carian Peralatan', pub_nav_process: 'Cara Mendaftar', pub_nav_docs: 'Dokumen', pub_nav_faq: 'Soalan Lazim', pub_nav_contact: 'Hubungi',
+    pub_register_supplier: 'Daftar sebagai Pembekal', pub_status_active: 'Berdaftar & Aktif', pub_status_expiring: 'Hampir Tamat Tempoh', pub_status_expired: 'Tamat Tempoh',
+  },
+};
+// Convenience helper used in screens
+window.t = (lang, key) => (window.STRINGS[lang] || window.STRINGS.en)[key] || key;
+
+// Parse hash: "#/screen-key" or "#/screen-key/subtab" → { screen, sub }
+function parseHash(hash) {
+  const parts = (hash || '').replace(/^#\/?/, '').split('/');
+  return { screen: parts[0] || null, sub: parts[1] || null };
+}
+function buildHash(screenKey, sub) {
+  return sub ? `#/${screenKey}/${sub}` : `#/${screenKey}`;
+}
+
 function App() {
   const [tweaks, setTweaks]                 = React.useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode]             = React.useState(false);
-  const [screen, setScreen]                 = React.useState(() => localStorage.getItem('ncef.screen') || DEFAULT_SCREEN_BY_ROLE[TWEAK_DEFAULTS.role] || 'dashboard');
+  const [screen, setScreen]                 = React.useState(() => {
+    const fromHash = parseHash(window.location.hash).screen;
+    return fromHash || localStorage.getItem('ncef.screen') || DEFAULT_SCREEN_BY_ROLE[TWEAK_DEFAULTS.role] || 'dashboard';
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [minaOpen, setMinaOpen]             = React.useState(false);
   const [loggedIn, setLoggedIn]             = React.useState(() => sessionStorage.getItem('ncef.loggedIn') === '1');
   const [switchOpen, setSwitchOpen]         = React.useState(false);
+  const [lang, setLang]                     = React.useState('en');
   const [sessionWarning, setSessionWarning] = React.useState(false);
   const [sessionCountdown, setSessionCountdown] = React.useState(60);
   const sessionTimerRef  = React.useRef(null);
@@ -893,7 +1080,25 @@ function App() {
     return () => events.forEach(e => window.removeEventListener(e, resetSessionTimer));
   }, [resetSessionTimer]);
 
-  React.useEffect(() => { localStorage.setItem('ncef.screen', screen); }, [screen]);
+  React.useEffect(() => {
+    localStorage.setItem('ncef.screen', screen);
+    // Sync hash — skip login screen so the URL stays clean on logout
+    if (screen !== 'login') {
+      const newHash = buildHash(screen);
+      if (window.location.hash !== newHash) history.pushState(null, '', newHash);
+    }
+  }, [screen]);
+
+  // Back/forward navigation support
+  React.useEffect(() => {
+    const onHash = () => {
+      const { screen: s } = parseHash(window.location.hash);
+      if (s && s !== screen) setScreen(s);
+    };
+    window.addEventListener('popstate', onHash);
+    return () => window.removeEventListener('popstate', onHash);
+  }, [screen]);
+
   React.useEffect(() => { sessionStorage.setItem('ncef.loggedIn', loggedIn ? '1' : '0'); }, [loggedIn]);
 
   React.useEffect(() => {
@@ -946,7 +1151,7 @@ function App() {
     );
   }
 
-  const SUPPLIER_ONLY = new Set(['dashboard','sdoc-wizard','special-approval','importation','certificates','imei-register','cert-renewal','onboarding']);
+  const SUPPLIER_ONLY = new Set(['dashboard','sdoc-wizard','special-approval','importation','certificates','imei-register','cert-renewal','account-renewal','onboarding']);
   const isRestricted  = SUPPLIER_ONLY.has(screen) && !isSupplier;
   const ScreenComp = isRestricted
     ? () => (
@@ -959,7 +1164,7 @@ function App() {
       )
     : (SCREENS[screen] || (() => <div style={{ padding:40, color:'var(--color-text-secondary)' }}>Screen "{screen}" not found.</div>));
 
-  const roleAccentColor = { supplier:'var(--color-primary)', 'team-lead':'#7B3FA0', officer:'#0F6ABF', recommender:'#2E7D32', verifier:'#E65100', approver:'#B71C1C' };
+  const roleAccentColor = { supplier:'var(--color-primary)', 'team-lead':'#7B3FA0', officer:'#0F6ABF', recommender:'#2E7D32', verifier:'#E65100', approver:'#B71C1C', 'content-manager':'#00796B' };
   const accentColor = roleAccentColor[tweaks.role] || 'var(--color-primary)';
 
   const notifs = (MOCK.notifications || []);
@@ -985,9 +1190,11 @@ function App() {
 
   return (
     <ConfigProvider theme={{ token:{ colorPrimary:'#0B4F91', colorSuccess:'#1B7F48', colorWarning:'#B87200', colorError:'#C62828', colorInfo:'#0F6ABF', fontFamily:"Inter, -apple-system, 'Segoe UI', sans-serif", borderRadius:8, colorBgLayout:'#F5F8FB' }, components:{ Menu:{ itemHeight:40 } } }}>
-      <Layout style={{ minHeight:'100vh' }} className={tweaks.denseTables ? 'ncef-compact' : ''}>
-        <Sider width={240} collapsedWidth={72} collapsed={sidebarCollapsed} style={{ background:'#fff', borderRight:'1px solid var(--color-divider)' }} theme="light">
-          <div style={{ padding:'18px 16px', borderBottom:'1px solid var(--color-divider)', display:'flex', alignItems:'center', gap:12, minHeight:72 }}>
+      <Layout style={{ height:'100vh', overflow:'hidden' }} className={tweaks.denseTables ? 'ncef-compact' : ''}>
+        <Sider width={240} collapsedWidth={72} collapsed={sidebarCollapsed}
+          style={{ background:'#fff', borderRight:'1px solid var(--color-divider)', height:'100vh', overflow:'hidden', position:'sticky', top:0, left:0, flexShrink:0, display:'flex', flexDirection:'column' }}
+          theme="light">
+          <div style={{ padding:'18px 16px', borderBottom:'1px solid var(--color-divider)', display:'flex', alignItems:'center', gap:12, minHeight:72, flexShrink:0 }}>
             <img src="assets/mcmc-logo.png" alt="MCMC" style={{ width:40, height:40, objectFit:'contain', flexShrink:0 }} />
             {!sidebarCollapsed && (
               <div>
@@ -996,9 +1203,11 @@ function App() {
               </div>
             )}
           </div>
-          <Menu selectedKeys={[screen]} mode="inline" onClick={e => setScreen(e.key)} items={currentNav} style={{ border:'none', marginTop:8 }} />
+          <div style={{ flex:1, overflowY:'auto', overflowX:'hidden' }}>
+            <Menu selectedKeys={[screen]} mode="inline" onClick={e => setScreen(e.key)} items={currentNav} style={{ border:'none', marginTop:8 }} />
+          </div>
           {!sidebarCollapsed && isSupplier && (
-            <div style={{ position:'absolute', bottom:16, left:16, right:16 }}>
+            <div style={{ padding:'0 16px 16px', flexShrink:0 }}>
               <div style={{ padding:12, background:'var(--color-primary-soft)', borderRadius:10, fontSize:11 }}>
                 <div style={{ fontWeight:700, color:'var(--color-primary)', marginBottom:4, display:'flex', alignItems:'center', gap:6 }}><RobotOutlined /> MINA assistant</div>
                 <div style={{ color:'var(--color-text-secondary)', lineHeight:1.5 }}>Ask about schemes, documents, or application status.</div>
@@ -1007,18 +1216,26 @@ function App() {
             </div>
           )}
         </Sider>
-        <Layout>
-          <Header style={{ background:'#fff', borderBottom:'1px solid var(--color-divider)', padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', height:56, lineHeight:'normal' }}>
+        <Layout style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }}>
+          <Header style={{ background:'#fff', borderBottom:'1px solid var(--color-divider)', padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', height:56, lineHeight:'normal', flexShrink:0, zIndex:10 }}>
             <Space size="middle">
               <Button type="text" icon={<MenuOutlined />} onClick={() => setSidebarCollapsed(!sidebarCollapsed)} />
               <Input placeholder="Search applications, certificates, IMEIs…" prefix={<SearchOutlined style={{ color:'var(--color-text-muted)' }} />} style={{ width:340 }} />
             </Space>
             <Space size="middle">
+              <antd.Tooltip title="Copy link to this screen">
+                <Button type="text" icon={<CopyOutlined style={{ fontSize:16 }} />} onClick={() => {
+                  navigator.clipboard.writeText(window.location.href).then(() => antd.message.success('Link copied to clipboard'));
+                }} />
+              </antd.Tooltip>
               <Dropdown menu={{ items: bellItems }} trigger={['click']} placement="bottomRight" overlayStyle={{ width:320 }}>
                 <Badge count={unreadCount} size="small"><Button type="text" icon={<BellOutlined style={{ fontSize:18 }} />} /></Badge>
               </Dropdown>
-              <Dropdown menu={{ items:[{ key:'en', label:'English' },{ key:'bm', label:'Bahasa Melayu' }] }}>
-                <Button type="text" icon={<GlobalOutlined />}>EN</Button>
+              <Dropdown menu={{ items:[
+                { key:'en', label:'English', onClick:() => setLang('en') },
+                { key:'bm', label:'Bahasa Melayu', onClick:() => setLang('bm') },
+              ]}}>
+                <Button type="text" icon={<GlobalOutlined />}>{lang === 'bm' ? 'BM' : 'EN'}</Button>
               </Dropdown>
               <Dropdown menu={{ items:[
                 { key:'profile', icon:<UserOutlined />,          label:'Profile & Settings',  onClick:() => setScreen('profile') },
@@ -1040,8 +1257,8 @@ function App() {
               </Dropdown>
             </Space>
           </Header>
-          <Content style={{ overflow:'auto' }}>
-            <ScreenComp nav={setScreen} tweaks={tweaks} currentUser={currentUser} />
+          <Content style={{ flex:1, overflowY:'auto', overflowX:'hidden', background:'var(--color-bg-layout, #F5F8FB)' }}>
+            <ScreenComp nav={(screenKey, sub) => { setScreen(screenKey); if (sub) history.pushState(null, '', buildHash(screenKey, sub)); }} tweaks={tweaks} currentUser={currentUser} lang={lang} />
           </Content>
         </Layout>
 
@@ -1082,7 +1299,9 @@ function App() {
                   <antd.Radio.Button value="team-lead">Team Lead</antd.Radio.Button>
                   <antd.Radio.Button value="officer">Officer</antd.Radio.Button>
                   <antd.Radio.Button value="recommender">Recommender</antd.Radio.Button>
+                  <antd.Radio.Button value="verifier">Verifier</antd.Radio.Button>
                   <antd.Radio.Button value="approver">Approver</antd.Radio.Button>
+                  <antd.Radio.Button value="content-manager">Content Mgr</antd.Radio.Button>
                 </antd.Radio.Group>
               </div>
               <div>
@@ -1102,6 +1321,9 @@ function App() {
                 </antd.Radio.Group>
               </div>
               <div><antd.Checkbox checked={tweaks.denseTables} onChange={e => updateTweak('denseTables',e.target.checked)}>Compact density</antd.Checkbox></div>
+              {tweaks.role === 'supplier' && (
+                <div><antd.Checkbox checked={tweaks.graceMode} onChange={e => updateTweak('graceMode',e.target.checked)}>Supplier grace period (§5.1.10)</antd.Checkbox></div>
+              )}
             </div>
           </div>
         )}

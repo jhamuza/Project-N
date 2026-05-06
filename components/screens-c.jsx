@@ -11,7 +11,8 @@ const {
   SendOutlined, PaperClipOutlined, ReloadOutlined, IdcardOutlined, ExclamationCircleOutlined,
   LeftOutlined, RightOutlined, PlusCircleOutlined, MoreOutlined, HistoryOutlined, KeyOutlined,
   ApartmentOutlined, ContainerOutlined, WalletOutlined, RiseOutlined, SafetyOutlined,
-  CopyOutlined, PrinterOutlined, ScanOutlined, CheckOutlined, CaretDownOutlined
+  CopyOutlined, PrinterOutlined, ScanOutlined, CheckOutlined, CaretDownOutlined,
+  CalendarOutlined
 } = window.icons;
 
 // ============ CERTIFICATES ============
@@ -101,9 +102,9 @@ SCREENS.certificates = function Certificates({ nav }) {
             ) },
             { title: 'Status',  dataIndex: 'status',   width: 110, render: statusTag },
             { title: '',        width: 110, render: (_, r) => (
-              <antd.Space>
-                <antd.Tooltip title="Download PDF"><antd.Button size="small" icon={<DownloadOutlined />} /></antd.Tooltip>
-                {r.status === 'expiring' && <antd.Button size="small" type="primary">Renew</antd.Button>}
+              <antd.Space onClick={e => e.stopPropagation()}>
+                <antd.Tooltip title="Download Certificate PDF"><antd.Button size="small" icon={<DownloadOutlined />} onClick={() => { setSelected(r); }} /></antd.Tooltip>
+                {r.status === 'expiring' && <antd.Button size="small" type="primary" onClick={() => nav('cert-renewal')}>Renew</antd.Button>}
               </antd.Space>
             ) },
           ]}
@@ -118,6 +119,65 @@ SCREENS.certificates = function Certificates({ nav }) {
 };
 
 function CertificateDetail({ cert, nav }) {
+  function downloadCertPdf() {
+    const lines = [
+      '╔══════════════════════════════════════════════════════════════╗',
+      '║  MALAYSIAN COMMUNICATIONS AND MULTIMEDIA COMMISSION (MCMC)  ║',
+      '║         CERTIFICATE OF REGISTERED COMPLIANCE (RCN)          ║',
+      '╚══════════════════════════════════════════════════════════════╝',
+      '',
+      `  Registered Compliance Number : ${cert.rcn}`,
+      `  Product Name                 : ${cert.product}`,
+      `  Brand                        : ${cert.brand}`,
+      `  Model Number                 : ${cert.model}`,
+      `  Registration Scheme          : Scheme ${cert.scheme}`,
+      `  Label Type                   : ${cert.labelType === 'e-label' ? 'Electronic (e-Label)' : 'Physical Sticker'}`,
+      '',
+      `  Issue Date                   : ${new Date(cert.issued).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}`,
+      `  Expiry Date                  : ${new Date(cert.expires).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}`,
+      `  Status                       : ${cert.status === 'active' ? 'ACTIVE' : cert.status === 'expiring' ? 'EXPIRING SOON' : 'EXPIRED'}`,
+      '',
+      '  Issuing Authority            : Consumer & Product Permit Group (CPPG)',
+      '  Issuing Officer              : En. Faisal Rahman',
+      '',
+      '──────────────────────────────────────────────────────────────',
+      '  This certificate confirms that the above equipment has been',
+      '  registered in accordance with the New Communications Equipment',
+      '  Framework (NCEF) under the Communications and Multimedia',
+      '  Act 1998 (Act 588).',
+      '',
+      '  Verify online: ncef.mcmc.gov.my/verify/' + cert.rcn,
+      '──────────────────────────────────────────────────────────────',
+      '  © Malaysian Communications and Multimedia Commission (MCMC)',
+      '  MCMC Tower 1, Jalan Impact, Cyber 6, 63000 Cyberjaya, Selangor',
+    ].join('\n');
+    const blob = new Blob([lines], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `NCEF-Certificate-${cert.rcn}.txt`;
+    a.click();
+    antd.message.success('Certificate downloaded');
+  }
+
+  function downloadLabel() {
+    const lines = [
+      '┌──────────────────────────────────────┐',
+      '│           NCEF MCMC LABEL            │',
+      `│  ${cert.rcn.padEnd(36)}│`,
+      `│  ${cert.brand.padEnd(20)}${('Sch ' + cert.scheme).padEnd(16)}│`,
+      `│  ${cert.model.substring(0, 36).padEnd(36)}│`,
+      `│  Exp: ${new Date(cert.expires).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).padEnd(29)}│`,
+      '│  [QR]  Scan to verify at mcmc.gov.my │',
+      '└──────────────────────────────────────┘',
+    ].join('\n');
+    const blob = new Blob([lines], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `NCEF-Label-${cert.rcn}.txt`;
+    a.click();
+    antd.message.success('Label template downloaded');
+  }
+
   return (
     <div>
       <antd.Card bordered style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)', color: '#fff', border: 'none' }}>
@@ -147,8 +207,8 @@ function CertificateDetail({ cert, nav }) {
       </antd.Card>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 16 }}>
-        <antd.Button icon={<DownloadOutlined />} block>Download PDF</antd.Button>
-        <antd.Button icon={<PrinterOutlined />} block>Print label</antd.Button>
+        <antd.Button icon={<DownloadOutlined />} block onClick={downloadCertPdf}>Download Certificate</antd.Button>
+        <antd.Button icon={<PrinterOutlined />} block onClick={downloadLabel}>Print Label</antd.Button>
       </div>
 
       <antd.Divider orientation="left" orientationMargin={0} style={{ fontSize: 13 }}>Details</antd.Divider>
@@ -187,6 +247,7 @@ SCREENS.payments = function Payments({ nav, currentUser }) {
   const pays = MOCK.payments;
   const totalPaid = pays.filter(p => p.status === 'paid').reduce((a, b) => a + b.amount, 0);
   const pending = pays.filter(p => p.status === 'pending').reduce((a, b) => a + b.amount, 0);
+  const [selectedPay, setSelectedPay] = React.useState(null);
 
   const methodIcon = (m) => {
     if (m.startsWith('FPX')) return <BankOutlined />;
@@ -195,6 +256,55 @@ SCREENS.payments = function Payments({ nav, currentUser }) {
     if (m.startsWith('Corporate')) return <FileTextOutlined />;
     return <WalletOutlined />;
   };
+
+  function downloadReceipt(p) {
+    const lines = [
+      'MCMC NCEF PORTAL — OFFICIAL RECEIPT',
+      '=====================================',
+      `Receipt No  : ${p.id}`,
+      `Date        : ${new Date(p.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}`,
+      `Application : ${p.app}`,
+      `Payer       : ${cu.company || 'Axiata Digital Sdn Bhd'} (${cu.supplierId || 'SUP-0426-00142'})`,
+      `Method      : ${p.method}`,
+      '',
+      'ITEM                              AMOUNT',
+      '----------------------------------------',
+      `NCEF Registration Fee             RM ${p.amount.toLocaleString('en-MY')}.00`,
+      '----------------------------------------',
+      `TOTAL PAID                        RM ${p.amount.toLocaleString('en-MY')}.00`,
+      '',
+      'SST: Exempt (Government service fee)',
+      '',
+      p.status === 'paid' ? '*** PAYMENT RECEIVED — OFFICIAL RECEIPT ***' : '*** PAYMENT PENDING ***',
+      '',
+      'Malaysian Communications and Multimedia Commission (MCMC)',
+      'MCMC Tower 1, Jalan Impact, Cyber 6, 63000 Cyberjaya, Selangor',
+      'Tel: +603-8688 8000  |  ncef@mcmc.gov.my  |  www.mcmc.gov.my',
+    ].join('\n');
+    const blob = new Blob([lines], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `MCMC-Receipt-${p.id}.txt`;
+    a.click();
+    antd.message.success('Receipt downloaded');
+  }
+
+  function exportCsv() {
+    const header = ['Date', 'Payment ID', 'Application', 'Method', 'Amount (RM)', 'Status'];
+    const rows = pays.map(p => [
+      new Date(p.date).toLocaleDateString('en-GB'),
+      p.id, p.app, p.method,
+      p.amount.toFixed(2),
+      p.status === 'paid' ? 'Paid' : 'Pending',
+    ]);
+    const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ncef-payments.csv';
+    a.click();
+    antd.message.success('CSV exported');
+  }
 
   return (
     <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
@@ -205,7 +315,7 @@ SCREENS.payments = function Payments({ nav, currentUser }) {
           <antd.Typography.Text type="secondary">All scheme fees, renewals and special approvals</antd.Typography.Text>
         </div>
         <antd.Space>
-          <antd.Button icon={<DownloadOutlined />}>Export CSV</antd.Button>
+          <antd.Button icon={<DownloadOutlined />} onClick={exportCsv}>Export CSV</antd.Button>
           <antd.Button type="primary" icon={<PlusOutlined />}>New payment</antd.Button>
         </antd.Space>
       </div>
@@ -240,6 +350,8 @@ SCREENS.payments = function Payments({ nav, currentUser }) {
               dataSource={pays}
               pagination={false}
               scroll={{ x: 'max-content' }}
+              onRow={r => ({ onClick: () => setSelectedPay(r), style: { cursor: 'pointer' } })}
+              rowClassName={r => r.id === selectedPay?.id ? 'ant-table-row-selected' : ''}
               columns={[
                 { title: 'Date',        dataIndex: 'date',   width: 120, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span> },
                 { title: 'Payment ID',  dataIndex: 'id',     width: 150, render: v => <antd.Typography.Text code style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
@@ -247,7 +359,7 @@ SCREENS.payments = function Payments({ nav, currentUser }) {
                 { title: 'Method',      dataIndex: 'method', width: 160, render: v => <antd.Space size={6}>{methodIcon(v)}<span>{v}</span></antd.Space> },
                 { title: 'Amount',      dataIndex: 'amount', width: 130, align: 'right', render: v => <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>RM {v.toLocaleString('en-MY')}.00</span> },
                 { title: 'Status',      dataIndex: 'status', width: 100, render: s => s === 'paid' ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>Paid</antd.Tag> : <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Pending</antd.Tag> },
-                { title: '',            width: 90,  render: () => <antd.Space><antd.Tooltip title="Download invoice"><antd.Button size="small" icon={<DownloadOutlined />} /></antd.Tooltip><antd.Tooltip title="Download receipt"><antd.Button size="small" icon={<FilePdfOutlined />} /></antd.Tooltip></antd.Space> },
+                { title: '',            width: 90,  render: (_, r) => <antd.Space onClick={e => e.stopPropagation()}><antd.Tooltip title="View invoice"><antd.Button size="small" icon={<EyeOutlined />} onClick={() => setSelectedPay(r)} /></antd.Tooltip><antd.Tooltip title="Download receipt"><antd.Button size="small" icon={<DownloadOutlined />} onClick={() => downloadReceipt(r)} /></antd.Tooltip></antd.Space> },
               ]}
             />
           </antd.Card>
@@ -294,45 +406,101 @@ SCREENS.payments = function Payments({ nav, currentUser }) {
             <antd.Button type="link" icon={<EditOutlined />} style={{ padding: 0, marginTop: 8 }}>Edit</antd.Button>
           </antd.Card>
 
-          <antd.Card title={<antd.Space><WalletOutlined /> Fee Offset &amp; Refunds</antd.Space>} bordered style={{ marginTop: 16 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {/* Fee offset balance */}
-              <div style={{ padding: 12, background: 'var(--color-primary-soft)', borderRadius: 8 }}>
-                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Credit Balance (Fee Offset)</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-primary)', marginTop: 2 }}>RM 600.00</div>
-                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>From rejected application APP-0426-00079 · Applied automatically to next renewal</div>
-              </div>
+        </antd.Col>
+      </antd.Row>
 
-              {/* Pending refund */}
-              <div style={{ padding: 12, background: 'var(--color-warning-bg)', borderRadius: 8, border: '1px solid var(--color-warning)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>Refund Pending</div>
-                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>APP-0426-00076 rejected · RM 1,200 · FPX</div>
-                    <div style={{ fontSize: 11, marginTop: 4 }}>Submitted 18 Apr 2026 · Expected within 5–7 business days</div>
-                  </div>
-                  <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Processing</antd.Tag>
+      {/* Invoice / Receipt drawer */}
+      <antd.Drawer
+        open={!!selectedPay}
+        onClose={() => setSelectedPay(null)}
+        width={520}
+        title={<antd.Space><FilePdfOutlined />{selectedPay?.id}</antd.Space>}
+        extra={<antd.Button type="primary" icon={<DownloadOutlined />} onClick={() => downloadReceipt(selectedPay)}>Download Receipt</antd.Button>}
+      >
+        {selectedPay && (() => {
+          const p = selectedPay;
+          const isPaid = p.status === 'paid';
+          return (
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+              {/* MCMC letterhead */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 0 20px', borderBottom: '2px solid var(--color-primary)' }}>
+                <img src="assets/mcmc-logo.png" alt="MCMC" style={{ width: 48, height: 48, background: 'var(--color-primary)', borderRadius: 6, padding: 4 }} onError={e => { e.target.style.display='none'; }} />
+                <div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, color: 'var(--color-primary)' }}>Malaysian Communications and Multimedia Commission</div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: 10, color: 'var(--color-text-muted)' }}>Suruhanjaya Komunikasi dan Multimedia Malaysia · NCEF Portal</div>
                 </div>
               </div>
 
-              {/* Offset policy note */}
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-                <b>Offset policy:</b> Credit balances are applied automatically against your next renewal or new application fee. Remaining balance after application is refunded to original payment method within 7 business days.
+              {/* PAID stamp */}
+              {isPaid && (
+                <div style={{ position: 'absolute', top: 120, right: 40, transform: 'rotate(-20deg)', fontSize: 36, fontWeight: 900, color: 'rgba(22,163,74,0.18)', border: '4px solid rgba(22,163,74,0.18)', padding: '4px 12px', borderRadius: 4, letterSpacing: 6, pointerEvents: 'none', userSelect: 'none' }}>PAID</div>
+              )}
+
+              <div style={{ marginTop: 20, marginBottom: 16 }}>
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                  {isPaid ? 'Official Receipt' : 'Invoice (Pending)'}
+                </div>
               </div>
 
-              <antd.Button block size="small" icon={<FileTextOutlined />}>Request manual refund</antd.Button>
+              {/* Header fields */}
+              {[
+                ['Receipt No.',   p.id],
+                ['Date',          new Date(p.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })],
+                ['Application',   p.app],
+                ['Payer',         `${cu.company || 'Axiata Digital Sdn Bhd'}`],
+                ['Supplier ID',   cu.supplierId || 'SUP-0426-00142'],
+                ['Payment Method',p.method],
+              ].map(([k, v]) => (
+                <div key={k} style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+                  <span style={{ width: 130, color: 'var(--color-text-muted)', flexShrink: 0 }}>{k}</span>
+                  <span>: {v}</span>
+                </div>
+              ))}
+
+              {/* Line items */}
+              <div style={{ marginTop: 20, borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)', padding: '12px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, marginBottom: 8 }}>
+                  <span>Description</span><span>Amount</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>NCEF Registration / Renewal Fee</span>
+                  <span>RM {p.amount.toLocaleString('en-MY')}.00</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>SST</span>
+                  <span>Exempt</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 14, marginTop: 12, padding: '0 0 12px' }}>
+                <span>Total {isPaid ? 'Paid' : 'Due'}</span>
+                <span style={{ color: isPaid ? 'var(--color-success)' : 'var(--color-warning)' }}>RM {p.amount.toLocaleString('en-MY')}.00</span>
+              </div>
+
+              {isPaid && (
+                <antd.Alert type="success" showIcon icon={<CheckCircleOutlined />} style={{ marginTop: 8 }} message="Payment received and verified by MCMC" description={`Transaction confirmed on ${new Date(p.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })} via ${p.method}.`} />
+              )}
+              {!isPaid && (
+                <antd.Alert type="warning" showIcon style={{ marginTop: 8 }} message="Payment pending" description="Complete payment via MCMC Pay portal. Invoice expires in 7 days." />
+              )}
+
+              <div style={{ marginTop: 24, padding: '12px 0', borderTop: '1px solid var(--color-border)', fontSize: 10, color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)', lineHeight: 1.6 }}>
+                MCMC Tower 1, Jalan Impact, Cyber 6, 63000 Cyberjaya, Selangor, Malaysia<br />
+                Tel: +603-8688 8000 · ncef@mcmc.gov.my · www.mcmc.gov.my<br />
+                This is a computer-generated receipt. No signature is required.
+              </div>
             </div>
-          </antd.Card>
-        </antd.Col>
-      </antd.Row>
+          );
+        })()}
+      </antd.Drawer>
     </div>
   );
 };
 
 // ============ PROFILE & SETTINGS ============
-SCREENS.profile = function Profile({ nav, currentUser }) {
+SCREENS.profile = function Profile({ nav, currentUser, tweaks }) {
   const cu = currentUser || MOCK.profiles.supplier;
   const isSupplier = cu.role === 'supplier';
+  const graceMode = tweaks?.graceMode;
   const [tab, setTab] = React.useState('profile');
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const tabs = [
@@ -342,6 +510,8 @@ SCREENS.profile = function Profile({ nav, currentUser }) {
     { k: 'security',      t: 'Security & Access',  icon: <SafetyOutlined /> },
     { k: 'notifications', t: 'Notifications',       icon: <BellOutlined /> },
     ...(isSupplier ? [{ k: 'api', t: 'API & Integrations', icon: <ApartmentOutlined /> }] : []),
+    ...(isSupplier ? [{ k: 'principals', t: 'Principals', icon: <IdcardOutlined /> }] : []),
+    ...(!isSupplier ? [{ k: 'calendar', t: 'Calendar Blocking', icon: <CalendarOutlined /> }] : []),
   ];
 
   return (
@@ -364,12 +534,14 @@ SCREENS.profile = function Profile({ nav, currentUser }) {
           </antd.Card>
         </antd.Col>
         <antd.Col xs={24} md={18}>
-          {tab === 'profile' && <ProfileTab cu={cu} />}
+          {tab === 'profile' && <ProfileTab cu={cu} graceMode={graceMode} />}
           {tab === 'organization' && <OrgTab cu={cu} />}
           {tab === 'team' && isSupplier && <TeamTab onInvite={() => setInviteOpen(true)} />}
           {tab === 'security' && <SecurityTab />}
           {tab === 'notifications' && <NotifTab />}
           {tab === 'api' && isSupplier && <ApiTab />}
+          {tab === 'principals' && isSupplier && <PrincipalsTab />}
+          {tab === 'calendar' && !isSupplier && <CalendarTab cu={cu} />}
         </antd.Col>
       </antd.Row>
 
@@ -378,11 +550,17 @@ SCREENS.profile = function Profile({ nav, currentUser }) {
   );
 };
 
-function ProfileTab({ cu }) {
+function ProfileTab({ cu, graceMode }) {
   const isSupplier = cu.role === 'supplier';
   const roleAccentColor = { supplier: 'var(--color-primary)', 'team-lead': '#7B3FA0', officer: '#0F6ABF', recommender: '#2E7D32', verifier: '#E65100', approver: '#B71C1C' };
   const accentColor = roleAccentColor[cu.role] || 'var(--color-primary)';
   const roleTagColor = { supplier: 'blue', 'team-lead': 'purple', officer: 'blue', recommender: 'green', verifier: 'orange', approver: 'red' };
+
+  const accountStatusNode = isSupplier
+    ? (graceMode
+        ? <span><antd.Tag color="orange" style={{ marginRight: 6 }}>Grace Period</antd.Tag><antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>Expires 05 Jul 2026 — renew to resume new applications</antd.Typography.Text></span>
+        : <antd.Tag color="green" icon={<CheckCircleOutlined />}>Active</antd.Tag>)
+    : null;
 
   const supplierDescItems = [
     { key: '1', label: 'Full Name', children: cu.name },
@@ -391,8 +569,9 @@ function ProfileTab({ cu }) {
     { key: '4', label: 'NRIC', children: '880512-14-5678' },
     { key: '5', label: 'Position', children: 'Head of Regulatory Compliance' },
     { key: '6', label: 'Department', children: 'Product Certification' },
-    { key: '7', label: 'Language', children: 'English (primary) · Bahasa Malaysia' },
-    { key: '8', label: 'Time Zone', children: 'Asia/Kuala_Lumpur (GMT+8)' },
+    { key: '7', label: 'Account Status', children: accountStatusNode },
+    { key: '8', label: 'Language', children: 'English (primary) · Bahasa Malaysia' },
+    { key: '9', label: 'Time Zone', children: 'Asia/Kuala_Lumpur (GMT+8)' },
   ];
   const mcmcDescItems = [
     { key: '1', label: 'Full Name', children: cu.name },
@@ -416,6 +595,7 @@ function ProfileTab({ cu }) {
           <antd.Space size={8} style={{ marginTop: 4 }}>
             <antd.Tag color={roleTagColor[cu.role] || 'blue'} icon={<SafetyOutlined />}>{cu.title}</antd.Tag>
             <antd.Tag icon={<CheckCircleOutlined />} color="green">Verified</antd.Tag>
+            {graceMode && <antd.Tag color="orange">Grace Period</antd.Tag>}
           </antd.Space>
           <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 6 }}>
             {isSupplier ? 'Member since 15 Jan 2024' : `${cu.org || 'MCMC'}`} · Last login 2 hours ago from Kuala Lumpur
@@ -898,6 +1078,293 @@ function InviteDrawer({ open, onClose }) {
         <antd.Button type="primary" icon={<SendOutlined />} onClick={onClose}>Send invite</antd.Button>
       </div>
     </antd.Drawer>
+  );
+}
+
+// ============ CALENDAR BLOCKING (MCMC Officers) ============
+function CalendarTab({ cu }) {
+  const isLead = cu?.role === 'team-lead';
+  const BLOCK_TYPES = ['Annual Leave', 'Medical Leave', 'Training / Course', 'Public Holiday', 'Non-Working Day'];
+
+  const [blocks, setBlocks] = React.useState([
+    { id: 1, type: 'Annual Leave',    start: '2026-05-19', end: '2026-05-22', notes: 'Hari Raya Aidiladha break',   status: 'upcoming' },
+    { id: 2, type: 'Training / Course', start: '2026-06-08', end: '2026-06-09', notes: 'MCMC Internal Audit Training', status: 'upcoming' },
+  ]);
+  const [addOpen, setAddOpen] = React.useState(false);
+  const [draft, setDraft] = React.useState({ type: 'Annual Leave', start: '', end: '', notes: '' });
+  const [transferOpen, setTransferOpen] = React.useState(null);
+  const [transferTo, setTransferTo] = React.useState(null);
+
+  const otherOfficers = MOCK.officerPerformance.filter(o => o.id !== cu?.id).slice(0, 4);
+
+  function addBlock() {
+    if (!draft.start || !draft.end) return;
+    setBlocks(prev => [...prev, { ...draft, id: Date.now(), status: 'upcoming' }]);
+    setAddOpen(false);
+    antd.message.success('Blocked period saved — queue manager notified');
+  }
+  function removeBlock(id) {
+    setBlocks(prev => prev.filter(b => b.id !== id));
+    antd.message.info('Blocked period removed');
+  }
+
+  const typeColor = { 'Annual Leave': 'blue', 'Medical Leave': 'red', 'Training / Course': 'orange', 'Public Holiday': 'green', 'Non-Working Day': 'default' };
+
+  return (
+    <antd.Card title={<antd.Space><ClockCircleOutlined /> Calendar Blocking</antd.Space>} bordered
+      extra={<antd.Button type="primary" icon={<PlusOutlined />} onClick={() => { setDraft({ type: 'Annual Leave', start: '', end: '', notes: '' }); setAddOpen(true); }}>Add Blocked Period</antd.Button>}>
+
+      <antd.Alert type="info" showIcon style={{ marginBottom: 16 }}
+        message="Blocked periods mark you as unavailable for new task assignments. Your Team Lead will be notified and can transfer existing assignments during your absence."
+      />
+
+      {/* Team Lead: pending transfer panel */}
+      {isLead && blocks.length > 0 && (
+        <antd.Card size="small" style={{ marginBottom: 16, border: '1px solid var(--color-warning)', background: '#fffbe6' }}
+          title={<span style={{ color: '#875100', fontWeight: 600 }}><WarningOutlined /> Assignments pending during upcoming leave</span>}>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>
+            3 applications are assigned to officers with upcoming blocked periods. You can pre-emptively transfer them.
+          </div>
+          {[
+            { id: 'APP-0426-00087', officer: 'Pn. Rosnah Idris', blocked: '19–22 May' },
+            { id: 'APP-0426-00091', officer: 'En. Syahrul Azlan', blocked: '08–09 Jun' },
+          ].map(item => (
+            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--color-divider)' }}>
+              <div>
+                <antd.Typography.Text code style={{ fontSize: 12 }}>{item.id}</antd.Typography.Text>
+                <span style={{ fontSize: 12, color: 'var(--color-text-muted)', marginLeft: 8 }}>Assigned: {item.officer} · Blocked: {item.blocked}</span>
+              </div>
+              <antd.Button size="small" onClick={() => { setTransferOpen(item.id); setTransferTo(null); }}>Transfer</antd.Button>
+            </div>
+          ))}
+        </antd.Card>
+      )}
+
+      {blocks.length === 0 ? (
+        <antd.Empty description="No blocked periods scheduled" image={antd.Empty.PRESENTED_IMAGE_SIMPLE} />
+      ) : (
+        <div style={{ display: 'grid', gap: 10 }}>
+          {blocks.map(b => (
+            <div key={b.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px', border: '1px solid var(--color-border)', borderRadius: 10, background: '#fafafa' }}>
+              <antd.Tag color={typeColor[b.type] || 'default'} style={{ marginTop: 2, minWidth: 100, textAlign: 'center' }}>{b.type}</antd.Tag>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>
+                  {new Date(b.start).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  {' — '}
+                  {new Date(b.end).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </div>
+                {b.notes && <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>{b.notes}</div>}
+              </div>
+              <antd.Tag color="orange">Upcoming</antd.Tag>
+              <antd.Button size="small" danger icon={<DeleteOutlined />} type="text" onClick={() => removeBlock(b.id)} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add Blocked Period Modal */}
+      <antd.Modal
+        open={addOpen}
+        title="Add Blocked Period"
+        onCancel={() => setAddOpen(false)}
+        onOk={addBlock}
+        okText="Save"
+        okButtonProps={{ disabled: !draft.start || !draft.end }}
+      >
+        <div style={{ display: 'grid', gap: 14, marginTop: 8 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Block Type</div>
+            <antd.Select value={draft.type} onChange={v => setDraft(d => ({ ...d, type: v }))} style={{ width: '100%' }}
+              options={BLOCK_TYPES.map(t => ({ value: t, label: t }))} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Start Date <span style={{ color: 'var(--color-danger)' }}>*</span></div>
+              <antd.Input type="date" value={draft.start} onChange={e => setDraft(d => ({ ...d, start: e.target.value }))} />
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>End Date <span style={{ color: 'var(--color-danger)' }}>*</span></div>
+              <antd.Input type="date" value={draft.end} onChange={e => setDraft(d => ({ ...d, end: e.target.value }))} />
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Notes <span style={{ color: 'var(--color-text-muted)' }}>(optional)</span></div>
+            <antd.Input.TextArea rows={2} value={draft.notes} onChange={e => setDraft(d => ({ ...d, notes: e.target.value }))} placeholder="e.g. Attending MCMC Internal Training Programme…" />
+          </div>
+        </div>
+      </antd.Modal>
+
+      {/* Transfer Assignment Modal */}
+      <antd.Modal
+        open={!!transferOpen}
+        title={<span>Transfer Assignment — <antd.Typography.Text code style={{ fontSize: 13 }}>{transferOpen}</antd.Typography.Text></span>}
+        onCancel={() => setTransferOpen(null)}
+        onOk={() => {
+          if (!transferTo) return;
+          const name = otherOfficers.find(o => o.id === transferTo)?.name;
+          antd.message.success(`${transferOpen} transferred to ${name}`);
+          setTransferOpen(null);
+        }}
+        okText="Confirm Transfer"
+        okButtonProps={{ disabled: !transferTo }}
+      >
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>Select an available officer to receive this assignment:</div>
+          <antd.Radio.Group value={transferTo} onChange={e => setTransferTo(e.target.value)} style={{ width: '100%', display: 'grid', gap: 8 }}>
+            {otherOfficers.map(o => (
+              <antd.Radio key={o.id} value={o.id} style={{ padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: 8, margin: 0 }}>
+                <span style={{ fontWeight: 600 }}>{o.name}</span>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginLeft: 8 }}>Queue: {o.queue} · SLA: {o.slaCompliance}%</span>
+              </antd.Radio>
+            ))}
+          </antd.Radio.Group>
+        </div>
+      </antd.Modal>
+    </antd.Card>
+  );
+}
+
+// ============ PRINCIPAL MANAGEMENT (Supplier) ============
+function PrincipalsTab() {
+  const [principals, setPrincipals] = React.useState(
+    MOCK.myPrincipals.map(lp => ({ ...MOCK.principalDirectory.find(p => p.id === lp.id), ...lp }))
+  );
+  const [addOpen, setAddOpen] = React.useState(false);
+  const [addStep, setAddStep] = React.useState(0);
+  const [selectedId, setSelectedId] = React.useState(null);
+  const [louUploaded, setLouUploaded] = React.useState(false);
+  const [loaUploaded, setLoaUploaded] = React.useState(false);
+  const [removeConfirm, setRemoveConfirm] = React.useState(null);
+
+  const available = MOCK.principalDirectory.filter(p => !principals.find(lp => lp.id === p.id));
+  const selected = MOCK.principalDirectory.find(p => p.id === selectedId);
+
+  function doAdd() {
+    if (!selectedId || !louUploaded || !loaUploaded) return;
+    setPrincipals(prev => [...prev, { ...selected, linkedAt: new Date().toISOString().slice(0, 10), louStatus: 'pending', loaStatus: 'pending' }]);
+    setAddOpen(false);
+    setAddStep(0);
+    setSelectedId(null);
+    setLouUploaded(false);
+    setLoaUploaded(false);
+    antd.message.success(`${selected.name} added as Principal — documents pending MCMC verification`);
+  }
+  function doRemove(id) {
+    setPrincipals(prev => prev.filter(p => p.id !== id));
+    setRemoveConfirm(null);
+    antd.message.info('Principal unlinked from your account');
+  }
+
+  const docStatus = s => s === 'verified'
+    ? <antd.Tag color="green" style={{ fontSize: 10 }}>Verified</antd.Tag>
+    : <antd.Tag color="orange" style={{ fontSize: 10 }}>Pending</antd.Tag>;
+
+  return (
+    <antd.Card
+      title={<antd.Space><IdcardOutlined /> Linked Principals</antd.Space>}
+      bordered
+      extra={<antd.Button type="primary" icon={<PlusOutlined />} onClick={() => { setAddOpen(true); setAddStep(0); setSelectedId(null); setLouUploaded(false); setLoaUploaded(false); }}>Add Principal</antd.Button>}
+    >
+      <antd.Alert type="info" showIcon style={{ marginBottom: 16 }}
+        message="Principals are overseas manufacturers or brand owners whose products you distribute. Each link requires a Letter of Undertaking (LoU) and Letter of Authorisation (LoA) verified by MCMC."
+      />
+
+      {principals.length === 0 ? (
+        <antd.Empty description="No principals linked yet" image={antd.Empty.PRESENTED_IMAGE_SIMPLE} />
+      ) : (
+        <div style={{ display: 'grid', gap: 12 }}>
+          {principals.map(p => (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 16px', border: '1px solid var(--color-border)', borderRadius: 10, background: '#fafafa' }}>
+              <antd.Avatar size={44} style={{ background: 'var(--color-primary)', flexShrink: 0, fontSize: 14, fontWeight: 700 }}>
+                {p.name?.split(' ').map(w => w[0]).slice(0, 2).join('')}
+              </antd.Avatar>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{p.name}</span>
+                  <antd.Tag style={{ fontSize: 10 }}>{p.category}</antd.Tag>
+                  <antd.Tag style={{ fontSize: 10 }}>{p.country}</antd.Tag>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 6 }}>
+                  <antd.Typography.Text code style={{ fontSize: 11 }}>{p.id}</antd.Typography.Text>
+                  <span style={{ marginLeft: 8 }}>Linked {new Date(p.linkedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                </div>
+                <antd.Space size={6}>
+                  <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>LoU:</span>{docStatus(p.louStatus)}
+                  <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginLeft: 4 }}>LoA:</span>{docStatus(p.loaStatus)}
+                </antd.Space>
+              </div>
+              <antd.Button size="small" danger onClick={() => setRemoveConfirm(p.id)}>Remove</antd.Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add Principal Modal */}
+      <antd.Modal
+        open={addOpen}
+        title={addStep === 0 ? 'Add Principal — Select Company' : 'Add Principal — Upload Documents'}
+        onCancel={() => setAddOpen(false)}
+        footer={
+          <antd.Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+            {addStep === 1 && <antd.Button onClick={() => setAddStep(0)}>← Back</antd.Button>}
+            {addStep === 0 && <antd.Button type="primary" disabled={!selectedId} onClick={() => setAddStep(1)}>Next →</antd.Button>}
+            {addStep === 1 && <antd.Button type="primary" disabled={!louUploaded || !loaUploaded} onClick={doAdd}>Add Principal</antd.Button>}
+          </antd.Space>
+        }
+      >
+        {addStep === 0 && (
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>Select from registered principals in the NCEF directory:</div>
+            <antd.Radio.Group value={selectedId} onChange={e => setSelectedId(e.target.value)} style={{ width: '100%', display: 'grid', gap: 8 }}>
+              {available.map(p => (
+                <antd.Radio key={p.id} value={p.id} style={{ padding: '10px 12px', border: `1px solid ${selectedId === p.id ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 8, margin: 0, background: selectedId === p.id ? 'var(--color-primary-soft)' : '#fff' }}>
+                  <div style={{ fontWeight: 600 }}>{p.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{p.country} · {p.category} · <antd.Typography.Text code style={{ fontSize: 10 }}>{p.id}</antd.Typography.Text></div>
+                </antd.Radio>
+              ))}
+            </antd.Radio.Group>
+            {available.length === 0 && <antd.Empty description="All registered principals are already linked" image={antd.Empty.PRESENTED_IMAGE_SIMPLE} />}
+          </div>
+        )}
+        {addStep === 1 && selected && (
+          <div style={{ marginTop: 8 }}>
+            <antd.Alert type="info" showIcon style={{ marginBottom: 16 }} message={<span>Linking <strong>{selected.name}</strong> — both documents are required before MCMC can verify the relationship.</span>} />
+            {[
+              { key: 'lou', label: 'Letter of Undertaking (LoU)', note: 'On company letterhead, signed by authorised representative', uploaded: louUploaded, setUploaded: setLouUploaded },
+              { key: 'loa', label: 'Letter of Authorisation (LoA)', note: 'Authorising your company to distribute/register the principal\'s equipment', uploaded: loaUploaded, setUploaded: setLoaUploaded },
+            ].map(doc => (
+              <div key={doc.key} style={{ marginBottom: 12, padding: 14, border: `1px solid ${doc.uploaded ? 'var(--color-success)' : 'var(--color-border)'}`, borderRadius: 8, background: doc.uploaded ? 'var(--color-success-bg, #f6ffed)' : '#fafafa' }}>
+                <div style={{ display: 'flex', justify: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{doc.label} <span style={{ color: 'var(--color-danger)' }}>*</span></div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{doc.note}</div>
+                  </div>
+                  {doc.uploaded
+                    ? <antd.Tag color="green">✓ Uploaded</antd.Tag>
+                    : <antd.Button size="small" icon={<UploadOutlined />} onClick={() => doc.setUploaded(true)}>Upload PDF</antd.Button>
+                  }
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </antd.Modal>
+
+      {/* Remove confirmation */}
+      <antd.Modal
+        open={!!removeConfirm}
+        title="Remove Principal"
+        onCancel={() => setRemoveConfirm(null)}
+        onOk={() => doRemove(removeConfirm)}
+        okText="Remove"
+        okButtonProps={{ danger: true }}
+      >
+        <antd.Alert type="warning" showIcon style={{ marginBottom: 12 }}
+          message="Removing this principal will unlink all associated applications. MCMC must be notified if active registrations reference this principal."
+        />
+        <p style={{ fontSize: 13 }}>Are you sure you want to remove <strong>{principals.find(p => p.id === removeConfirm)?.name}</strong> as a linked principal?</p>
+      </antd.Modal>
+    </antd.Card>
   );
 }
 

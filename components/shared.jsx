@@ -5,19 +5,21 @@ const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 // --- STATUS PILL ---
-function StatusPill({ status }) {
+function StatusPill({ status, lang }) {
+  const T = (k) => (window.t ? window.t(lang || 'en', k) : k);
   const map = {
-    draft:              { cls: 'draft',     label: 'Draft' },
-    under_review:       { cls: 'review',    label: 'Under Review' },
-    submitted:          { cls: 'review',    label: 'Submitted' },
-    iteration_required: { cls: 'iteration', label: 'Iteration Required' },
-    approved:           { cls: 'approved',  label: 'Approved' },
-    rejected:           { cls: 'rejected',  label: 'Rejected' },
-    expired:            { cls: 'expired',   label: 'Expired' },
-    priority:           { cls: 'priority',  label: 'Priority Review' },
+    draft:              { cls: 'draft',     key: 'status_draft' },
+    under_review:       { cls: 'review',    key: 'status_under_review' },
+    submitted:          { cls: 'review',    key: 'status_submitted' },
+    iteration_required: { cls: 'iteration', key: 'status_iteration' },
+    approved:           { cls: 'approved',  key: 'status_approved' },
+    rejected:           { cls: 'rejected',  key: 'status_rejected' },
+    expired:            { cls: 'expired',   key: 'status_expired' },
+    priority:           { cls: 'priority',  key: 'status_priority' },
   };
-  const s = map[status] || { cls: 'draft', label: status };
-  return <span className={`status-pill ${s.cls}`}><span className="dot" />{s.label}</span>;
+  const s = map[status] || { cls: 'draft', key: null };
+  const label = s.key ? T(s.key) : status;
+  return <span className={`status-pill ${s.cls}`}><span className="dot" />{label}</span>;
 }
 
 function SchemeBadge({ scheme }) {

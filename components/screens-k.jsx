@@ -44,7 +44,9 @@ Object.assign(window.MOCK, {
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PUBLIC PORTAL SCREEN
 // ─────────────────────────────────────────────────────────────────────────────
-SCREENS['public-portal'] = function PublicPortal({ nav }) {
+SCREENS['public-portal'] = function PublicPortal({ nav, lang: _lang }) {
+  const lang = _lang || 'en';
+  const T = (k) => window.t(lang, k);
   const [section, setSection] = React.useState('search');
   const [q, setQ]             = React.useState('');
   const [qBrand, setQBrand]   = React.useState('');
@@ -101,11 +103,11 @@ SCREENS['public-portal'] = function PublicPortal({ nav }) {
 
   // ── NAV TABS ────────────────────────────────────────────────────────────────
   const navItems = [
-    { k: 'search',   l: 'Equipment Search' },
-    { k: 'process',  l: 'How to Register' },
-    { k: 'docs',     l: 'Documents' },
-    { k: 'faq',      l: 'FAQ' },
-    { k: 'contact',  l: 'Contact' },
+    { k: 'search',   l: T('pub_nav_search') },
+    { k: 'process',  l: T('pub_nav_process') },
+    { k: 'docs',     l: T('pub_nav_docs') },
+    { k: 'faq',      l: T('pub_nav_faq') },
+    { k: 'contact',  l: T('pub_nav_contact') },
   ];
 
   // ── HERO ────────────────────────────────────────────────────────────────────
@@ -126,19 +128,19 @@ SCREENS['public-portal'] = function PublicPortal({ nav }) {
             <div style={{ fontSize: 12, opacity: .85, letterSpacing: .4, marginTop: 2 }}>New Communications Equipment Framework · Malaysian Communications and Multimedia Commission</div>
           </div>
         </div>
-        <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 6, lineHeight: 1.2 }}>Verify Equipment Certification</div>
-        <div style={{ fontSize: 14, opacity: .9, marginBottom: 8 }}>Semak status pendaftaran peralatan komunikasi di Malaysia</div>
-        <div style={{ fontSize: 13, opacity: .8, marginBottom: 28 }}>Check if communications equipment is registered with MCMC before import, sale, or use in Malaysia.</div>
+        <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 6, lineHeight: 1.2 }}>{T('pub_hero_title')}</div>
+        <div style={{ fontSize: 14, opacity: .9, marginBottom: 8 }}>{lang === 'bm' ? 'Verify Equipment Certification' : 'Semak status pendaftaran peralatan komunikasi di Malaysia'}</div>
+        <div style={{ fontSize: 13, opacity: .8, marginBottom: 28 }}>{T('pub_hero_subtitle')}</div>
 
         {/* Main search */}
         <div style={{ display: 'flex', gap: 10, maxWidth: 700 }}>
-          <antd.Input size="large" placeholder="Search by brand, model, RCN, IMEI, or serial number…" value={q} onChange={e => { setQ(e.target.value); setSearched(false); }} onPressEnter={doSearch}
+          <antd.Input size="large" placeholder={T('pub_search_ph')} value={q} onChange={e => { setQ(e.target.value); setSearched(false); }} onPressEnter={doSearch}
             prefix={<SearchOutlined style={{ color: '#94a3b8' }} />} style={{ flex: 1, borderRadius: 8 }} />
-          <antd.Button type="primary" size="large" onClick={doSearch} style={{ background: '#fff', color: 'var(--color-primary)', border: 'none', fontWeight: 700, borderRadius: 8, minWidth: 100 }}>Search</antd.Button>
+          <antd.Button type="primary" size="large" onClick={doSearch} style={{ background: '#fff', color: 'var(--color-primary)', border: 'none', fontWeight: 700, borderRadius: 8, minWidth: 100 }}>{T('pub_search_btn')}</antd.Button>
         </div>
         <div style={{ marginTop: 10, opacity: .75, fontSize: 12 }}>
           <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setAdvancedSearch(!advancedSearch)}>
-            {advancedSearch ? '▾ Hide advanced search' : '▸ Advanced search (filter by brand, model, IMEI, Supplier ID)'}
+            {advancedSearch ? T('pub_adv_hide') : T('pub_adv_show')}
           </span>
         </div>
 
@@ -172,7 +174,7 @@ SCREENS['public-portal'] = function PublicPortal({ nav }) {
         ))}
         <div style={{ flex: 1 }} />
         <div style={{ padding: '10px 20px', display: 'flex', alignItems: 'center' }}>
-          <antd.Button type="primary" size="small" onClick={() => nav('onboarding')}>Register as Supplier</antd.Button>
+          <antd.Button type="primary" size="small" onClick={() => nav('onboarding')}>{T('pub_register_supplier')}</antd.Button>
         </div>
       </div>
     </div>
@@ -198,7 +200,7 @@ SCREENS['public-portal'] = function PublicPortal({ nav }) {
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
                             <span className={`scheme-badge ${r.scheme?.toLowerCase()}`}>Scheme {r.scheme}</span>
-                            {r.status === 'active' ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>Registered & Active</antd.Tag> : r.status === 'expiring' ? <antd.Tag color="orange" icon={<ClockCircleOutlined />}>Expiring Soon</antd.Tag> : <antd.Tag icon={<CloseCircleOutlined />}>Expired</antd.Tag>}
+                            {r.status === 'active' ? <antd.Tag color="green" icon={<CheckCircleOutlined />}>{T('pub_status_active')}</antd.Tag> : r.status === 'expiring' ? <antd.Tag color="orange" icon={<ClockCircleOutlined />}>{T('pub_status_expiring')}</antd.Tag> : <antd.Tag icon={<CloseCircleOutlined />}>{T('pub_status_expired')}</antd.Tag>}
                           </div>
                           <div style={{ fontWeight: 700, fontSize: 16 }}>{r.product}</div>
                           <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 2 }}>{r.brand} · Model: {r.model}</div>
@@ -378,10 +380,10 @@ SCREENS['public-portal'] = function PublicPortal({ nav }) {
     const faqs = MOCK.publicFaqs.filter(f => (faqCat === 'All' || f.cat === faqCat) && (!faqQ || (f.q + f.a).toLowerCase().includes(faqQ.toLowerCase())));
     return (
       <div>
-        <antd.Typography.Title level={4} style={{ marginTop: 0 }}>Frequently Asked Questions</antd.Typography.Title>
+        <antd.Typography.Title level={4} style={{ marginTop: 0 }}>{lang === 'bm' ? 'Soalan Lazim' : 'Frequently Asked Questions'}</antd.Typography.Title>
         <antd.Row gutter={12} style={{ marginBottom: 16 }}>
           <antd.Col flex="auto">
-            <antd.Input placeholder="Search FAQs…" prefix={<SearchOutlined />} value={faqQ} onChange={e => setFaqQ(e.target.value)} />
+            <antd.Input placeholder={lang === 'bm' ? 'Cari soalan lazim…' : 'Search FAQs…'} prefix={<SearchOutlined />} value={faqQ} onChange={e => setFaqQ(e.target.value)} />
           </antd.Col>
           <antd.Col>
             <antd.Segmented value={faqCat} onChange={setFaqCat} options={cats} />

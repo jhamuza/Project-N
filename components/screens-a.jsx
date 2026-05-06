@@ -4,7 +4,9 @@ const SCREENS = {};
 // ============ LOGIN ============
 // Pre-auth screen. Rendered by App when loggedIn === false.
 // Accepts onLogin(role) — parent flips loggedIn=true and navigates to role's default landing.
-SCREENS.login = function LoginScreen({ onLogin }) {
+SCREENS.login = function LoginScreen({ onLogin, lang: _lang }) {
+  const lang = _lang || 'en';
+  const T = (k) => window.t(lang, k);
   const profiles = MOCK.profiles;
   const [selected, setSelected] = React.useState('supplier');
   const p = profiles[selected];
@@ -41,7 +43,11 @@ SCREENS.login = function LoginScreen({ onLogin }) {
   const roleAccent = {
     supplier: 'var(--color-primary)',
     'team-lead': '#7B3FA0',
-    officer: 'var(--color-accent, #0F6ABF)',
+    officer: '#0F6ABF',
+    recommender: '#2E7D32',
+    verifier: '#E65100',
+    approver: '#B71C1C',
+    'content-manager': '#00796B',
   };
 
   // ── Inline Forgot Password flow ──────────────────────────────────────────
@@ -83,20 +89,20 @@ SCREENS.login = function LoginScreen({ onLogin }) {
         {/* Right: Form */}
         <antd.Card bordered={false} style={{ boxShadow: 'var(--elevation-2, 0 8px 24px rgba(11,79,145,0.08))', borderRadius: 16, minHeight: 540 }} bodyStyle={{ padding: 40 }}>
           <div style={{ marginBottom: 24 }}>
-            <antd.Typography.Title level={3} style={{ margin: 0 }}>Sign in</antd.Typography.Title>
-            <antd.Typography.Text type="secondary">Use your MCMC credentials or supplier account</antd.Typography.Text>
+            <antd.Typography.Title level={3} style={{ margin: 0 }}>{T('login_title')}</antd.Typography.Title>
+            <antd.Typography.Text type="secondary">{T('login_subtitle')}</antd.Typography.Text>
           </div>
 
           <antd.Form layout="vertical" onFinish={submit}>
-            <antd.Form.Item label="Email" required>
+            <antd.Form.Item label={T('login_email')} required>
               <antd.Input size="large" prefix={<MailOutlined />} value={email} onChange={e => setEmail(e.target.value)} />
             </antd.Form.Item>
-            <antd.Form.Item label="Password" required>
+            <antd.Form.Item label={T('login_password')} required>
               <antd.Input.Password size="large" prefix={<LockOutlined />} value={password} onChange={e => setPassword(e.target.value)} />
             </antd.Form.Item>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <antd.Checkbox defaultChecked>Remember me</antd.Checkbox>
-              <antd.Typography.Link onClick={() => setForgotMode(true)}>Forgot password?</antd.Typography.Link>
+              <antd.Checkbox defaultChecked>{T('login_remember')}</antd.Checkbox>
+              <antd.Typography.Link onClick={() => setForgotMode(true)}>{T('login_forgot')}</antd.Typography.Link>
             </div>
             {loginError === 'wrong_credentials' && (
               <antd.Alert
@@ -119,13 +125,14 @@ SCREENS.login = function LoginScreen({ onLogin }) {
                 style={{ marginBottom: 16 }}
               />
             )}
-            <antd.Button type="primary" size="large" htmlType="submit" block loading={loading} disabled={loginError === 'account_locked'}>Sign in</antd.Button>
+            <antd.Button type="primary" size="large" htmlType="submit" block loading={loading} disabled={loginError === 'account_locked'}>{T('login_submit')}</antd.Button>
           </antd.Form>
 
-          <antd.Divider style={{ margin: '24px 0 16px', fontSize: 11, color: 'var(--color-text-muted)' }}>DEMO ACCOUNTS</antd.Divider>
+          <antd.Divider style={{ margin: '24px 0 16px', fontSize: 11, color: 'var(--color-text-muted)' }}>{T('login_demo')}</antd.Divider>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-            {['supplier', 'team-lead', 'officer'].map(key => {
+            {['supplier', 'team-lead', 'officer', 'recommender', 'verifier', 'approver', 'content-manager'].map(key => {
               const prof = profiles[key];
+              if (!prof) return null;
               const isActive = selected === key;
               return (
                 <div
@@ -136,7 +143,7 @@ SCREENS.login = function LoginScreen({ onLogin }) {
                     border: `1.5px solid ${isActive ? roleAccent[key] : 'var(--color-border, #E5E7EB)'}`,
                     borderRadius: 10,
                     cursor: 'pointer',
-                    background: isActive ? 'rgba(11,79,145,0.04)' : '#fff',
+                    background: isActive ? `${roleAccent[key]}10` : '#fff',
                     textAlign: 'center',
                     transition: 'all 0.15s',
                   }}
@@ -149,7 +156,7 @@ SCREENS.login = function LoginScreen({ onLogin }) {
             })}
           </div>
           <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 12, textAlign: 'center' }}>
-            Click a card to prefill demo credentials
+            {T('login_demo_hint')}
           </div>
         </antd.Card>
       </div>
@@ -159,21 +166,59 @@ SCREENS.login = function LoginScreen({ onLogin }) {
 
 
 // ============ DASHBOARD ============
-SCREENS.dashboard = function Dashboard({ nav, tweaks }) {
+SCREENS.dashboard = function Dashboard({ nav, tweaks, lang: _lang }) {
+  const lang = _lang || 'en';
+  const T = (k) => window.t(lang, k);
+  const graceMode = tweaks?.graceMode;
+  const GRACE_EXPIRY = new Date('2026-07-05');
   const k = MOCK.kpi.supplier;
   const recent = MOCK.assessments.slice(0, 5);
   const kpis = [
-    { label: 'Total Applications', value: k.totalApps, delta: '+3 this month', icon: '📋', to: 'applications' },
-    { label: 'Approved Certificates', value: k.approved, delta: '2 renewing in 30d', icon: '✓', to: 'applications' },
-    { label: 'Pending Action', value: k.pending, delta: '1 needs iteration', icon: '⚠', to: 'applications', warn: true },
-    { label: 'Expiring Soon', value: k.expiringSoon, delta: 'Within 90 days', icon: '⏰', to: 'applications' },
+    { label: T('dash_kpi_pending'),  value: k.pending,       delta: lang === 'bm' ? '1 perlukan pindaan' : '1 needs iteration', icon: '⚠', to: 'applications', warn: true },
+    { label: T('dash_kpi_approved'), value: k.approved,      delta: lang === 'bm' ? '2 pembaharuan dalam 30h' : '2 renewing in 30d', icon: '✓', to: 'applications' },
+    { label: T('dash_kpi_expiring'), value: k.expiringSoon,  delta: lang === 'bm' ? 'Dalam 90 hari' : 'Within 90 days', icon: '⏰', to: 'applications' },
+    { label: lang === 'bm' ? 'Jumlah Permohonan' : 'Total Applications', value: k.totalApps, delta: lang === 'bm' ? '+3 bulan ini' : '+3 this month', icon: '📋', to: 'applications' },
   ];
+  const TODAY_DASH = new Date('2026-05-05');
+  const ACCT_EXPIRY = new Date('2026-06-15');
+  const acctDaysLeft = Math.ceil((ACCT_EXPIRY - TODAY_DASH) / 864e5);
+  const acctExpiring = acctDaysLeft <= 90;
+
   return (
     <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      {graceMode && (
+        <antd.Alert
+          type="error"
+          showIcon
+          style={{ marginBottom: 20 }}
+          message={
+            <span>
+              <strong>{lang === 'bm' ? 'Akaun dalam tempoh tangguh' : 'Account is in grace period'}</strong>
+              {' — '}{lang === 'bm' ? 'tamat' : 'expires'} {GRACE_EXPIRY.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}.
+              {' '}{lang === 'bm' ? 'Permohonan baharu disekat. Sila baharu akaun anda untuk meneruskan.' : 'New applications are blocked. Renew your account to resume submitting.'}
+            </span>
+          }
+          action={<antd.Button size="small" danger onClick={() => nav('account-renewal')}>{lang === 'bm' ? 'Baharu Akaun' : 'Renew Account'}</antd.Button>}
+        />
+      )}
+      {!graceMode && acctExpiring && (
+        <antd.Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 20 }}
+          message={<span><strong>{lang === 'bm' ? `Pendaftaran akaun tamat dalam ${acctDaysLeft} hari` : `Account registration expiring in ${acctDaysLeft} days`}</strong> — {ACCT_EXPIRY.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}. {lang === 'bm' ? 'Mohon pembaharuan sekarang untuk mengelak gangguan perkhidmatan.' : 'Renew now to avoid service disruption.'}</span>}
+          action={<antd.Button size="small" onClick={() => nav('account-renewal')}>{lang === 'bm' ? 'Baharu Akaun' : 'Renew Account'}</antd.Button>}
+          closable
+        />
+      )}
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Supplier Dashboard · {MOCK.currentUser.supplierId}</div>
-        <Title level={2} style={{ margin: '4px 0 0', fontWeight: 600 }}>Selamat datang, {MOCK.currentUser.name.split(' ')[0]}</Title>
-        <Text type="secondary">Axiata Digital Sdn Bhd · Active supplier since Jan 2024</Text>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>
+          {lang === 'bm' ? 'Papan Pemuka Pembekal' : 'Supplier Dashboard'} · {MOCK.currentUser.supplierId}
+        </div>
+        <Title level={2} style={{ margin: '4px 0 0', fontWeight: 600 }}>
+          {lang === 'bm' ? `${T('dash_welcome')}, ${MOCK.currentUser.name.split(' ')[0]}` : `Welcome back, ${MOCK.currentUser.name.split(' ')[0]}`}
+        </Title>
+        <Text type="secondary">{lang === 'bm' ? 'Axiata Digital Sdn Bhd · Pembekal aktif sejak Jan 2024' : 'Axiata Digital Sdn Bhd · Active supplier since Jan 2024'}</Text>
       </div>
 
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
@@ -195,17 +240,17 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks }) {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={16}>
-          <Card title="Recent Applications" extra={<Button type="link" onClick={() => nav('applications')}>View all →</Button>} bordered>
+          <Card title={T('dash_recent')} extra={<Button type="link" onClick={() => nav('applications')}>{T('dash_view_all')} →</Button>} bordered>
             <List
               dataSource={recent}
               renderItem={(a) => (
                 <List.Item
-                  actions={[<StatusPill status={a.status} />, <Button type="link" size="small" onClick={() => nav('officer-review')}>Open</Button>]}
+                  actions={[<StatusPill status={a.status} lang={lang} />, <Button type="link" size="small" onClick={() => nav('officer-review')}>{T('apps_open')}</Button>]}
                   style={{ padding: '12px 0' }}
                 >
                   <List.Item.Meta
                     title={<Space><SchemeBadge scheme={a.scheme} /><Text strong>{a.product}</Text></Space>}
-                    description={<Text type="secondary" style={{ fontSize: 12 }}>{a.id} · {a.brand} {a.model} · Updated {dayjs(a.updated).fromNow?.() || '2 days ago'}</Text>}
+                    description={<Text type="secondary" style={{ fontSize: 12 }}>{a.id} · {a.brand} {a.model} · {lang === 'bm' ? 'Dikemaskini' : 'Updated'} {dayjs(a.updated).fromNow?.() || '2 days ago'}</Text>}
                   />
                 </List.Item>
               )}
@@ -213,15 +258,20 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks }) {
           </Card>
         </Col>
         <Col xs={24} lg={8}>
-          <Card title="Quick Actions" bordered style={{ marginBottom: 16 }}>
+          <Card title={T('dash_quick_actions')} bordered style={{ marginBottom: 16 }}>
             <Space direction="vertical" style={{ width: '100%' }} size={8}>
-              <Button block type="primary" size="large" onClick={() => nav('sdoc-wizard')}>+ New SDoC Application</Button>
-              <Button block size="large" onClick={() => nav('special-approval')}>+ Special Approval</Button>
-              <Button block size="large" onClick={() => nav('imei-register')}>+ Register IMEI / SN</Button>
-              <Button block size="large" onClick={() => nav('cert-renewal')}>+ Certificate Renewal</Button>
+              <antd.Tooltip title={graceMode ? (lang === 'bm' ? 'Pembaharuan akaun diperlukan' : 'Account renewal required') : ''}>
+                <Button block type="primary" size="large" disabled={!!graceMode} onClick={() => nav('sdoc-wizard')}>{T('dash_new_sdoc')}</Button>
+              </antd.Tooltip>
+              <antd.Tooltip title={graceMode ? (lang === 'bm' ? 'Pembaharuan akaun diperlukan' : 'Account renewal required') : ''}>
+                <Button block size="large" disabled={!!graceMode} onClick={() => nav('special-approval')}>{T('dash_new_sa')}</Button>
+              </antd.Tooltip>
+              <Button block size="large" onClick={() => nav('imei-register')}>{lang === 'bm' ? '+ Daftar IMEI / S/N' : '+ Register IMEI / SN'}</Button>
+              <Button block size="large" onClick={() => nav('cert-renewal')}>{T('dash_new_renewal')}</Button>
+              <Button block size="large" onClick={() => nav('account-renewal')}>{T('dash_new_account_renewal')}</Button>
             </Space>
           </Card>
-          <Card title="Notifications" bordered>
+          <Card title={lang === 'bm' ? 'Pemberitahuan' : 'Notifications'} bordered>
             <List
               size="small"
               dataSource={[
@@ -248,8 +298,125 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks }) {
   );
 };
 
+// ============ OFFICER ALL-APPLICATIONS VIEW ============
+function OfficerAllApplications({ nav, currentUser }) {
+  const [search, setSearch] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState('all');
+  const [schemeFilter, setSchemeFilter] = React.useState([]);
+  const [selectedRows, setSelectedRows] = React.useState([]);
+  const [bulkOpen, setBulkOpen] = React.useState(false);
+
+  const isLead = currentUser?.role === 'team-lead' || currentUser?.role === 'approver';
+
+  // Expand mock data to simulate cross-supplier entries
+  const allOfficerApps = [
+    ...MOCK.assessments.map(a => ({ ...a, applicant: 'Axiata Digital Sdn Bhd', supplierId: 'SUP-0426-00142' })),
+    { id: 'APP-0426-00091', product: 'OPPO Find X7 Ultra', brand: 'OPPO', model: 'X7U', scheme: 'A', status: 'under_review', aiScore: 81, submitted: '2026-04-10', updated: '2026-04-11', applicant: 'OPPO Malaysia Sdn Bhd', supplierId: 'SUP-0621-00091' },
+    { id: 'APP-0426-00092', product: 'Xiaomi 14 Ultra', brand: 'Xiaomi', model: 'MI-14U', scheme: 'B', status: 'under_review', aiScore: 74, submitted: '2026-04-12', updated: '2026-04-13', applicant: 'Xiaomi Technology MY', supplierId: 'SUP-0823-00210' },
+    { id: 'APP-0426-00094', product: 'TP-Link Deco BE85', brand: 'TP-Link', model: 'Deco-BE85', scheme: 'C', status: 'approved', aiScore: 96, submitted: '2026-03-28', updated: '2026-03-28', applicant: 'TP-Link Technology Sdn Bhd', supplierId: 'SUP-0621-00090' },
+    { id: 'APP-0426-00095', product: 'Huawei Band 8', brand: 'Huawei', model: 'BAND8', scheme: 'B', status: 'iteration_required', aiScore: 68, submitted: '2026-04-05', updated: '2026-04-08', applicant: 'Huawei Technologies (M) Sdn Bhd', supplierId: 'SUP-0224-00142' },
+  ];
+
+  const byStatus = statusFilter === 'all' ? allOfficerApps : allOfficerApps.filter(a => a.status === statusFilter);
+  const byScheme = schemeFilter.length ? byStatus.filter(a => schemeFilter.includes(a.scheme)) : byStatus;
+  const filtered = search ? byScheme.filter(a => [a.id, a.product, a.brand, a.applicant, a.supplierId].join(' ').toLowerCase().includes(search.toLowerCase())) : byScheme;
+
+  function exportSelected() {
+    const rows = (selectedRows.length ? allOfficerApps.filter(a => selectedRows.includes(a.id)) : filtered);
+    const header = ['App ID', 'Applicant', 'Product', 'Scheme', 'Status', 'AI Score', 'Submitted'];
+    const csv = [header, ...rows.map(a => [a.id, a.applicant, a.product, a.scheme, a.status, a.aiScore ?? '', new Date(a.submitted).toLocaleDateString('en-GB')])].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const el = document.createElement('a'); el.href = URL.createObjectURL(blob); el.download = 'ncef-all-applications.csv'; el.click();
+    antd.message.success(`Exported ${rows.length} rows`);
+  }
+
+  const statusCounts = { all: allOfficerApps.length };
+  ['under_review','approved','iteration_required','rejected','draft'].forEach(s => { statusCounts[s] = allOfficerApps.filter(a => a.status === s).length; });
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Officer View</div>
+          <antd.Typography.Title level={3} style={{ margin: '4px 0 0' }}>All Applications</antd.Typography.Title>
+          <antd.Typography.Text type="secondary">Cross-supplier master list — {allOfficerApps.length} total applications</antd.Typography.Text>
+        </div>
+        <antd.Space>
+          {selectedRows.length > 0 && (
+            <antd.Dropdown menu={{ items: [
+              { key: 'export', label: `Export selected (${selectedRows.length})`, onClick: exportSelected },
+              { key: 'assign', label: 'Bulk assign to officer…', disabled: !isLead, onClick: () => setBulkOpen(true) },
+              { key: 'flag',   label: 'Flag for priority review', onClick: () => { antd.message.success(`${selectedRows.length} applications flagged`); setSelectedRows([]); } },
+            ]}}>
+              <antd.Button type="primary">{selectedRows.length} selected ▾</antd.Button>
+            </antd.Dropdown>
+          )}
+          <antd.Button icon={<DownloadOutlined />} onClick={exportSelected}>Export CSV</antd.Button>
+        </antd.Space>
+      </div>
+
+      {/* Filters */}
+      <antd.Card bordered style={{ marginBottom: 16 }}>
+        <antd.Row gutter={[12, 12]} align="middle">
+          <antd.Col flex="auto">
+            <antd.Input placeholder="Search application ID, product, applicant, supplier ID…" prefix={<SearchOutlined />} value={search} onChange={e => setSearch(e.target.value)} allowClear />
+          </antd.Col>
+          <antd.Col>
+            <antd.Select placeholder="Status" style={{ width: 160 }} value={statusFilter} onChange={setStatusFilter} options={[
+              { value: 'all', label: `All (${statusCounts.all})` },
+              { value: 'under_review', label: `Under Review (${statusCounts.under_review})` },
+              { value: 'approved', label: `Approved (${statusCounts.approved})` },
+              { value: 'iteration_required', label: `Iteration Req. (${statusCounts.iteration_required})` },
+              { value: 'rejected', label: `Rejected (${statusCounts.rejected})` },
+              { value: 'draft', label: `Draft (${statusCounts.draft})` },
+            ]} />
+          </antd.Col>
+          <antd.Col>
+            <antd.Select placeholder="Scheme" mode="multiple" style={{ width: 180 }} value={schemeFilter} onChange={setSchemeFilter} options={['A','B','C','SA'].map(s => ({ value: s, label: `Scheme ${s}` }))} maxTagCount={2} />
+          </antd.Col>
+        </antd.Row>
+      </antd.Card>
+
+      <antd.Table
+        rowKey="id"
+        dataSource={filtered}
+        pagination={{ pageSize: 10, showTotal: (t, r) => `${r[0]}–${r[1]} of ${t}` }}
+        scroll={{ x: 'max-content' }}
+        rowSelection={isLead ? { selectedRowKeys: selectedRows, onChange: setSelectedRows } : undefined}
+        columns={[
+          { title: 'App ID',    dataIndex: 'id',        width: 160, render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
+          { title: 'Applicant', dataIndex: 'applicant', width: 210, ellipsis: true, render: (v, r) => <div><div style={{ fontWeight: 600, fontSize: 12 }}>{v}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.supplierId}</div></div> },
+          { title: 'Product',   width: 200, ellipsis: true, render: (_, r) => <div><div style={{ fontWeight: 600 }}>{r.product}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.brand} · {r.model}</div></div> },
+          { title: 'Scheme',    dataIndex: 'scheme',    width: 90,  render: s => <SchemeBadge scheme={s} /> },
+          { title: 'Status',    dataIndex: 'status',    width: 160, render: s => <StatusPill status={s} /> },
+          { title: 'AI Score',  dataIndex: 'aiScore',   width: 100, align: 'right', render: v => v != null ? <antd.Tag color={v >= 90 ? 'green' : v >= 70 ? 'orange' : 'red'}>{v}</antd.Tag> : <span style={{ color: 'var(--color-text-muted)' }}>—</span> },
+          { title: 'Submitted', dataIndex: 'submitted', width: 120, render: v => <span style={{ whiteSpace: 'nowrap', fontSize: 12 }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span> },
+          { title: '', width: 80, render: () => <antd.Button size="small" onClick={() => nav('officer-review')}>Review</antd.Button> },
+        ]}
+      />
+
+      {/* Bulk assign modal */}
+      <antd.Modal open={bulkOpen} onCancel={() => setBulkOpen(false)} title={`Bulk Assign — ${selectedRows.length} applications`} okText="Assign" onOk={() => { antd.message.success(`${selectedRows.length} applications assigned`); setSelectedRows([]); setBulkOpen(false); }} width={440}>
+        <antd.Form layout="vertical" style={{ marginTop: 12 }}>
+          <antd.Form.Item label="Assign to officer">
+            <antd.Select placeholder="Select officer…" options={(MOCK.officerPerformance || []).map(o => ({ value: o.id, label: `${o.name} — ${o.pending} pending` }))} />
+          </antd.Form.Item>
+          <antd.Form.Item label="Note (optional)">
+            <antd.Input.TextArea rows={3} placeholder="Reason for bulk assignment…" />
+          </antd.Form.Item>
+        </antd.Form>
+      </antd.Modal>
+    </div>
+  );
+}
+
 // ============ APPLICATIONS LIST ============
-SCREENS.applications = function Applications({ nav }) {
+SCREENS.applications = function Applications({ nav, lang: _lang, currentUser }) {
+  const lang = _lang || 'en';
+  const T = (k) => window.t(lang, k);
+  const isOfficer = currentUser && currentUser.role !== 'supplier';
+  if (isOfficer) return <OfficerAllApplications nav={nav} currentUser={currentUser} />;
+
   const FilterOutlined = icons.FilterOutlined || icons.SearchOutlined;
   const [typeTab, setTypeTab] = React.useState('all');
   const [statusFilter, setStatusFilter] = React.useState('all');
@@ -257,6 +424,10 @@ SCREENS.applications = function Applications({ nav }) {
   const [schemeFilter, setSchemeFilter] = React.useState([]);
   const [aiFilter, setAiFilter] = React.useState('all');
   const [showAdv, setShowAdv] = React.useState(false);
+  const [extModal, setExtModal] = React.useState(null);
+  const [extReason, setExtReason] = React.useState('');
+  const [extDays, setExtDays] = React.useState(7);
+  const [extSent, setExtSent] = React.useState({});
   const all = MOCK.assessments;
 
   function appType(a) {
@@ -277,84 +448,126 @@ SCREENS.applications = function Applications({ nav }) {
     ? byAi.filter(a => [a.id, a.product, a.brand, a.model].join(' ').toLowerCase().includes(search.toLowerCase()))
     : byAi;
 
+  const TODAY_APPS = new Date('2026-05-05');
+  const DRAFT_LAPSE_DAYS = 60;
+
+  function draftDaysLeft(a) {
+    if (a.status !== 'draft') return null;
+    const updated = new Date(a.updated);
+    const lapseDate = new Date(updated.getTime() + DRAFT_LAPSE_DAYS * 864e5);
+    return Math.ceil((lapseDate - TODAY_APPS) / 864e5);
+  }
+
   const sdocCount = all.filter(a => appType(a) === 'sdoc').length;
   const saCount   = all.filter(a => appType(a) === 'sa').length;
   const iterCount = all.filter(a => a.status === 'iteration_required').length;
   const draftCount = all.filter(a => a.status === 'draft').length;
+  const expiringDrafts = all.filter(a => { const d = draftDaysLeft(a); return d !== null && d <= 14; });
   const advCount  = schemeFilter.length + (aiFilter !== 'all' ? 1 : 0);
 
   const statusOptions = [
-    { label: 'All statuses', value: 'all' },
-    { label: `Draft (${draftCount})`,       value: 'draft' },
-    { label: 'Under Review',                value: 'under_review' },
-    { label: `Needs action (${iterCount})`, value: 'iteration_required' },
-    { label: 'Approved',                    value: 'approved' },
-    { label: 'Rejected',                    value: 'rejected' },
+    { label: T('apps_status_all'),                             value: 'all' },
+    { label: `${T('apps_status_draft')} (${draftCount})`,     value: 'draft' },
+    { label: T('apps_status_review'),                          value: 'under_review' },
+    { label: `${T('apps_status_iteration')} (${iterCount})`,  value: 'iteration_required' },
+    { label: T('apps_status_approved'),                        value: 'approved' },
+    { label: T('apps_status_rejected'),                        value: 'rejected' },
   ];
 
   const cols = [
-    { title: 'App ID', dataIndex: 'id', width: 160, render: v => <Text code style={{ fontSize: 12 }}>{v}</Text> },
-    { title: 'Type / Scheme', width: 130, render: (_, r) => (
+    { title: T('apps_col_id'), dataIndex: 'id', width: 160, render: v => <Text code style={{ fontSize: 12 }}>{v}</Text> },
+    { title: T('apps_col_type'), width: 130, render: (_, r) => (
       <antd.Space direction="vertical" size={2}>
-        <Tag style={{ fontSize: 11 }}>{r.scheme === 'SA' ? 'Special Approval' : r.scheme === 'REN' ? 'Renewal' : r.scheme === 'IMEI' ? 'IMEI' : `Scheme ${r.scheme}`}</Tag>
+        <Tag style={{ fontSize: 11 }}>{r.scheme === 'SA' ? (lang === 'bm' ? 'Kelulusan Khas' : 'Special Approval') : r.scheme === 'REN' ? (lang === 'bm' ? 'Pembaharuan' : 'Renewal') : r.scheme === 'IMEI' ? 'IMEI' : `Skim ${r.scheme}`}</Tag>
         <Text style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-          {appType(r) === 'sa' ? 'Special Approval' : appType(r) === 'renewal' ? 'Renewal' : 'SDoC'}
+          {appType(r) === 'sa' ? (lang === 'bm' ? 'Kelulusan Khas' : 'Special Approval') : appType(r) === 'renewal' ? (lang === 'bm' ? 'Pembaharuan' : 'Renewal') : 'SDoC'}
         </Text>
       </antd.Space>
     )},
-    { title: 'Product', width: 220, render: (_, r) => (
+    { title: T('apps_col_product'), width: 220, render: (_, r) => (
       <div>
         <div style={{ fontWeight: 600, fontSize: 13 }}>{r.product}</div>
         <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{r.brand} · {r.model}</div>
       </div>
     )},
-    { title: 'Validation', dataIndex: 'aiScore', width: 130, render: s =>
-      !s ? <Text type="secondary" style={{ fontSize: 12 }}>Pending</Text>
-      : s >= 90 ? <Tag color="green" icon={<CheckCircleOutlined />}>No issues</Tag>
-      : <Tag color="orange" icon={<WarningOutlined />}>Items to review</Tag>
+    { title: T('apps_col_validation'), dataIndex: 'aiScore', width: 130, render: s =>
+      !s ? <Text type="secondary" style={{ fontSize: 12 }}>{lang === 'bm' ? 'Menunggu' : 'Pending'}</Text>
+      : s >= 90 ? <Tag color="green" icon={<CheckCircleOutlined />}>{lang === 'bm' ? 'Tiada isu' : 'No issues'}</Tag>
+      : <Tag color="orange" icon={<WarningOutlined />}>{lang === 'bm' ? 'Perlu semak' : 'Items to review'}</Tag>
     },
-    { title: 'Status', dataIndex: 'status', width: 150, render: s => <StatusPill status={s} /> },
+    { title: T('apps_col_status'), dataIndex: 'status', width: 150, render: (s, r) => {
+      const dl = draftDaysLeft(r);
+      return (
+        <antd.Space direction="vertical" size={2}>
+          <StatusPill status={s} lang={lang} />
+          {dl !== null && dl <= 30 && (
+            <antd.Tag color={dl <= 7 ? 'red' : dl <= 14 ? 'orange' : 'gold'} style={{ fontSize: 10 }}>
+              {lang === 'bm' ? `Luput dalam ${dl}h` : `Lapses in ${dl}d`}
+            </antd.Tag>
+          )}
+        </antd.Space>
+      );
+    }},
     { title: 'Updated', dataIndex: 'updated', width: 100, render: v =>
       <Text style={{ fontSize: 12 }}>{new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}</Text>
     },
-    { title: '', width: 130, render: (_, r) => (
-      <antd.Space size={4}>
+    { title: '', width: 180, render: (_, r) => (
+      <antd.Space size={4} wrap>
         {r.status === 'iteration_required' && (
           <Button size="small" type="primary" icon={<ReloadOutlined />} onClick={() => nav('iteration-reply')}
             style={{ background: 'var(--color-warning)', borderColor: 'var(--color-warning)' }}>
             Respond
           </Button>
         )}
-        <Button size="small" onClick={() => nav('application-detail')}>Open</Button>
+        {r.status === 'iteration_required' && !extSent[r.id] && (
+          <Button size="small" onClick={() => { setExtModal(r); setExtReason(''); setExtDays(7); }}>
+            {T('apps_ext_request')}
+          </Button>
+        )}
+        {r.status === 'iteration_required' && extSent[r.id] && (
+          <Tag color="blue" style={{ fontSize: 10 }}>{lang === 'bm' ? 'Lanjutan Dimohon' : 'Extension Requested'}</Tag>
+        )}
+        <Button size="small" onClick={() => nav('application-detail')}>{T('apps_open')}</Button>
       </antd.Space>
     )},
   ];
 
   const typeTabs = [
-    { key: 'all',     label: <span>All <antd.Badge count={all.length} style={{ backgroundColor: 'var(--color-text-muted)', marginLeft: 4 }} /></span> },
+    { key: 'all',     label: <span>{lang === 'bm' ? 'Semua' : 'All'} <antd.Badge count={all.length} style={{ backgroundColor: 'var(--color-text-muted)', marginLeft: 4 }} /></span> },
     { key: 'sdoc',    label: <span>SDoC <antd.Badge count={sdocCount} style={{ backgroundColor: 'var(--color-primary)', marginLeft: 4 }} /></span> },
-    { key: 'sa',      label: <span>Special Approval <antd.Badge count={saCount} color="purple" style={{ marginLeft: 4 }} /></span> },
-    { key: 'renewal', label: <span>Renewals <antd.Badge count={all.filter(a => appType(a) === 'renewal').length} color="cyan" style={{ marginLeft: 4 }} /></span> },
+    { key: 'sa',      label: <span>{lang === 'bm' ? 'Kelulusan Khas' : 'Special Approval'} <antd.Badge count={saCount} color="purple" style={{ marginLeft: 4 }} /></span> },
+    { key: 'renewal', label: <span>{lang === 'bm' ? 'Pembaharuan' : 'Renewals'} <antd.Badge count={all.filter(a => appType(a) === 'renewal').length} color="cyan" style={{ marginLeft: 4 }} /></span> },
   ];
 
   return (
     <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
         <div>
-          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Applications</div>
-          <Title level={3} style={{ margin: '4px 0 0' }}>My Applications</Title>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>{lang === 'bm' ? 'Permohonan' : 'Applications'}</div>
+          <Title level={3} style={{ margin: '4px 0 0' }}>{T('apps_title')}</Title>
         </div>
         <Space wrap>
-          <Input.Search placeholder="Search by ID, product, model…" style={{ width: 240 }}
+          <Input.Search placeholder={T('apps_search')} style={{ width: 240 }}
             value={search} onChange={e => setSearch(e.target.value)} allowClear />
           <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 170 }} options={statusOptions} />
           <antd.Badge count={advCount} size="small">
             <Button icon={<FilterOutlined />} type={advCount > 0 ? 'primary' : 'default'}
               onClick={() => setShowAdv(v => !v)}>
-              Filters
+              {lang === 'bm' ? 'Penapis' : 'Filters'}
             </Button>
           </antd.Badge>
-          <Button type="primary" onClick={() => nav('sdoc-wizard')}>+ New SDoC</Button>
+          <antd.Dropdown menu={{ items:[
+            { key:'csv', label:'Export CSV', icon:<icons.DownloadOutlined />, onClick:() => {
+              const header=['ID','Scheme','Product','Brand','Model','Status','Updated'];
+              const rows=[header,...filtered.map(r=>[r.id,r.scheme,r.product,r.brand,r.model,r.status,r.updated].map(v=>`"${String(v||'').replace(/"/g,'""')}"`)  )];
+              const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+              const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'ncef-applications.csv'});
+              a.click(); antd.message.success(lang === 'bm' ? 'Dieksport' : 'Applications exported');
+            }},
+          ]}} trigger={['click']}>
+            <Button icon={<DownloadOutlined />}>{T('apps_export')} <span style={{fontSize:10,marginLeft:2}}>▾</span></Button>
+          </antd.Dropdown>
+          <Button type="primary" onClick={() => nav('sdoc-wizard')}>{T('apps_new_sdoc')}</Button>
         </Space>
       </div>
 
@@ -391,6 +604,14 @@ SCREENS.applications = function Applications({ nav }) {
         </Card>
       )}
 
+      {expiringDrafts.length > 0 && (
+        <antd.Alert type="error" showIcon style={{ marginBottom: 8 }}
+          message={`${expiringDrafts.length} draft${expiringDrafts.length > 1 ? 's' : ''} will auto-lapse soon`}
+          description={`Unsubmitted drafts are auto-cancelled after ${DRAFT_LAPSE_DAYS} days of inactivity. Submit or update these drafts to avoid losing your progress.`}
+          action={<Button size="small" danger onClick={() => { setStatusFilter('draft'); setTypeTab('all'); }}>View Drafts</Button>}
+        />
+      )}
+
       {iterCount > 0 && (
         <antd.Alert type="warning" showIcon style={{ marginBottom: 16 }}
           message={`${iterCount} application${iterCount > 1 ? 's' : ''} require${iterCount === 1 ? 's' : ''} your attention`}
@@ -412,12 +633,56 @@ SCREENS.applications = function Applications({ nav }) {
           rowClassName={r => r.status === 'iteration_required' ? 'ant-table-row-warning' : ''}
         />
       </Card>
+
+      {/* Iteration Extension Request Modal */}
+      <antd.Modal
+        open={!!extModal}
+        title="Request Iteration Period Extension"
+        onCancel={() => setExtModal(null)}
+        onOk={() => {
+          setExtSent(prev => ({ ...prev, [extModal.id]: true }));
+          setExtModal(null);
+          antd.message.success('Extension request submitted — your officer will review within 1 working day');
+        }}
+        okText="Submit Request"
+        okButtonProps={{ disabled: extReason.trim().length < 10 }}
+      >
+        {extModal && (
+          <div>
+            <antd.Alert type="info" showIcon style={{ marginBottom: 16 }}
+              message={<span>Requesting extension for <antd.Typography.Text code>{extModal.id}</antd.Typography.Text> — iteration deadline extended if approved by your assigned officer.</span>}
+            />
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Additional days needed</div>
+              <antd.Select value={extDays} onChange={setExtDays} style={{ width: '100%' }}
+                options={[
+                  { value: 7,  label: '7 days' },
+                  { value: 14, label: '14 days' },
+                  { value: 21, label: '21 days' },
+                  { value: 30, label: '30 days (maximum)' },
+                ]}
+              />
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Reason for extension <span style={{ color: 'var(--color-danger)' }}>*</span></div>
+              <antd.Input.TextArea
+                rows={4}
+                placeholder="Explain why additional time is needed (e.g. waiting for updated test report from lab, key signatory on leave)…"
+                value={extReason}
+                onChange={e => setExtReason(e.target.value)}
+              />
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>Minimum 10 characters</div>
+            </div>
+          </div>
+        )}
+      </antd.Modal>
     </div>
   );
 };
 
 // ============ APPLICATION DETAIL (Supplier view) ============
-SCREENS['application-detail'] = function ApplicationDetail({ nav }) {
+SCREENS['application-detail'] = function ApplicationDetail({ nav, lang: _lang }) {
+  const lang = _lang || 'en';
   const a = MOCK.assessments.find(x => x.id === 'APP-0426-00087') || MOCK.assessments[0];
   const auditTrail = (MOCK.supplierAuditTrail || {})[a.id] || [
     { t: 'Application submitted',     d: '15 Apr 2026, 14:20', icon: '📤', note: '' },
@@ -445,7 +710,7 @@ SCREENS['application-detail'] = function ApplicationDetail({ nav }) {
             <SchemeBadge scheme={a.scheme} />
             <Title level={3} style={{ margin: 0 }}>{a.product}</Title>
             <Text type="secondary">{a.brand} · {a.model}</Text>
-            <StatusPill status={a.status} />
+            <StatusPill status={a.status} lang={lang} />
           </div>
           <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
             Submitted {new Date(a.submitted).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -570,6 +835,114 @@ SCREENS['application-detail'] = function ApplicationDetail({ nav }) {
                 />
               ),
             },
+            {
+              key: 'timeline',
+              label: 'Status Timeline',
+              children: (() => {
+                const statusFlow = [
+                  {
+                    stage: 'Draft',
+                    date: '14 Apr 2026',
+                    actor: 'Nurul Aisyah binti Ahmad',
+                    role: 'Supplier',
+                    roleColor: 'blue',
+                    note: 'Application created — documents uploaded and declaration signed.',
+                    done: true,
+                    color: 'gray',
+                  },
+                  {
+                    stage: 'Submitted',
+                    date: '16 Apr 2026',
+                    actor: 'Nurul Aisyah binti Ahmad',
+                    role: 'Supplier',
+                    roleColor: 'blue',
+                    note: 'SDoC submitted with payment of RM 350. Reference: PAY-0426-00218.',
+                    done: true,
+                    color: 'blue',
+                  },
+                  {
+                    stage: 'AI Validation',
+                    date: '16 Apr 2026',
+                    actor: 'NCEF AI Engine (Qwen2.5-VL)',
+                    role: 'System',
+                    roleColor: 'cyan',
+                    note: `AI compliance score: ${a.aiScore}/100 — routed to CPPG officer queue (score < 90).`,
+                    done: true,
+                    color: 'cyan',
+                  },
+                  {
+                    stage: 'Auto-assigned',
+                    date: '16 Apr 2026',
+                    actor: 'System',
+                    role: 'System',
+                    roleColor: 'cyan',
+                    note: 'Auto-assigned to En. Faisal Rahman (Team Lead, CPPG-TL-01) based on workload distribution.',
+                    done: true,
+                    color: 'cyan',
+                  },
+                  {
+                    stage: 'Under Review',
+                    date: '17 Apr 2026',
+                    actor: 'En. Faisal Rahman',
+                    role: 'Team Lead',
+                    roleColor: 'purple',
+                    note: 'Review commenced. Documents sent for OCR verification.',
+                    done: a.status !== 'draft' && a.status !== 'submitted',
+                    color: 'purple',
+                  },
+                  ...(a.status === 'iteration_required' ? [{
+                    stage: 'Iteration Requested',
+                    date: '19 Apr 2026',
+                    actor: 'En. Faisal Rahman',
+                    role: 'Team Lead',
+                    roleColor: 'purple',
+                    note: 'Officer requested amendment: frequency band missing secondary range; standards clause N/A requires justification.',
+                    done: true,
+                    color: 'orange',
+                  }] : []),
+                  ...(a.status === 'approved' ? [{
+                    stage: 'Approved',
+                    date: '22 Apr 2026',
+                    actor: 'En. Faisal Rahman',
+                    role: 'Team Lead',
+                    roleColor: 'purple',
+                    note: `Certificate issued — RCN: ${a.rcn || 'RCN-0426-00001'}. Emailed to applicant.`,
+                    done: true,
+                    color: 'green',
+                  }] : []),
+                  ...(['draft', 'submitted', 'under_review', 'iteration_required'].includes(a.status) ? [{
+                    stage: 'Decision Pending',
+                    date: null,
+                    actor: null,
+                    role: null,
+                    roleColor: 'default',
+                    note: 'Awaiting officer decision — Approve / Request Iteration / Reject.',
+                    done: false,
+                    color: 'gray',
+                  }] : []),
+                ];
+                return (
+                  <div style={{ paddingTop: 12 }}>
+                    <antd.Timeline
+                      items={statusFlow.map(s => ({
+                        color: s.color,
+                        children: (
+                          <div style={{ paddingBottom: 8 }}>
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 2 }}>
+                              <span style={{ fontWeight: 600, fontSize: 13, opacity: s.done ? 1 : 0.5 }}>{s.stage}</span>
+                              {s.role && <antd.Tag color={s.roleColor} style={{ fontSize: 10, margin: 0 }}>{s.role}</antd.Tag>}
+                              {!s.done && <antd.Tag color="default" style={{ fontSize: 10, margin: 0 }}>Pending</antd.Tag>}
+                            </div>
+                            {s.date && <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 3 }}>{s.date}{s.actor ? ` · ${s.actor}` : ''}</div>}
+                            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', opacity: s.done ? 1 : 0.6 }}>{s.note}</div>
+                          </div>
+                        ),
+                      }))}
+                    />
+                  </div>
+                );
+              })(),
+            },
           ]} />
         </Col>
 
@@ -580,7 +953,7 @@ SCREENS['application-detail'] = function ApplicationDetail({ nav }) {
             {[
               ['Application ID', a.id],
               ['Scheme', <SchemeBadge scheme={a.scheme} />],
-              ['Status', <StatusPill status={a.status} />],
+              ['Status', <StatusPill status={a.status} lang={lang} />],
               ['Submitted', new Date(a.submitted).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })],
               ...(a.rcn ? [['Certificate (RCN)', <Text code style={{ fontSize: 12 }}>{a.rcn}</Text>]] : []),
               ...(a.iterationDue ? [['Amendment Due', <Text style={{ color: 'var(--color-warning)', fontWeight: 600 }}>{new Date(a.iterationDue).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>]] : []),
@@ -1435,6 +1808,231 @@ SCREENS['cert-renewal'] = function CertRenewal({ nav }) {
           )}
         </div>
       </Card>
+    </div>
+  );
+};
+
+// ============ ACCOUNT REGISTRATION RENEWAL ============
+SCREENS['account-renewal'] = function AccountRenewal({ nav }) {
+  const TODAY = new Date('2026-05-05');
+  const ACCT_EXPIRY = new Date('2026-06-15');
+  const ACCT_ISSUED = new Date('2024-01-10');
+  const GRACE_END = new Date(ACCT_EXPIRY.getTime() + 6 * 30 * 864e5);
+
+  const yearsUsed = Math.floor((TODAY - ACCT_ISSUED) / (365.25 * 864e5));
+  const maxYears = Math.max(1, 5 - yearsUsed);
+  const daysLeft = Math.ceil((ACCT_EXPIRY - TODAY) / 864e5);
+
+  const [step, setStep] = React.useState(0);
+  const [period, setPeriod] = React.useState(1);
+  const [aiRunning, setAiRunning] = React.useState(false);
+  const [aiDone, setAiDone] = React.useState(false);
+  const [payMethod, setPayMethod] = React.useState('fpx');
+  const [confirmed, setConfirmed] = React.useState(false);
+
+  const steps = ['Review Account', 'AI Revalidation', 'Payment', 'Confirmation'];
+  const REG_FEE = 100;
+  const ANNUAL_FEE = 50;
+  const fee = REG_FEE + ANNUAL_FEE * period;
+  const newExpiry = new Date(ACCT_EXPIRY.getTime() + period * 365.25 * 864e5);
+
+  React.useEffect(() => {
+    if (step === 1 && !aiDone) {
+      setAiRunning(true);
+      const t = setTimeout(() => { setAiRunning(false); setAiDone(true); }, 2200);
+      return () => clearTimeout(t);
+    }
+  }, [step]);
+
+  const p = MOCK.currentUser;
+
+  const profileFields = [
+    ['Company Name', 'Axiata Digital Sdn Bhd', 'verified'],
+    ['Registration No.', '201901023456 (ROC)', 'verified'],
+    ['Category', 'Category A — Commercial', 'verified'],
+    ['Supplier ID', 'SUP-0426-00142', 'verified'],
+    ['PIC Name', p.name, 'verified'],
+    ['PIC Email', p.email, 'verified'],
+    ['Company Address', 'Level 5, Axiata Tower, Kuala Lumpur', 'verified'],
+    ['Nature of Business', 'Telecommunications Equipment Distribution', 'verified'],
+  ];
+
+  return (
+    <div style={{ padding: 32, maxWidth: 860, margin: '0 auto' }}>
+      <antd.Breadcrumb style={{ marginBottom: 8 }} items={[
+        { title: <a onClick={() => nav('dashboard')}>Dashboard</a> },
+        { title: 'Account Registration Renewal' },
+      ]} />
+      <div style={{ margin: '8px 0 24px' }}>
+        <antd.Typography.Title level={3} style={{ margin: 0 }}>Account Registration Renewal</antd.Typography.Title>
+        <antd.Typography.Text type="secondary">Renew your supplier account registration to maintain access to NCEF services.</antd.Typography.Text>
+      </div>
+
+      <antd.Alert
+        type={daysLeft <= 30 ? 'error' : 'warning'}
+        showIcon
+        style={{ marginBottom: 20 }}
+        message={<span>Current registration expires <strong>{ACCT_EXPIRY.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong> ({daysLeft} days). Grace period ends {GRACE_END.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} — after which account access is blocked.</span>}
+      />
+
+      <div style={{ marginBottom: 28 }}>
+        <antd.Steps current={step} size="small" labelPlacement="vertical" responsive items={steps.map(s => ({ title: s }))} />
+      </div>
+
+      <antd.Card bordered>
+        {/* STEP 0: Review profile */}
+        {step === 0 && (
+          <div>
+            <antd.Typography.Title level={4} style={{ marginTop: 0 }}>Review Account Information</antd.Typography.Title>
+            <antd.Typography.Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+              Verify your company details are current before renewing. Contact MCMC if corrections are needed.
+            </antd.Typography.Text>
+
+            <antd.Descriptions bordered size="small" column={1} style={{ marginBottom: 20 }}>
+              {profileFields.map(([label, value, status]) => (
+                <antd.Descriptions.Item key={label} label={label}>
+                  <antd.Space>
+                    <span>{value}</span>
+                    {status === 'verified' && <antd.Tag color="green" style={{ fontSize: 10, margin: 0 }}>Verified</antd.Tag>}
+                  </antd.Space>
+                </antd.Descriptions.Item>
+              ))}
+            </antd.Descriptions>
+
+            <antd.Divider />
+            <antd.Typography.Title level={5} style={{ marginTop: 0 }}>Renewal Period</antd.Typography.Title>
+            <antd.Typography.Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+              You have used {yearsUsed} year{yearsUsed !== 1 ? 's' : ''} — maximum renewal is <strong>{maxYears} year{maxYears !== 1 ? 's' : ''}</strong> (cumulative cap: 5 years).
+            </antd.Typography.Text>
+            <antd.Segmented
+              value={period}
+              onChange={setPeriod}
+              options={[1, 2, 3, 4, 5].map(y => ({
+                value: y,
+                label: `${y} yr${y > 1 ? 's' : ''}`,
+                disabled: y > maxYears,
+              }))}
+              style={{ marginBottom: 16 }}
+            />
+            <antd.Card size="small" style={{ background: 'var(--color-bg-soft, #F8F9FA)', border: '1px solid var(--color-border)' }}>
+              <antd.Space split={<antd.Divider type="vertical" />}>
+                <span><antd.Typography.Text type="secondary">Registration fee</antd.Typography.Text> <strong>RM {REG_FEE}</strong></span>
+                <span><antd.Typography.Text type="secondary">Annual fee</antd.Typography.Text> <strong>RM {ANNUAL_FEE} × {period} yr</strong></span>
+                <span><antd.Typography.Text type="secondary">Total</antd.Typography.Text> <strong style={{ color: 'var(--color-primary)', fontSize: 16 }}>RM {fee}</strong></span>
+              </antd.Space>
+              <div style={{ marginTop: 8, fontSize: 12, color: 'var(--color-text-muted)' }}>
+                New expiry: <strong>{newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong>
+              </div>
+            </antd.Card>
+          </div>
+        )}
+
+        {/* STEP 1: AI revalidation */}
+        {step === 1 && (
+          <div style={{ padding: '16px 0' }}>
+            <antd.Typography.Title level={4} style={{ marginTop: 0 }}>AI Document Revalidation</antd.Typography.Title>
+            {aiRunning ? (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <antd.Spin size="large" />
+                <div style={{ marginTop: 16, color: 'var(--color-text-muted)' }}>Checking your company documents against the latest MCMC standards…</div>
+              </div>
+            ) : (
+              <div>
+                <antd.Alert type="success" showIcon message="Revalidation complete — no issues found" style={{ marginBottom: 16 }} />
+                <antd.Typography.Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>AI confidence score: <strong style={{ color: 'var(--color-success)' }}>96%</strong> — account is eligible for auto-renewal.</antd.Typography.Text>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {[
+                    ['SSM Registration Document', 'Valid until Dec 2027', 'success'],
+                    ['Company Address', 'Matches SSM records', 'success'],
+                    ['PIC Contact Details', 'Verified', 'success'],
+                    ['Nature of Business', 'Consistent with existing profile', 'success'],
+                    ['PDPA Consent', 'On file — no refresh required', 'success'],
+                  ].map(([doc, note, status]) => (
+                    <div key={doc} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', border: '1px solid var(--color-border)', borderRadius: 8 }}>
+                      <antd.Tag color={status === 'success' ? 'green' : 'orange'} style={{ margin: 0, minWidth: 70, textAlign: 'center' }}>
+                        {status === 'success' ? '✓ OK' : 'Review'}
+                      </antd.Tag>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500 }}>{doc}</div>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{note}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* STEP 2: Payment */}
+        {step === 2 && (
+          <div>
+            <antd.Typography.Title level={4} style={{ marginTop: 0 }}>Payment</antd.Typography.Title>
+            <antd.Card size="small" style={{ marginBottom: 20, background: 'var(--color-bg-soft, #F8F9FA)' }}>
+              <antd.Descriptions size="small" column={1}>
+                <antd.Descriptions.Item label="Account Registration Renewal">RM {fee}</antd.Descriptions.Item>
+                <antd.Descriptions.Item label="Renewal Period">{period} year{period > 1 ? 's' : ''}</antd.Descriptions.Item>
+                <antd.Descriptions.Item label="New Expiry Date">{newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</antd.Descriptions.Item>
+                <antd.Descriptions.Item label={<strong>Total</strong>}><strong style={{ color: 'var(--color-primary)', fontSize: 15 }}>RM {fee}</strong></antd.Descriptions.Item>
+              </antd.Descriptions>
+            </antd.Card>
+            <antd.Typography.Text strong style={{ display: 'block', marginBottom: 12 }}>Payment Method</antd.Typography.Text>
+            <antd.Radio.Group value={payMethod} onChange={e => setPayMethod(e.target.value)} style={{ width: '100%', display: 'grid', gap: 8 }}>
+              {[
+                { v: 'fpx', t: 'FPX Online Banking', d: 'Direct debit from your bank account' },
+                { v: 'card', t: 'Credit / Debit Card', d: 'Visa, Mastercard, American Express' },
+                { v: 'duitnow', t: 'DuitNow QR', d: 'Scan QR with your banking app' },
+                { v: 'invoice', t: 'Corporate Invoice', d: 'Generate invoice for account payable (30-day terms)' },
+              ].map(o => (
+                <antd.Radio key={o.v} value={o.v} style={{ padding: 12, border: `1px solid ${payMethod === o.v ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 8, margin: 0, background: payMethod === o.v ? 'var(--color-primary-soft)' : '#fff' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{o.t}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{o.d}</div>
+                </antd.Radio>
+              ))}
+            </antd.Radio.Group>
+          </div>
+        )}
+
+        {/* STEP 3: Confirmation */}
+        {step === 3 && (
+          <antd.Result
+            status="success"
+            title="Account Successfully Renewed"
+            subTitle={
+              <div style={{ textAlign: 'left', maxWidth: 480, margin: '0 auto' }}>
+                <antd.Descriptions column={1} size="small" bordered style={{ marginTop: 16 }}>
+                  <antd.Descriptions.Item label="Supplier ID"><antd.Typography.Text code>SUP-0426-00142</antd.Typography.Text></antd.Descriptions.Item>
+                  <antd.Descriptions.Item label="Renewed For">{period} year{period > 1 ? 's' : ''}</antd.Descriptions.Item>
+                  <antd.Descriptions.Item label="New Expiry Date"><strong>{newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</strong></antd.Descriptions.Item>
+                  <antd.Descriptions.Item label="Amount Paid">RM {fee}</antd.Descriptions.Item>
+                  <antd.Descriptions.Item label="Reference">TXN-{Date.now().toString().slice(-8)}</antd.Descriptions.Item>
+                </antd.Descriptions>
+                <antd.Alert type="info" showIcon style={{ marginTop: 16 }} message="A confirmation email with your renewal receipt has been sent to nurul.aisyah@axiatadigital.com.my" />
+              </div>
+            }
+            extra={[
+              <antd.Button type="primary" key="dash" onClick={() => nav('dashboard')}>Back to Dashboard</antd.Button>,
+              <antd.Button key="apps" onClick={() => nav('applications')}>View Applications</antd.Button>,
+            ]}
+          />
+        )}
+
+        {/* Navigation */}
+        {step < 3 && (
+          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between' }}>
+            <antd.Button onClick={() => step === 0 ? nav('dashboard') : setStep(step - 1)}>
+              {step === 0 ? 'Cancel' : '← Back'}
+            </antd.Button>
+            <antd.Button
+              type="primary"
+              disabled={step === 1 && aiRunning}
+              onClick={() => setStep(step + 1)}
+            >
+              {step === 2 ? `Pay RM ${fee} →` : 'Continue →'}
+            </antd.Button>
+          </div>
+        )}
+      </antd.Card>
     </div>
   );
 };

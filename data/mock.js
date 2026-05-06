@@ -92,6 +92,19 @@ window.MOCK = {
       grade: 'JUSA C',
       phone: '+603-8688 8001',
     },
+    'content-manager': {
+      id: 'OFF-007',
+      role: 'content-manager',
+      name: 'Cik Siti Nabilah binti Roslan',
+      title: 'Content Manager',
+      initials: 'SN',
+      email: 'siti.nabilah@mcmc.gov.my',
+      org: 'Malaysian Communications and Multimedia Commission (MCMC)',
+      division: 'Corporate Communications',
+      department: 'Digital Content & Public Affairs',
+      grade: 'N41',
+      phone: '+603-8688 8310',
+    },
   },
 
   // Full MCMC team roster — used by Workflow Config role-tagging and performance views.
@@ -266,6 +279,19 @@ window.MOCK = {
     { id: 'CON-0119-00012', linkedAt: '2024-08-12', primaryFor: ['Scheme A', 'Scheme B'], notes: 'Lead consultant for telecom equipment registrations.' },
     { id: 'CON-0220-00045', linkedAt: '2025-02-19', primaryFor: ['Scheme A'],             notes: 'EMC compliance review.' },
     { id: 'CON-1023-00088', linkedAt: '2026-01-07', primaryFor: ['Scheme C'],             notes: 'Documentation support for low-risk products.' },
+  ],
+  // Principal directory (companies that can be linked as Principals by suppliers).
+  principalDirectory: [
+    { id: 'PRI-0124-00031', name: 'Samsung Electronics Co., Ltd.', country: 'South Korea', category: 'Manufacturer', regNo: 'KR-124-31-00825', contact: 'global.ncef@samsung.com' },
+    { id: 'PRI-0220-00018', name: 'Sony Corporation',               country: 'Japan',       category: 'Manufacturer', regNo: 'JP-0000-00-7212418', contact: 'ncef@sony.com' },
+    { id: 'PRI-0322-00055', name: 'Huawei Technologies Co., Ltd.',  country: 'China',       category: 'Manufacturer', regNo: 'CN-91440300MA5JH7Y72H', contact: 'cert@huawei.com' },
+    { id: 'PRI-0119-00009', name: 'Nokia Solutions and Networks Oy',country: 'Finland',     category: 'OEM',          regNo: 'FI-0112038-9', contact: 'regulatory@nokia.com' },
+    { id: 'PRI-0523-00077', name: 'Ericsson AB',                    country: 'Sweden',      category: 'Manufacturer', regNo: 'SE-556016-0680', contact: 'certification@ericsson.com' },
+  ],
+  // Principals linked to the current supplier (Axiata Digital). Editable by Supplier Admin.
+  myPrincipals: [
+    { id: 'PRI-0124-00031', linkedAt: '2024-04-10', louStatus: 'verified', loaStatus: 'verified' },
+    { id: 'PRI-0220-00018', linkedAt: '2025-09-03', louStatus: 'verified', loaStatus: 'pending' },
   ],
   // Team members for current supplier account
   teamMembers: [

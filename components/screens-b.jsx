@@ -99,7 +99,6 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
 
   const SchemeStep = () => (
     <div style={{ maxWidth: 900 }}>
-      <Alert type="info" showIcon message="Your product suggests Scheme A based on radio equipment profile" description="Your uploaded datasheet was assessed and matched to MCMC MTSFB TC G015:2022 category. You may select a different scheme if you believe the classification is incorrect." style={{ marginBottom: 20 }} />
       <Row gutter={16}>
         {schemes.map(s => (
           <Col xs={24} md={8} key={s.k}>
@@ -636,6 +635,8 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
   const [saSigIc, setSaSigIc]     = React.useState('');
   const [saChecked, setSaChecked] = React.useState([]);
   const [saLetterTab, setSaLetterTab] = React.useState('summary');
+  const [minutesUploaded, setMinutesUploaded] = React.useState(false);
+  const [minutesUploading, setMinutesUploading] = React.useState(false);
 
   const PURPOSES = [
     { k: 'personal', t: 'Personal Use',              d: 'Individual importing one unit for non-commercial use',              tier: 'low',       tierLabel: 'Low Risk',    tierColor: 'green'  },
@@ -962,6 +963,68 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
               </div>
             </div>
 
+            {isProhibited && (
+              <div style={{ margin: '20px 0', padding: '20px 24px', border: `2px solid ${minutesUploaded ? 'var(--color-success)' : 'var(--color-warning)'}`, borderRadius: 12, background: minutesUploaded ? 'var(--color-success-bg, #f6ffed)' : '#fffbe6' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
+                      {minutesUploaded ? '✅ Offline Meeting Minutes Uploaded — Digital Chain Unlocked' : '⏳ Pending: Offline Acceptance Meeting (§5.3.3 Step 2)'}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
+                      {minutesUploaded
+                        ? 'Recommender En. Ahmad Rashid has uploaded the signed meeting minutes. The digital approval chain is now active and processing has begun.'
+                        : 'For Restricted/Prohibited equipment, MCMC must conduct an offline physical acceptance meeting before the digital approval chain can begin. The assigned Recommender (P5/P6) must upload the official signed meeting minutes to unlock this step.'}
+                    </div>
+                  </div>
+                  {!minutesUploaded && (
+                    <Tag color="orange" style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>Awaiting Officer</Tag>
+                  )}
+                </div>
+
+                {!minutesUploaded && (
+                  <div style={{ marginTop: 16, padding: '14px 16px', background: '#fff', borderRadius: 8, border: '1px solid #ffe58f' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: '#875100' }}>
+                      Officer Simulation — Recommender action (En. Ahmad Rashid)
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>
+                      In production, this action is performed by the Recommender in their officer portal. Click below to simulate uploading signed meeting minutes.
+                    </div>
+                    <antd.Space direction="vertical" style={{ width: '100%' }} size={8}>
+                      <antd.Descriptions size="small" column={2} bordered>
+                        <antd.Descriptions.Item label="Meeting Date">05 May 2026</antd.Descriptions.Item>
+                        <antd.Descriptions.Item label="Venue">MCMC HQ, Cyberjaya</antd.Descriptions.Item>
+                        <antd.Descriptions.Item label="Attendees">Recommender, Applicant Rep, CPPG Officer</antd.Descriptions.Item>
+                        <antd.Descriptions.Item label="Outcome">Approved to proceed to digital chain</antd.Descriptions.Item>
+                      </antd.Descriptions>
+                      <Button
+                        type="primary"
+                        icon={<UploadOutlined />}
+                        loading={minutesUploading}
+                        style={{ background: '#875100', borderColor: '#875100' }}
+                        onClick={() => {
+                          setMinutesUploading(true);
+                          setTimeout(() => { setMinutesUploading(false); setMinutesUploaded(true); antd.message.success('Meeting minutes uploaded — digital approval chain unlocked'); }, 1500);
+                        }}
+                      >
+                        Upload Meeting Minutes (PDF)
+                      </Button>
+                    </antd.Space>
+                  </div>
+                )}
+
+                {minutesUploaded && (
+                  <antd.Timeline style={{ marginTop: 16 }} items={[
+                    { color: 'green', children: <span style={{ fontSize: 12 }}><b>Offline Meeting Conducted</b> — 05 May 2026 · MCMC HQ</span> },
+                    { color: 'green', children: <span style={{ fontSize: 12 }}><b>Meeting Minutes Uploaded</b> — En. Ahmad Rashid · 05 May 2026 14:32</span> },
+                    { color: 'blue',  children: <span style={{ fontSize: 12 }}><b>Recommender Review</b> — En. Ahmad Rashid (P5/P6) · In progress</span> },
+                    { color: 'gray',  children: <span style={{ fontSize: 12 }}><b>Head of Certification Review</b> — Pending escalation</span> },
+                    { color: 'gray',  children: <span style={{ fontSize: 12 }}><b>Director General Approval</b> — Pending</span> },
+                    { color: 'gray',  children: <span style={{ fontSize: 12 }}><b>SA Letter Issued</b> — Pending final sign-off</span> },
+                  ]} />
+                )}
+              </div>
+            )}
+
             <Divider>SA Letter Preview</Divider>
 
             <antd.Tabs activeKey={saLetterTab} onChange={setSaLetterTab} size="small"
@@ -1085,6 +1148,10 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
   const [activeDoc, setActiveDoc] = React.useState(null);
   const [reassignOpen, setReassignOpen] = React.useState(false);
   const [assignedOverride, setAssignedOverride] = React.useState(null);
+  const [reclassScheme, setReclassScheme] = React.useState(null);
+  const [reclassReason, setReclassReason] = React.useState('');
+  const [reclassConfirmOpen, setReclassConfirmOpen] = React.useState(false);
+  const [reclassDone, setReclassDone] = React.useState(false);
   const a = MOCK.assessments[0];
   const isLead = currentUser?.role === 'team-lead';
   const isOfficer = currentUser?.role === 'officer';
@@ -1232,6 +1299,46 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
                   </Card>
                 ),
               },
+              {
+                key: 'extension',
+                label: <span>Extension Requests <antd.Badge count={1} size="small" /></span>,
+                children: (() => {
+                  const [extDecision, setExtDecision] = React.useState(null);
+                  return (
+                    <Card bordered>
+                      <div style={{ padding: '12px 0', borderBottom: '1px solid var(--color-divider)', marginBottom: 12 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div>
+                            <antd.Typography.Text strong>Iteration Extension Request</antd.Typography.Text>
+                            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>Submitted by Nurul Aisyah · 05 May 2026, 09:14</div>
+                          </div>
+                          <antd.Tag color={extDecision === 'approved' ? 'green' : extDecision === 'denied' ? 'red' : 'orange'}>
+                            {extDecision === 'approved' ? 'Approved' : extDecision === 'denied' ? 'Denied' : 'Pending'}
+                          </antd.Tag>
+                        </div>
+                      </div>
+                      <antd.Descriptions column={1} size="small" style={{ marginBottom: 14 }}>
+                        <antd.Descriptions.Item label="Additional days">14 days</antd.Descriptions.Item>
+                        <antd.Descriptions.Item label="Current deadline">12 May 2026</antd.Descriptions.Item>
+                        <antd.Descriptions.Item label="New deadline (if approved)">26 May 2026</antd.Descriptions.Item>
+                        <antd.Descriptions.Item label="Reason">
+                          Waiting for updated test report from SIRIM QAS — lab turnaround is 10 working days. Cannot resubmit without the updated CoC.
+                        </antd.Descriptions.Item>
+                      </antd.Descriptions>
+                      {!extDecision ? (
+                        <antd.Space>
+                          <Button type="primary" size="small" onClick={() => { setExtDecision('approved'); antd.message.success('Extension approved — applicant notified'); }}>Approve</Button>
+                          <Button danger size="small" onClick={() => { setExtDecision('denied'); antd.message.warning('Extension denied — applicant notified'); }}>Deny</Button>
+                        </antd.Space>
+                      ) : (
+                        <antd.Alert type={extDecision === 'approved' ? 'success' : 'error'} showIcon
+                          message={extDecision === 'approved' ? 'Extension approved — deadline extended to 26 May 2026' : 'Extension denied — original deadline stands (12 May 2026)'}
+                        />
+                      )}
+                    </Card>
+                  );
+                })(),
+              },
             ]}
           />
         </div>
@@ -1251,21 +1358,145 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
           </div>
 
           <Divider />
+          {/* Approval chain position badge */}
+          {(() => {
+            const role = currentUser?.role;
+            const chainMeta = {
+              'recommender': { pos: 1, total: 3, label: 'Recommender', next: 'Verifier', accent: '#2E7D32' },
+              'verifier':    { pos: 2, total: 3, label: 'Verifier',    next: 'Approver', accent: '#E65100' },
+              'approver':    { pos: 3, total: 3, label: 'Approver',    next: null,       accent: '#B71C1C' },
+              'team-lead':   { pos: 3, total: 3, label: 'Team Lead (Acting Approver)', next: null, accent: '#7B3FA0' },
+            }[role];
+            if (!chainMeta) return null;
+            return (
+              <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: `${chainMeta.accent}10`, border: `1px solid ${chainMeta.accent}30` }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: chainMeta.accent, letterSpacing: .3 }}>
+                  APPROVAL CHAIN — STAGE {chainMeta.pos} of {chainMeta.total}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 3 }}>
+                  You are the <b>{chainMeta.label}</b>.
+                  {chainMeta.next ? ` Approving here escalates to the ${chainMeta.next}.` : ' Your decision is final.'}
+                </div>
+              </div>
+            );
+          })()}
           <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 10 }}>Decision</div>
-          <Radio.Group value={decision} onChange={e => setDecision(e.target.value)} style={{ width: '100%', display: 'grid', gap: 8 }}>
-            {[
-              { v: 'approve', t: 'Approve', d: 'Issue certificate (RCN)', color: 'var(--color-success)' },
-              { v: 'iterate', t: 'Request Iteration', d: 'Return to applicant for amendment', color: 'var(--color-warning)' },
-              { v: 'reject', t: 'Reject', d: 'Close application with documented reason', color: 'var(--color-danger)' },
-            ].map(o => (
-              <Radio key={o.v} value={o.v} style={{ padding: 10, border: `1px solid ${decision === o.v ? o.color : 'var(--color-border)'}`, borderRadius: 8, margin: 0, background: decision === o.v ? `${o.color}10` : '#fff' }}>
-                <span style={{ display: 'inline-block' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: decision === o.v ? o.color : 'inherit' }}>{o.t}</div>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{o.d}</div>
-                </span>
-              </Radio>
-            ))}
-          </Radio.Group>
+          {reclassDone ? (
+            <antd.Alert type="success" showIcon message={`Reclassified to Scheme ${reclassScheme} — application returned to applicant`} style={{ marginBottom: 8 }} />
+          ) : (
+            <Radio.Group value={decision} onChange={e => { setDecision(e.target.value); setReclassScheme(null); setReclassReason(''); }} style={{ width: '100%', display: 'grid', gap: 8 }}>
+              {(() => {
+                const role = currentUser?.role;
+                const optsByRole = {
+                  recommender: [
+                    { v: 'approve',  t: 'Recommend',            d: 'Endorse and escalate to Verifier',             color: 'var(--color-success)' },
+                    { v: 'iterate',  t: 'Return for Revision',  d: 'Send back to applicant with amendment notes',   color: 'var(--color-warning)' },
+                    { v: 'reject',   t: 'Do Not Recommend',     d: 'Decline with documented reasons',               color: 'var(--color-danger)' },
+                  ],
+                  verifier: [
+                    { v: 'approve',    t: 'Verify & Escalate',      d: 'Confirm technical compliance — escalate to Approver', color: 'var(--color-success)' },
+                    { v: 'iterate',    t: 'Request Clarification',   d: 'Ask applicant for additional information',            color: 'var(--color-warning)' },
+                    { v: 'reclassify', t: 'Refer Back to Recommender', d: 'Return to Recommender for re-assessment',          color: '#7B3FA0' },
+                    { v: 'reject',     t: 'Reject',                  d: 'Technical review failed — close application',        color: 'var(--color-danger)' },
+                  ],
+                  approver: [
+                    { v: 'approve',    t: 'Approve',             d: 'Issue RCN certificate — final decision',   color: 'var(--color-success)' },
+                    { v: 'iterate',    t: 'Request Iteration',   d: 'Return to applicant for amendment',         color: 'var(--color-warning)' },
+                    { v: 'reclassify', t: 'Return to Verifier',  d: 'Escalate concern to Verifier for re-check', color: '#7B3FA0' },
+                    { v: 'reject',     t: 'Reject',              d: 'Close with documented reason — notified',   color: 'var(--color-danger)' },
+                  ],
+                };
+                const opts = optsByRole[role] || [
+                  { v: 'approve',    t: 'Approve',             d: 'Issue certificate (RCN)',                      color: 'var(--color-success)' },
+                  { v: 'iterate',    t: 'Request Iteration',   d: 'Return to applicant for amendment',            color: 'var(--color-warning)' },
+                  { v: 'reclassify', t: 'Reclassify',          d: 'Change scheme — applicant must resubmit',      color: '#7B3FA0' },
+                  { v: 'reject',     t: 'Reject',              d: 'Close application with documented reason',     color: 'var(--color-danger)' },
+                ];
+                return opts.map(o => (
+                  <Radio key={o.v} value={o.v} style={{ padding: 10, border: `1px solid ${decision === o.v ? o.color : 'var(--color-border)'}`, borderRadius: 8, margin: 0, background: decision === o.v ? `${o.color}10` : '#fff' }}>
+                    <span style={{ display: 'inline-block' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: decision === o.v ? o.color : 'inherit' }}>{o.t}</div>
+                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{o.d}</div>
+                    </span>
+                  </Radio>
+                ));
+              })()}
+            </Radio.Group>
+          )}
+
+          {decision === 'reclassify' && !reclassDone && (
+            <div style={{ marginTop: 16, padding: 14, border: '1px solid #7B3FA030', borderRadius: 8, background: '#7B3FA008' }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 10 }}>Reclassification</div>
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 4 }}>Current scheme</div>
+                <SchemeBadge scheme={a.scheme} />
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 4 }}>Reclassify to</div>
+                <antd.Select
+                  placeholder="Select target scheme…"
+                  style={{ width: '100%' }}
+                  value={reclassScheme}
+                  onChange={setReclassScheme}
+                  options={[
+                    { value: 'A', label: 'Scheme A — High Risk (SDoC with Certification)', disabled: a.scheme === 'A' },
+                    { value: 'B', label: 'Scheme B — Medium Risk (SDoC with Verification)', disabled: a.scheme === 'B' },
+                    { value: 'C', label: 'Scheme C — Low Risk (Self-Declaration)', disabled: a.scheme === 'C' },
+                  ]}
+                />
+              </div>
+              {reclassScheme && (
+                <antd.Alert
+                  type={reclassScheme > a.scheme ? 'warning' : 'info'}
+                  showIcon
+                  style={{ marginBottom: 10, fontSize: 11 }}
+                  message={reclassScheme > a.scheme
+                    ? `Upgrade to Scheme ${reclassScheme} — applicant must submit additional documents (e.g. CoC from accredited body).`
+                    : `Downgrade to Scheme ${reclassScheme} — applicant may remove certification documents; fee offset applies.`}
+                />
+              )}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 4 }}>Reason for reclassification <span style={{ color: 'var(--color-danger)' }}>*</span></div>
+                <antd.Input.TextArea
+                  rows={3}
+                  placeholder="Explain why the application must be reclassified (included in applicant notification)…"
+                  value={reclassReason}
+                  onChange={e => setReclassReason(e.target.value)}
+                />
+              </div>
+              <antd.Button
+                type="primary"
+                block
+                disabled={!reclassScheme || reclassReason.trim().length < 10}
+                style={{ background: '#7B3FA0', borderColor: '#7B3FA0' }}
+                onClick={() => setReclassConfirmOpen(true)}
+              >
+                Confirm Reclassification
+              </antd.Button>
+            </div>
+          )}
+
+          {/* Reclassification confirm modal */}
+          <antd.Modal
+            open={reclassConfirmOpen}
+            title="Confirm Reclassification"
+            onCancel={() => setReclassConfirmOpen(false)}
+            onOk={() => {
+              setReclassConfirmOpen(false);
+              setReclassDone(true);
+              antd.message.success(`${a.id} reclassified to Scheme ${reclassScheme} — applicant notified`);
+            }}
+            okText="Reclassify & Notify Applicant"
+            okButtonProps={{ style: { background: '#7B3FA0', borderColor: '#7B3FA0' } }}
+          >
+            <antd.Descriptions column={1} size="small" bordered>
+              <antd.Descriptions.Item label="Application">{a.id}</antd.Descriptions.Item>
+              <antd.Descriptions.Item label="From">Scheme {a.scheme}</antd.Descriptions.Item>
+              <antd.Descriptions.Item label="To">Scheme {reclassScheme}</antd.Descriptions.Item>
+              <antd.Descriptions.Item label="Reason">{reclassReason}</antd.Descriptions.Item>
+            </antd.Descriptions>
+            <antd.Alert type="warning" showIcon style={{ marginTop: 12 }} message="The applicant will be notified by email and must resubmit the application with updated documents under the new scheme." />
+          </antd.Modal>
 
           {decision === 'iterate' && (
             <div style={{ marginTop: 16 }}>
@@ -1296,7 +1527,21 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
           )}
 
           <div style={{ marginTop: 24, display: 'grid', gap: 8 }}>
-            <Button type="primary" size="large" block disabled={!decision} onClick={() => alert('Decision submitted')}>Submit Decision</Button>
+            {(() => {
+              const role = currentUser?.role;
+              const submitLabel = role === 'recommender' ? 'Submit Recommendation'
+                : role === 'verifier' ? 'Submit Verification'
+                : role === 'approver' ? 'Submit Final Decision'
+                : 'Submit Decision';
+              const isReclassifyFinal = decision === 'reclassify' && role !== 'team-lead' && role !== 'approver';
+              return (
+                <Button type="primary" size="large" block
+                  disabled={!decision || isReclassifyFinal || reclassDone}
+                  onClick={() => { antd.message.success(`${submitLabel} recorded`); }}>
+                  {submitLabel}
+                </Button>
+              );
+            })()}
             <Button block>Save draft</Button>
           </div>
 
