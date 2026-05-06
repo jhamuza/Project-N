@@ -12,6 +12,9 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
   const [sigIc, setSigIc] = React.useState('');
   const [sigChecked, setSigChecked] = React.useState(false);
   const [form] = Form.useForm();
+  // Mock AI doc score — Scheme C gets a high score to trigger auto-cert path
+  const mockDocScore = scheme === 'C' ? 94 : scheme === 'B' ? 78 : 72;
+  const isAutoCert = scheme === 'C' && mockDocScore >= 90;
 
   const steps = [
     { k: 'scheme', t: 'Scheme' },
@@ -298,7 +301,20 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
           </div>
         </Card>
       )}
-      {aiDone && <DocFindingsPanel />}
+      {aiDone && (
+        <>
+          {isAutoCert && (
+            <Alert type="success" showIcon style={{ marginBottom: 16 }}
+              icon={<RobotOutlined />}
+              message={<span style={{ fontWeight: 700 }}>Auto-certification eligible — Score {mockDocScore}/100</span>}
+              description={
+                <span>All documents meet Scheme C requirements. Upon payment, your RCN will be <b>auto-issued within 2 working hours</b> — no manual officer review required. This is the fastest certification path under URS §5.2.4.</span>
+              }
+            />
+          )}
+          <DocFindingsPanel />
+        </>
+      )}
     </div>
   );
 
@@ -508,21 +524,101 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
 
   const ConfirmStep = () => {
     const slaMap = { A: '22 Apr 2026', B: '20 Apr 2026', C: '16 Apr 2026' };
-    const isAutoAccept = scheme === 'C';
+    const AUTO_RCN = 'RCN-0526-00512';
+    const certExpiry = `${new Date().getFullYear() + period}-05-06`;
+
+    if (isAutoCert) {
+      function downloadAutoCert() {
+        const lines = [
+          '┌─────────────────────────────────────────────────────────────────┐',
+          '│         MCMC — NATIONAL COMMUNICATIONS AND MULTIMEDIA COMMISSION │',
+          '│        NATIONAL COMMUNICATIONS EQUIPMENT FRAMEWORK (NCEF)        │',
+          '│             CERTIFICATE OF CONFORMITY — AUTO-ISSUED               │',
+          '└─────────────────────────────────────────────────────────────────┘',
+          '',
+          `  CERTIFICATE NO : ${AUTO_RCN}`,
+          `  ISSUED DATE    : ${new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' })}`,
+          `  EXPIRY DATE    : ${new Date(certExpiry).toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' })}`,
+          '',
+          '  CERTIFICATE HOLDER',
+          '  ──────────────────',
+          '  Axiata Digital Services Sdn Bhd',
+          '  Axiata Tower, 9 Jalan Stesen Sentral 5, KL Sentral',
+          '  50470 Kuala Lumpur, Malaysia',
+          '',
+          '  PRODUCT DETAILS',
+          '  ───────────────',
+          '  Brand / Model  : Samsung / SM-S928B (Galaxy S24 Ultra)',
+          '  Scheme         : C — Self-Declaration (Auto-accepted)',
+          '  Category       : Mobile Phone / Smartphone',
+          '  AI Doc Score   : 94/100',
+          '',
+          '  CERTIFICATION BASIS',
+          '  ───────────────────',
+          '  Communications and Multimedia Act 1998 (CMA), Section 184',
+          '  MCMC NCEF Technical Standard TS G015:2022',
+          '  Auto-certified per URS §5.2.4 (score ≥ 90)',
+          '',
+          '  This certificate is issued electronically and is valid without signature.',
+          '  Verify at: https://ncef.mcmc.gov.my/verify/' + AUTO_RCN,
+          '',
+          '═══════════════════════════════════════════════════════════════════',
+          '  MCMC Reference: CPPG/NCEF/AUTO/' + AUTO_RCN,
+          '═══════════════════════════════════════════════════════════════════',
+        ].join('\n');
+        const blob = new Blob([lines], { type: 'text/plain' });
+        const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `NCEF-Certificate-${AUTO_RCN}.txt` });
+        a.click(); URL.revokeObjectURL(a.href);
+      }
+
+      return (
+        <div style={{ textAlign: 'center', padding: '40px 20px', maxWidth: 620, margin: '0 auto' }}>
+          <div style={{ display: 'inline-flex', width: 88, height: 88, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 44, color: 'var(--color-success)', marginBottom: 8 }}>
+            <SafetyCertificateOutlined />
+          </div>
+          <antd.Tag color="green" style={{ marginBottom: 12, fontSize: 12 }}>AI Auto-Certified · §5.2.4</antd.Tag>
+          <Title level={3} style={{ margin: '0 0 6px' }}>Certificate Issued</Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>Scheme C auto-certification complete. Your RCN has been generated immediately — no manual review required.</Text>
+
+          <div style={{ margin: '20px 0', padding: 20, background: 'linear-gradient(135deg, #E5F6EE 0%, #F0FBF5 100%)', borderRadius: 14, border: '1px solid #BEE5CF' }}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Registration Number</div>
+                <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-success)', marginTop: 2 }}>{AUTO_RCN}</div>
+              </Col>
+              <Col span={12}>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Valid Until</div>
+                <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2 }}>{new Date(certExpiry).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+              </Col>
+              <Col span={12} style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>AI Document Score</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-success)', marginTop: 2 }}>{mockDocScore}/100 — All clear</div>
+              </Col>
+              <Col span={12} style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Fee Paid</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>RM {totalFee.toLocaleString('en-MY')}</div>
+              </Col>
+            </Row>
+          </div>
+
+          <Alert type="info" showIcon icon={<RobotOutlined />} style={{ textAlign: 'left', marginBottom: 20 }}
+            message="What happens next"
+            description="Your certificate is now active and your product may be imported/used immediately. The certificate has been added to your Certificates list. MCMC will send a confirmation email within 30 minutes." />
+
+          <Space wrap size="middle" style={{ justifyContent: 'center' }}>
+            <Button size="large" icon={<DownloadOutlined />} onClick={downloadAutoCert}>Download Certificate</Button>
+            <Button size="large" onClick={() => nav('certificates')}>View My Certificates</Button>
+            <Button size="large" type="primary" onClick={() => nav('dashboard')}>Go to Dashboard</Button>
+          </Space>
+        </div>
+      );
+    }
+
     return (
       <div style={{ textAlign: 'center', padding: '40px 20px', maxWidth: 580, margin: '0 auto' }}>
         <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'var(--color-success)' }}>✓</div>
         <Title level={3} style={{ marginTop: 16 }}>Application Submitted</Title>
-        <Text type="secondary">
-          {isAutoAccept
-            ? 'Payment received. Your application is under auto-review — expected decision within 1 working day.'
-            : 'Payment received. Your application has been assigned to an MCMC officer for review.'}
-        </Text>
-        {isAutoAccept && (
-          <Alert type="info" showIcon style={{ marginTop: 16, textAlign: 'left' }}
-            message="Scheme C: Expedited review"
-            description="Your application is eligible for expedited processing. If all documents are in order, your RCN will be issued without manual intervention. You will receive an email notification when the decision is made." />
-        )}
+        <Text type="secondary">Payment received. Your application has been assigned to an MCMC officer for review.</Text>
         <div style={{ marginTop: 20, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12 }}>
           <Row gutter={16}>
             <Col span={12}>

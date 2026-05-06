@@ -1670,9 +1670,10 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | **Certificates List** | ✅ Done | Filter by status; detail drawer with download certificate + print label (real Blob downloads); renew/IMEI shortcuts | — |
 | **Payments & Invoices** | ✅ Done | Transaction history; payment methods; billing information; invoice/receipt drawer per transaction (Blob CSV export) | Standalone payment portal; real MCMC Pay gateway; SIFS reconciliation |
 | **Consultant Management** | ✅ Done | Link/unlink from directory; scheme assignment; notes | — |
-| **AI Score Display** | ✅ Done | Gauge / bar / verdict visualisations; 8 sub-scores; threshold commentary | Real Qwen2.5-VL API call; auto-accept routing |
+| **AI Score Display** | ✅ Done | Gauge / bar / verdict visualisations; 8 sub-scores; threshold commentary; Scheme C auto-cert fast-track (Sprint 15) | Real Qwen2.5-VL API call |
 | **MINA Chatbot** | ✅ Done | Interactive drawer; 19-pair QA engine; typing indicator; quick-pick tags; live input with Enter-to-send | Real LLM backend |
 | **Notification Centre** | ✅ Done | Dedicated Notifications page with 4 tabs (All/Unread/Action/System); in-app bell dropdown (5 items); session timeout modal with 60-s countdown | Real email/SMS/push delivery |
+| **Global Search** | ✅ Done (Sprint 15) | Ctrl+K / ⌘K trigger; searches applications, certificates, notifications; grouped results; quick-nav grid | Full-text search across all entities with server-side index |
 | **Workflow Config / Role Tagging** | ✅ Done | Role-based member management — assign multiple roles per MCMC officer; designate role lead; add/remove members per role; per-member performance drawer; team-level stats | — |
 | **MCMC Officer Profiles** | ✅ Done | All 5 MCMC profiles have division, department, grade, phone; 10-member roster in `mcmcTeamMembers`; `roleDefinitions` for Workflow Config | — |
 | **Integrations Health** | ✅ Done | Real-time health dashboard for 7 systems; latency, uptime %, status badge; architecture diagram (`screens-e.jsx`) | Real API adapter calls |
@@ -1784,6 +1785,7 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | **12** | Roles & bilingual | #27 Content Manager role · #28 Bilingual BM toggle | S + L | Content Manager completes role coverage; BM toggle implemented for supplier-facing screens and public portal |
 | **13** | Polish & workflow fidelity | #29 Grace-period status · #30 Role-aware decision panel · #31 App status timeline | S × 3 | Close last URS gaps; differentiate officer-tier decision flows; add per-application progression view |
 | **14** | Payments, certificates & officer views | #32 Invoice drawer · #33 Officer All-Applications · #34 Certificate download | S + S–M + S | Full invoice/receipt experience; split supplier vs officer app list; real certificate/label download |
+| **15** | UX completeness & smart automation | #35 Scheme C auto-cert fast-track · #36 Supplier user management · #37 Global search | S + M + M | Close URS §5.2.4 auto-accept gap; multi-user supplier team management; functional app-wide search panel |
 
 ---
 
@@ -2167,6 +2169,59 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 
 ---
 
+#### Sprint 15 Completion Notes (2026-05-06)
+
+**Initiative #35 — Scheme C Auto-Certification Fast-Track (URS §5.2.4)**
+
+`screens-b.jsx` (`SDoCWizard`):
+- Added `mockDocScore` state: Scheme C = 94, B = 78, A = 72. `isAutoCert = scheme === 'C' && mockDocScore >= 90`
+- `AIStep`: when `aiDone` and `isAutoCert`, shows green `antd.Alert` with `RobotOutlined` icon — "Auto-certification eligible — Score 94/100" with URS §5.2.4 reference before `DocFindingsPanel`
+- `ConfirmStep`: branches on `isAutoCert` — auto-cert path shows:
+  - `SafetyCertificateOutlined` success icon (green circle)
+  - "AI Auto-Certified · §5.2.4" tag
+  - "Certificate Issued" heading (not "Application Submitted")
+  - Immediately shows `RCN-0526-00512`, valid-until date, AI score, fee paid in a green gradient card
+  - Inline `downloadAutoCert()` Blob download (ASCII certificate with MCMC header, product details, CMA 1998 reference, verify URL)
+  - Buttons: Download Certificate · View My Certificates · Go to Dashboard
+- Manual-review path (Scheme A/B) unchanged — still shows "Application Submitted" with SLA date
+
+`data/mock.js`:
+- Added `autoCertified: [...]` array with 3 mock auto-cert records (RCN, issuedAt, certExpiry, aiScore)
+
+`index.html` (`OfficerQueue`):
+- Added `autoCertList` from `MOCK.autoCertified`
+- Added 4th Segmented tab "Auto-certified (3)" with `RobotOutlined` icon (team-lead only)
+- Auto-cert tab renders: info `antd.Alert` explaining §5.2.4 + dedicated table (App ID, Applicant, Product, AI Score, RCN Issued, Issued At, Valid Until, Status=green "Auto-certified" tag)
+- Main queue table unchanged — only the tab switch shows auto-cert view
+
+**Initiative #36 — Supplier User Management** *(already implemented in prior sprint — verified complete)*
+
+`screens-c.jsx` `ProfileTab` already includes:
+- `TeamTab` component: Team Members table (name, email, role, last login, status, suspended/active toggle, Remove action), search filter, role-permission info alert
+- Join Requests inbox: pending users who registered with company BRN; Approve / Reject actions with loading state and toast feedback
+- `InviteDrawer`: email + role select + optional message → sends invite with success feedback
+- `data/mock.js` `teamMembers` (5 users) and `joinRequests` (2 pending) — both populated
+- Tab only appears for `role === 'supplier'`
+
+**Initiative #37 — Global Search Panel**
+
+`index.html`:
+- Added `searchOpen` + `searchQuery` state to `App`
+- Header search bar replaced with styled `<div>` trigger showing "⌘K" shortcut hint; click opens search modal
+- Added `keydown` listener for `Ctrl+K` / `⌘K` → opens modal; `Escape` → closes
+- `GlobalSearchModal` component (before `App`):
+  - `antd.Modal` 620px wide, `top: 80`, no default footer/close button
+  - Auto-focuses input on open (`useEffect` + `inputRef`)
+  - Search indexes: `MOCK.assessments` (by ID/product/brand/model/applicant), `MOCK.certificates` (by RCN/product/brand/scheme), `MOCK.notifications` (by title/body)
+  - Results grouped by type (Applications / Certificates / Notifications) with section headers + icons
+  - Each result row: title, monospace sub-label, status pill / tag, `ArrowRightOutlined`; hover highlight
+  - Click navigates to target screen and closes modal
+  - Empty state: "No results for '…'"
+  - Empty query: "Quick Navigation" 3×2 grid of common screens
+  - Footer: result count + "Press ↵ to open" hint
+
+---
+
 ### 12.5 URS Gap Analysis — Remaining Prototype Gaps (as of 06 May 2026)
 
 Cross-referencing the URS v1.7 requirements against the current prototype state. Items below are URS-mandated flows not yet fully prototyped. Items marked 🚫 are out-of-scope for the prototype (production-only).
@@ -2208,7 +2263,7 @@ Cross-referencing the URS v1.7 requirements against the current prototype state.
 | Gap | URS Reference | Notes |
 |---|---|---|
 | **Fraud detection** — AI flags forged documents, duplicate applications, suspicious patterns for officer investigation. | §5.14 | No visual in prototype; real AI call out-of-scope |
-| **Scheme C auto-accept routing** — Score ≥ 90 should skip the queue entirely and immediately issue RCN. Prototype shows "expedited review" but officer queue still receives it. | §5.2.4 | Mock data limitation — no conditional routing |
+| ~~**Scheme C auto-accept routing**~~ — Score ≥ 90 skips the officer queue; RCN issued immediately at payment confirmation. | §5.2.4 | ✅ Done — Sprint 15 (#35). SDoC wizard detects score ≥ 90 at AI step, ConfirmStep shows issued RCN + download. TL officer queue has "Auto-certified" tab. |
 | **AI confidence feeds PMS** — Non-conformance records from PMS auto-adjust AI risk scoring thresholds. | §5.8 | Requires live AI backend; out-of-scope for prototype |
 | **Real waiver code validation** — WaiverCodeInput accepts any 8-char code starting with `WVR-` (mock). | §5.13 | Backend out-of-scope |
 | ~~**SA Letter editable fields**~~ | §5.3.3, §5.3.5 | ✅ Done — Sprint 9 (SALetterConfigTab in AdminConfig) |
@@ -2229,7 +2284,7 @@ Cross-referencing the URS v1.7 requirements against the current prototype state.
 | Admin config | ~~Notification templates~~, ~~equipment type master list~~, ~~application expiry~~ — all resolved | — |
 | Reporting | ~~Export CSV/XLSX~~ — resolved | — |
 | Role coverage | ~~Content Manager~~ — resolved Sprint 12 | — |
-| AI / automation | Auto-accept routing, fraud detection, waiver backend | Out-of-scope for prototype |
+| AI / automation | ~~Auto-accept routing~~ (✅ Sprint 15), fraud detection, waiver backend | Fraud detection + waiver backend out-of-scope for prototype |
 | Bilingual / A11y | ~~BM translation~~ (supplier + public portal) — resolved Sprint 12; WCAG out-of-scope | — |
 
 ---

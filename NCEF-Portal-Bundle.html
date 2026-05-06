@@ -346,6 +346,11 @@ window.MOCK = {
     { id: 'APP-0426-00094', scheme: 'SA', applicant: 'Maxis Broadband Sdn Bhd', product: '5G mmWave Test Unit', submitted: '2026-04-18T10:15:00', aiScore: 65, priority: 'high', slaHours: 8, assignedTo: null },
     { id: 'APP-0426-00095', scheme: 'A', applicant: 'Digi Telecommunications', product: 'Ericsson AIR 6419', submitted: '2026-04-18T15:42:00', aiScore: 83, priority: 'normal', slaHours: 48, assignedTo: 'OFF-003' },
   ],
+  autoCertified: [
+    { id: 'APP-0426-00096', scheme: 'C', applicant: 'Axiata Digital Sdn Bhd', product: 'Samsung Galaxy S24 Ultra', submitted: '2026-05-05T09:12:00', aiScore: 94, rcn: 'RCN-0526-00512', issuedAt: '2026-05-05T09:14:38', certExpiry: '2027-05-05' },
+    { id: 'APP-0426-00097', scheme: 'C', applicant: 'U Mobile Sdn Bhd', product: 'Xiaomi Redmi Note 14', submitted: '2026-05-04T14:33:00', aiScore: 91, rcn: 'RCN-0526-00510', issuedAt: '2026-05-04T14:35:02', certExpiry: '2027-05-04' },
+    { id: 'APP-0426-00098', scheme: 'C', applicant: 'YTL Communications Sdn Bhd', product: 'TP-Link Archer BE9300', submitted: '2026-05-03T11:00:00', aiScore: 93, rcn: 'RCN-0526-00507', issuedAt: '2026-05-03T11:02:15', certExpiry: '2028-05-03' },
+  ],
   // Supplier-facing audit trail (no AI/system internals)
   supplierAuditTrail: {
     'APP-0426-00087': [
@@ -2824,6 +2829,9 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
   const [sigIc, setSigIc] = React.useState('');
   const [sigChecked, setSigChecked] = React.useState(false);
   const [form] = Form.useForm();
+  // Mock AI doc score — Scheme C gets a high score to trigger auto-cert path
+  const mockDocScore = scheme === 'C' ? 94 : scheme === 'B' ? 78 : 72;
+  const isAutoCert = scheme === 'C' && mockDocScore >= 90;
 
   const steps = [
     { k: 'scheme', t: 'Scheme' },
@@ -3110,7 +3118,20 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
           </div>
         </Card>
       )}
-      {aiDone && <DocFindingsPanel />}
+      {aiDone && (
+        <>
+          {isAutoCert && (
+            <Alert type="success" showIcon style={{ marginBottom: 16 }}
+              icon={<RobotOutlined />}
+              message={<span style={{ fontWeight: 700 }}>Auto-certification eligible — Score {mockDocScore}/100</span>}
+              description={
+                <span>All documents meet Scheme C requirements. Upon payment, your RCN will be <b>auto-issued within 2 working hours</b> — no manual officer review required. This is the fastest certification path under URS §5.2.4.</span>
+              }
+            />
+          )}
+          <DocFindingsPanel />
+        </>
+      )}
     </div>
   );
 
@@ -3320,21 +3341,101 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
 
   const ConfirmStep = () => {
     const slaMap = { A: '22 Apr 2026', B: '20 Apr 2026', C: '16 Apr 2026' };
-    const isAutoAccept = scheme === 'C';
+    const AUTO_RCN = 'RCN-0526-00512';
+    const certExpiry = `${new Date().getFullYear() + period}-05-06`;
+
+    if (isAutoCert) {
+      function downloadAutoCert() {
+        const lines = [
+          '┌─────────────────────────────────────────────────────────────────┐',
+          '│         MCMC — NATIONAL COMMUNICATIONS AND MULTIMEDIA COMMISSION │',
+          '│        NATIONAL COMMUNICATIONS EQUIPMENT FRAMEWORK (NCEF)        │',
+          '│             CERTIFICATE OF CONFORMITY — AUTO-ISSUED               │',
+          '└─────────────────────────────────────────────────────────────────┘',
+          '',
+          `  CERTIFICATE NO : ${AUTO_RCN}`,
+          `  ISSUED DATE    : ${new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' })}`,
+          `  EXPIRY DATE    : ${new Date(certExpiry).toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' })}`,
+          '',
+          '  CERTIFICATE HOLDER',
+          '  ──────────────────',
+          '  Axiata Digital Services Sdn Bhd',
+          '  Axiata Tower, 9 Jalan Stesen Sentral 5, KL Sentral',
+          '  50470 Kuala Lumpur, Malaysia',
+          '',
+          '  PRODUCT DETAILS',
+          '  ───────────────',
+          '  Brand / Model  : Samsung / SM-S928B (Galaxy S24 Ultra)',
+          '  Scheme         : C — Self-Declaration (Auto-accepted)',
+          '  Category       : Mobile Phone / Smartphone',
+          '  AI Doc Score   : 94/100',
+          '',
+          '  CERTIFICATION BASIS',
+          '  ───────────────────',
+          '  Communications and Multimedia Act 1998 (CMA), Section 184',
+          '  MCMC NCEF Technical Standard TS G015:2022',
+          '  Auto-certified per URS §5.2.4 (score ≥ 90)',
+          '',
+          '  This certificate is issued electronically and is valid without signature.',
+          '  Verify at: https://ncef.mcmc.gov.my/verify/' + AUTO_RCN,
+          '',
+          '═══════════════════════════════════════════════════════════════════',
+          '  MCMC Reference: CPPG/NCEF/AUTO/' + AUTO_RCN,
+          '═══════════════════════════════════════════════════════════════════',
+        ].join('\n');
+        const blob = new Blob([lines], { type: 'text/plain' });
+        const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `NCEF-Certificate-${AUTO_RCN}.txt` });
+        a.click(); URL.revokeObjectURL(a.href);
+      }
+
+      return (
+        <div style={{ textAlign: 'center', padding: '40px 20px', maxWidth: 620, margin: '0 auto' }}>
+          <div style={{ display: 'inline-flex', width: 88, height: 88, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 44, color: 'var(--color-success)', marginBottom: 8 }}>
+            <SafetyCertificateOutlined />
+          </div>
+          <antd.Tag color="green" style={{ marginBottom: 12, fontSize: 12 }}>AI Auto-Certified · §5.2.4</antd.Tag>
+          <Title level={3} style={{ margin: '0 0 6px' }}>Certificate Issued</Title>
+          <Text type="secondary" style={{ fontSize: 14 }}>Scheme C auto-certification complete. Your RCN has been generated immediately — no manual review required.</Text>
+
+          <div style={{ margin: '20px 0', padding: 20, background: 'linear-gradient(135deg, #E5F6EE 0%, #F0FBF5 100%)', borderRadius: 14, border: '1px solid #BEE5CF' }}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Registration Number</div>
+                <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-success)', marginTop: 2 }}>{AUTO_RCN}</div>
+              </Col>
+              <Col span={12}>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Valid Until</div>
+                <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2 }}>{new Date(certExpiry).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+              </Col>
+              <Col span={12} style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>AI Document Score</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-success)', marginTop: 2 }}>{mockDocScore}/100 — All clear</div>
+              </Col>
+              <Col span={12} style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>Fee Paid</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>RM {totalFee.toLocaleString('en-MY')}</div>
+              </Col>
+            </Row>
+          </div>
+
+          <Alert type="info" showIcon icon={<RobotOutlined />} style={{ textAlign: 'left', marginBottom: 20 }}
+            message="What happens next"
+            description="Your certificate is now active and your product may be imported/used immediately. The certificate has been added to your Certificates list. MCMC will send a confirmation email within 30 minutes." />
+
+          <Space wrap size="middle" style={{ justifyContent: 'center' }}>
+            <Button size="large" icon={<DownloadOutlined />} onClick={downloadAutoCert}>Download Certificate</Button>
+            <Button size="large" onClick={() => nav('certificates')}>View My Certificates</Button>
+            <Button size="large" type="primary" onClick={() => nav('dashboard')}>Go to Dashboard</Button>
+          </Space>
+        </div>
+      );
+    }
+
     return (
       <div style={{ textAlign: 'center', padding: '40px 20px', maxWidth: 580, margin: '0 auto' }}>
         <div style={{ display: 'inline-flex', width: 80, height: 80, borderRadius: '50%', background: 'var(--color-success-bg)', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'var(--color-success)' }}>✓</div>
         <Title level={3} style={{ marginTop: 16 }}>Application Submitted</Title>
-        <Text type="secondary">
-          {isAutoAccept
-            ? 'Payment received. Your application is under auto-review — expected decision within 1 working day.'
-            : 'Payment received. Your application has been assigned to an MCMC officer for review.'}
-        </Text>
-        {isAutoAccept && (
-          <Alert type="info" showIcon style={{ marginTop: 16, textAlign: 'left' }}
-            message="Scheme C: Expedited review"
-            description="Your application is eligible for expedited processing. If all documents are in order, your RCN will be issued without manual intervention. You will receive an email notification when the decision is made." />
-        )}
+        <Text type="secondary">Payment received. Your application has been assigned to an MCMC officer for review.</Text>
         <div style={{ marginTop: 20, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12 }}>
           <Row gutter={16}>
             <Col span={12}>
@@ -12109,6 +12210,7 @@ function OfficerQueue({ nav, currentUser }) {
   const [qAi,       setQAi]       = React.useState('all');
   const [showAdv,   setShowAdv]   = React.useState(false);
 
+  const autoCertList = MOCK.autoCertified || [];
   const baseList = React.useMemo(() => {
     if (!isLead) return resolved.filter(x => x.assignedTo === myId);
     if (filter === 'mine')       return resolved.filter(x => x.assignedTo === myId);
@@ -12167,6 +12269,7 @@ function OfficerQueue({ nav, currentUser }) {
               { label: `My queue (${myCount})`, value: 'mine' },
               { label: `Team queue (${teamAssigned})`, value: 'team' },
               { label: `Unassigned (${unassignedCount})`, value: 'unassigned' },
+              { label: <antd.Space size={4}><RobotOutlined />{`Auto-certified (${autoCertList.length})`}</antd.Space>, value: 'auto' },
             ]} />
           ) : (
             <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
@@ -12227,26 +12330,46 @@ function OfficerQueue({ nav, currentUser }) {
           </div>
         )}
 
-        <antd.Table rowKey="id" dataSource={list} pagination={false} scroll={{ x: 'max-content' }}
-          onRow={row => ({ onClick: e => { if (e.target.closest('.assign-btn')) return; nav('officer-review'); }, style: { cursor: 'pointer' } })}
-          columns={[
-            { title: 'App ID',    dataIndex: 'id',       width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
-            { title: 'Scheme',    dataIndex: 'scheme',   width: 130, render: s => <antd.Tag style={{ fontSize: 11 }}>{s === 'SA' ? 'Special Approval' : `Scheme ${s}`}</antd.Tag> },
-            { title: 'Applicant', dataIndex: 'applicant', width: 200 },
-            { title: 'Product',   dataIndex: 'product',  width: 220 },
-            { title: 'AI Score',  dataIndex: 'aiScore',  width: 90,  render: s => <antd.Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{s}</antd.Tag> },
-            { title: 'Priority',  dataIndex: 'priority', width: 90,  render: p => <antd.Tag color={p === 'high' ? 'red' : p === 'low' ? 'default' : 'blue'}>{p}</antd.Tag> },
-            { title: 'SLA',       dataIndex: 'slaHours', width: 90,  render: h => <antd.Tag color={h < 12 ? 'red' : h < 24 ? 'orange' : 'default'} style={{ whiteSpace: 'nowrap' }}>{h}h left</antd.Tag> },
-            ...(isLead ? [{
-              title: 'Assigned', dataIndex: 'assignedTo', width: 130,
-              render: (id, row) => id
-                ? <antd.Tooltip title={officerById[id]?.name}><antd.Tag>{officerById[id]?.name?.split(' ').slice(-1)[0] || id}</antd.Tag></antd.Tooltip>
-                : <antd.Button className="assign-btn" size="small" type="primary" icon={<TeamOutlined />}
-                    onClick={e => { e.stopPropagation(); setAssignTarget(row.id); setAssignOpen(true); }}>Assign…</antd.Button>,
-            }] : []),
-            { title: 'Submitted', dataIndex: 'submitted', width: 140, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span> },
-          ]}
-        />
+        {filter === 'auto' ? (
+          <>
+            <antd.Alert type="info" showIcon icon={<RobotOutlined />} style={{ marginBottom: 12 }}
+              message="Auto-certified applications (Scheme C, AI score ≥ 90)"
+              description="These applications were certified automatically per URS §5.2.4. No officer action required. Certificate has been issued and the applicant notified." />
+            <antd.Table rowKey="id" dataSource={autoCertList} pagination={false} scroll={{ x: 'max-content' }}
+              columns={[
+                { title: 'App ID',    dataIndex: 'id',        width: 150, render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
+                { title: 'Applicant', dataIndex: 'applicant', width: 220 },
+                { title: 'Product',   dataIndex: 'product',   width: 220 },
+                { title: 'AI Score',  dataIndex: 'aiScore',   width: 90,  render: s => <antd.Tag color="green" style={{ fontWeight: 700 }}>{s}</antd.Tag> },
+                { title: 'RCN Issued', dataIndex: 'rcn',      width: 150, render: v => <antd.Typography.Text code style={{ fontSize: 12, color: 'var(--color-success)' }}>{v}</antd.Typography.Text> },
+                { title: 'Issued At', dataIndex: 'issuedAt',  width: 160, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</span> },
+                { title: 'Valid Until', dataIndex: 'certExpiry', width: 120, render: v => new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) },
+                { title: 'Status', width: 140, render: () => <antd.Tag color="green" icon={<RobotOutlined />}>Auto-certified</antd.Tag> },
+              ]}
+            />
+          </>
+        ) : (
+          <antd.Table rowKey="id" dataSource={list} pagination={false} scroll={{ x: 'max-content' }}
+            onRow={row => ({ onClick: e => { if (e.target.closest('.assign-btn')) return; nav('officer-review'); }, style: { cursor: 'pointer' } })}
+            columns={[
+              { title: 'App ID',    dataIndex: 'id',       width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
+              { title: 'Scheme',    dataIndex: 'scheme',   width: 130, render: s => <antd.Tag style={{ fontSize: 11 }}>{s === 'SA' ? 'Special Approval' : `Scheme ${s}`}</antd.Tag> },
+              { title: 'Applicant', dataIndex: 'applicant', width: 200 },
+              { title: 'Product',   dataIndex: 'product',  width: 220 },
+              { title: 'AI Score',  dataIndex: 'aiScore',  width: 90,  render: s => <antd.Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{s}</antd.Tag> },
+              { title: 'Priority',  dataIndex: 'priority', width: 90,  render: p => <antd.Tag color={p === 'high' ? 'red' : p === 'low' ? 'default' : 'blue'}>{p}</antd.Tag> },
+              { title: 'SLA',       dataIndex: 'slaHours', width: 90,  render: h => <antd.Tag color={h < 12 ? 'red' : h < 24 ? 'orange' : 'default'} style={{ whiteSpace: 'nowrap' }}>{h}h left</antd.Tag> },
+              ...(isLead ? [{
+                title: 'Assigned', dataIndex: 'assignedTo', width: 130,
+                render: (id, row) => id
+                  ? <antd.Tooltip title={officerById[id]?.name}><antd.Tag>{officerById[id]?.name?.split(' ').slice(-1)[0] || id}</antd.Tag></antd.Tooltip>
+                  : <antd.Button className="assign-btn" size="small" type="primary" icon={<TeamOutlined />}
+                      onClick={e => { e.stopPropagation(); setAssignTarget(row.id); setAssignOpen(true); }}>Assign…</antd.Button>,
+              }] : []),
+              { title: 'Submitted', dataIndex: 'submitted', width: 140, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span> },
+            ]}
+          />
+        )}
       </antd.Card>
       {isLead && (
         <AssignOfficerModal open={assignOpen} onClose={() => setAssignOpen(false)}
@@ -12906,6 +13029,175 @@ function buildHash(screenKey, sub) {
   return sub ? `#/${screenKey}/${sub}` : `#/${screenKey}`;
 }
 
+// ──── GLOBAL SEARCH ──────────────────────────────────────────────────────────
+function GlobalSearchModal({ open, query, setQuery, onClose, onNavigate }) {
+  const inputRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (open) setTimeout(() => inputRef.current?.focus(), 80);
+  }, [open]);
+
+  const results = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+
+    const groups = [];
+
+    // Applications
+    const apps = (MOCK.assessments || []).filter(a =>
+      [a.id, a.product, a.brand || '', a.model || '', a.applicant || ''].join(' ').toLowerCase().includes(q)
+    ).slice(0, 4);
+    if (apps.length) groups.push({
+      label: 'Applications',
+      icon: <FileTextOutlined />,
+      items: apps.map(a => ({
+        key: 'applications',
+        label: a.product,
+        sub: a.id,
+        right: <StatusPill status={a.status} />,
+        screen: 'applications',
+      })),
+    });
+
+    // Certificates
+    const certs = (MOCK.certificates || []).filter(c =>
+      [c.rcn, c.product, c.brand || '', c.scheme || ''].join(' ').toLowerCase().includes(q)
+    ).slice(0, 4);
+    if (certs.length) groups.push({
+      label: 'Certificates',
+      icon: <SafetyCertificateOutlined />,
+      items: certs.map(c => ({
+        key: 'certificates',
+        label: c.product,
+        sub: c.rcn,
+        right: <antd.Tag color={c.status === 'active' ? 'green' : c.status === 'expiring' ? 'orange' : 'default'} style={{ fontSize: 10, margin: 0 }}>{c.status}</antd.Tag>,
+        screen: 'certificates',
+      })),
+    });
+
+    // IMEIs
+    const imeis = (MOCK.imeiRecords || []).filter(r =>
+      [r.imei, r.model, r.brand || ''].join(' ').toLowerCase().includes(q)
+    ).slice(0, 3);
+    if (imeis.length) groups.push({
+      label: 'IMEI Registry',
+      icon: <IdcardOutlined />,
+      items: imeis.map(r => ({
+        key: 'imei-register',
+        label: r.model,
+        sub: r.imei,
+        right: <antd.Tag color={r.status === 'active' ? 'green' : 'default'} style={{ fontSize: 10, margin: 0 }}>{r.status}</antd.Tag>,
+        screen: 'imei-register',
+      })),
+    });
+
+    // Notifications
+    const notifs = (MOCK.notifications || []).filter(n =>
+      [n.title, n.body].join(' ').toLowerCase().includes(q)
+    ).slice(0, 2);
+    if (notifs.length) groups.push({
+      label: 'Notifications',
+      icon: <BellOutlined />,
+      items: notifs.map(n => ({
+        key: 'notifications',
+        label: n.title,
+        sub: new Date(n.ts).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+        right: !n.read ? <antd.Badge dot /> : null,
+        screen: 'notifications',
+      })),
+    });
+
+    return groups;
+  }, [query]);
+
+  const totalResults = results.reduce((s, g) => s + g.items.length, 0);
+
+  const quickLinks = [
+    { label: 'Review Queue',   screen: 'officer-queue',  icon: <FlagOutlined /> },
+    { label: 'My Applications', screen: 'applications',  icon: <FileTextOutlined /> },
+    { label: 'Certificates',   screen: 'certificates',   icon: <SafetyCertificateOutlined /> },
+    { label: 'Notifications',  screen: 'notifications',  icon: <BellOutlined /> },
+    { label: 'Reports',        screen: 'reports',        icon: <BarChartOutlined /> },
+    { label: 'Profile',        screen: 'profile',        icon: <UserOutlined /> },
+  ];
+
+  return (
+    <antd.Modal
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      width={620}
+      styles={{ body: { padding: 0 } }}
+      style={{ top: 80 }}
+      closable={false}
+      destroyOnClose
+    >
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <SearchOutlined style={{ fontSize: 16, color: 'var(--color-text-muted)', flexShrink: 0 }} />
+        <antd.Input
+          ref={inputRef}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search applications, certificates, IMEIs, notifications…"
+          bordered={false}
+          style={{ fontSize: 15, flex: 1, padding: 0 }}
+        />
+        {query && <antd.Button type="text" size="small" icon={<CloseCircleOutlined />} onClick={() => setQuery('')} style={{ color: 'var(--color-text-muted)' }} />}
+        <kbd onClick={onClose} style={{ fontSize: 11, background: 'var(--color-bg-subtle)', border: '1px solid var(--color-border)', borderRadius: 4, padding: '2px 6px', cursor: 'pointer', color: 'var(--color-text-muted)', flexShrink: 0 }}>Esc</kbd>
+      </div>
+
+      <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+        {!query && (
+          <div style={{ padding: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 10 }}>Quick Navigation</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              {quickLinks.map(l => (
+                <div key={l.screen} onClick={() => onNavigate(l.screen)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--color-border)', cursor: 'pointer', fontSize: 13, color: 'var(--color-text-secondary)', background: 'var(--color-bg-elevated)', transition: 'all .15s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--color-primary-soft)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'var(--color-bg-elevated)'}>
+                  <span style={{ color: 'var(--color-primary)', fontSize: 14 }}>{l.icon}</span>
+                  {l.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {query && totalResults === 0 && (
+          <antd.Empty description={`No results for "${query}"`} style={{ padding: '36px 0' }} />
+        )}
+
+        {results.map(group => (
+          <div key={group.label}>
+            <div style={{ padding: '8px 16px 4px', fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              {group.icon} {group.label}
+            </div>
+            {group.items.map((item, i) => (
+              <div key={i} onClick={() => onNavigate(item.screen)}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', cursor: 'pointer', transition: 'background .1s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--color-primary-soft)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)', marginTop: 1 }}>{item.sub}</div>
+                </div>
+                {item.right}
+                <ArrowRightOutlined style={{ color: 'var(--color-text-muted)', fontSize: 11 }} />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ padding: '8px 16px', borderTop: '1px solid var(--color-divider)', fontSize: 11, color: 'var(--color-text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+        {query ? <span>{totalResults} result{totalResults !== 1 ? 's' : ''} found</span> : <span>Type to search</span>}
+        <span>Press <kbd style={{ fontSize: 10, background: 'var(--color-bg-subtle)', border: '1px solid var(--color-border)', borderRadius: 3, padding: '1px 4px' }}>↵</kbd> to open</span>
+      </div>
+    </antd.Modal>
+  );
+}
+
 function App() {
   const [tweaks, setTweaks]                 = React.useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode]             = React.useState(false);
@@ -12918,6 +13210,8 @@ function App() {
   const [loggedIn, setLoggedIn]             = React.useState(() => sessionStorage.getItem('ncef.loggedIn') === '1');
   const [switchOpen, setSwitchOpen]         = React.useState(false);
   const [lang, setLang]                     = React.useState('en');
+  const [searchOpen, setSearchOpen]         = React.useState(false);
+  const [searchQuery, setSearchQuery]       = React.useState('');
   const [sessionWarning, setSessionWarning] = React.useState(false);
   const [sessionCountdown, setSessionCountdown] = React.useState(60);
   const sessionTimerRef  = React.useRef(null);
@@ -12956,6 +13250,19 @@ function App() {
     resetSessionTimer();
     return () => events.forEach(e => window.removeEventListener(e, resetSessionTimer));
   }, [resetSessionTimer]);
+
+  React.useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+        setSearchQuery('');
+      }
+      if (e.key === 'Escape') setSearchOpen(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   React.useEffect(() => {
     localStorage.setItem('ncef.screen', screen);
@@ -13097,7 +13404,14 @@ function App() {
           <Header style={{ background:'#fff', borderBottom:'1px solid var(--color-divider)', padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', height:56, lineHeight:'normal', flexShrink:0, zIndex:10 }}>
             <Space size="middle">
               <Button type="text" icon={<MenuOutlined />} onClick={() => setSidebarCollapsed(!sidebarCollapsed)} />
-              <Input placeholder="Search applications, certificates, IMEIs…" prefix={<SearchOutlined style={{ color:'var(--color-text-muted)' }} />} style={{ width:340 }} />
+              <antd.Tooltip title={<span>Search <kbd style={{ background:'rgba(255,255,255,0.15)', padding:'1px 5px', borderRadius:3, fontSize:11 }}>Ctrl K</kbd></span>} placement="bottom">
+                <div onClick={() => { setSearchOpen(true); setSearchQuery(''); }}
+                  style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 12px', background:'var(--color-bg-subtle)', border:'1px solid var(--color-border)', borderRadius:8, width:340, cursor:'text', color:'var(--color-text-muted)', fontSize:13 }}>
+                  <SearchOutlined />
+                  <span style={{ flex:1 }}>Search applications, certificates, IMEIs…</span>
+                  <kbd style={{ fontSize:10, background:'var(--color-bg-elevated)', border:'1px solid var(--color-border)', borderRadius:3, padding:'1px 5px', color:'var(--color-text-muted)', display:'inline-block' }}>⌘K</kbd>
+                </div>
+              </antd.Tooltip>
             </Space>
             <Space size="middle">
               <antd.Tooltip title="Copy link to this screen">
@@ -13148,6 +13462,7 @@ function App() {
 
         <SwitchProfileModal open={switchOpen} currentRole={tweaks.role} onClose={() => setSwitchOpen(false)} onSwitch={handleSwitchProfile} />
         <MinaDrawer open={minaOpen} onClose={() => setMinaOpen(false)} currentUser={currentUser} />
+        <GlobalSearchModal open={searchOpen} query={searchQuery} setQuery={setSearchQuery} onClose={() => setSearchOpen(false)} onNavigate={key => { setScreen(key); setSearchOpen(false); }} />
 
         <antd.Modal open={sessionWarning} closable={false} maskClosable={false} width={420}
           footer={[

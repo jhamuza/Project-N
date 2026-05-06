@@ -144,6 +144,11 @@ window.MOCK = {
     { id: 'APP-0426-00094', scheme: 'SA', applicant: 'Maxis Broadband Sdn Bhd', product: '5G mmWave Test Unit', submitted: '2026-04-18T10:15:00', aiScore: 65, priority: 'high', slaHours: 8, assignedTo: null },
     { id: 'APP-0426-00095', scheme: 'A', applicant: 'Digi Telecommunications', product: 'Ericsson AIR 6419', submitted: '2026-04-18T15:42:00', aiScore: 83, priority: 'normal', slaHours: 48, assignedTo: 'OFF-003' },
   ],
+  autoCertified: [
+    { id: 'APP-0426-00096', scheme: 'C', applicant: 'Axiata Digital Sdn Bhd', product: 'Samsung Galaxy S24 Ultra', submitted: '2026-05-05T09:12:00', aiScore: 94, rcn: 'RCN-0526-00512', issuedAt: '2026-05-05T09:14:38', certExpiry: '2027-05-05' },
+    { id: 'APP-0426-00097', scheme: 'C', applicant: 'U Mobile Sdn Bhd', product: 'Xiaomi Redmi Note 14', submitted: '2026-05-04T14:33:00', aiScore: 91, rcn: 'RCN-0526-00510', issuedAt: '2026-05-04T14:35:02', certExpiry: '2027-05-04' },
+    { id: 'APP-0426-00098', scheme: 'C', applicant: 'YTL Communications Sdn Bhd', product: 'TP-Link Archer BE9300', submitted: '2026-05-03T11:00:00', aiScore: 93, rcn: 'RCN-0526-00507', issuedAt: '2026-05-03T11:02:15', certExpiry: '2028-05-03' },
+  ],
   // Supplier-facing audit trail (no AI/system internals)
   supplierAuditTrail: {
     'APP-0426-00087': [
