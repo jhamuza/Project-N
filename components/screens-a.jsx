@@ -271,26 +271,61 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks, lang: _lang }) {
               <Button block size="large" onClick={() => nav('account-renewal')}>{T('dash_new_account_renewal')}</Button>
             </Space>
           </Card>
-          <Card title={lang === 'bm' ? 'Pemberitahuan' : 'Notifications'} bordered>
-            <List
-              size="small"
-              dataSource={[
-                { t: 'Application APP-0426-00083 requires iteration', d: '2 days ago', kind: 'warning' },
-                { t: 'Certificate RCN-0326-00430 expires in 45 days', d: '3 days ago', kind: 'info' },
-                { t: 'Payment received for APP-0426-00085', d: '1 week ago', kind: 'success' },
-              ]}
-              renderItem={(n) => (
-                <List.Item style={{ padding: '8px 0' }}>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 8, background: n.kind === 'warning' ? 'var(--color-warning)' : n.kind === 'success' ? 'var(--color-success)' : 'var(--color-info)' }} />
-                    <div>
-                      <div style={{ fontSize: 13 }}>{n.t}</div>
-                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{n.d}</div>
-                    </div>
+          {/* Certificate Health widget */}
+          <Card bordered bodyStyle={{ padding: '14px 16px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 12 }}>{lang === 'bm' ? 'Kesihatan Sijil' : 'Certificate Health'}</div>
+            {(() => {
+              const certs = MOCK.certificates || [];
+              const active   = certs.filter(c => c.status === 'active').length;
+              const expiring = certs.filter(c => c.status === 'expiring').length;
+              const expired  = certs.filter(c => c.status === 'expired').length;
+              const nextExp  = [...certs].filter(c => c.expires).sort((a,b) => new Date(a.expires)-new Date(b.expires))[0];
+              const daysToNext = nextExp ? Math.ceil((new Date(nextExp.expires) - new Date('2026-05-06')) / 864e5) : null;
+              return (
+                <>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                    {[{l: lang === 'bm' ? 'Aktif' : 'Active', v: active, c: 'var(--color-success)'}, {l: lang === 'bm' ? 'Akan Tamat' : 'Expiring', v: expiring, c: 'var(--color-warning)'}, {l: lang === 'bm' ? 'Tamat' : 'Expired', v: expired, c: 'var(--color-danger)'}].map(s => (
+                      <div key={s.l} style={{ flex: 1, textAlign: 'center', padding: '8px 4px', background: 'var(--color-bg-subtle)', borderRadius: 8 }}>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: s.c }}>{s.v}</div>
+                        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 2 }}>{s.l}</div>
+                      </div>
+                    ))}
                   </div>
-                </List.Item>
-              )}
-            />
+                  {daysToNext !== null && daysToNext <= 90 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '6px 8px', background: daysToNext <= 30 ? 'var(--color-danger-bg)' : 'var(--color-warning-bg)', borderRadius: 6 }}>
+                      <span style={{ color: daysToNext <= 30 ? 'var(--color-danger)' : 'var(--color-warning)', fontWeight: 600 }}>
+                        ⏰ {lang === 'bm' ? 'Tamat dalam' : 'Expires in'} {daysToNext}d
+                      </span>
+                      <Text style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{nextExp?.product?.slice(0, 20)}</Text>
+                    </div>
+                  )}
+                  <Button block size="small" style={{ marginTop: 10 }} onClick={() => nav('certificates')}>{lang === 'bm' ? 'Urus Sijil →' : 'Manage Certificates →'}</Button>
+                </>
+              );
+            })()}
+          </Card>
+
+          {/* Activity feed */}
+          <Card title={lang === 'bm' ? 'Aktiviti Terkini' : 'Recent Activity'}
+            bordered
+            extra={<Button type="link" size="small" onClick={() => nav('notifications')}>{lang === 'bm' ? 'Lihat semua' : 'View all'}</Button>}>
+            {(MOCK.notifications || []).slice(0, 5).map((n, i) => {
+              const catColor = { iteration: 'var(--color-warning)', payment: 'var(--color-success)', approved: 'var(--color-success)', expiry: 'var(--color-warning)', rejected: 'var(--color-danger)', system: 'var(--color-info)' };
+              const catIcon  = { iteration: '⚠️', payment: '✅', approved: '🏅', expiry: '⏰', rejected: '❌', system: 'ℹ️' };
+              const daysAgo  = Math.floor((new Date('2026-05-06') - new Date(n.ts)) / 864e5);
+              const timeStr  = daysAgo === 0 ? (lang === 'bm' ? 'Hari ini' : 'Today') : daysAgo === 1 ? (lang === 'bm' ? 'Semalam' : 'Yesterday') : `${daysAgo}d ago`;
+              return (
+                <div key={n.id} onClick={() => nav('notifications')}
+                  style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderBottom: i < 4 ? '1px solid var(--color-divider)' : 'none', cursor: 'pointer' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: `${catColor[n.cat]}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>{catIcon[n.cat]}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: n.read ? 400 : 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.title}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 1 }}>{timeStr}</div>
+                  </div>
+                  {!n.read && <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', marginTop: 4, flexShrink: 0 }} />}
+                </div>
+              );
+            })}
           </Card>
         </Col>
       </Row>

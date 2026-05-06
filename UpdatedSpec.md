@@ -1661,8 +1661,9 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | **Compliance Status Management** | ✅ Done | Suppliers tab with bulk-select; compliance timeline drawer; Change Status modal; Certificates tab; Enforcement Actions tab (`screens-j.jsx`) | Real status propagation to ESB |
 | **Public Search Portal** | ✅ Done | Bilingual hero; Advanced Search; certificate detail with QR; How-to-Register guide; Documents tab; FAQ; Contact tab; MINA public chatbot (`screens-k.jsx`) | — |
 | **Mobile Apps (Android/iOS/HW)** | 🚫 Out of scope | — | Native Flutter apps — production deliverable only |
-| **Officer Queue** | ✅ Done | My / Team / Unassigned tabs; assign modal; SLA circles; KPI row; advanced filters (Scheme / Priority / AI Score / Search); scheme column neutral tag | — |
-| **Active Review (Officer)** | ✅ Done | Split view: styled PDF viewer + decision panel; audit trail; access guard; TL Reassign; Reclassify modal; Extension Requests tab (approve/deny with new deadline display) | Real PDF rendering |
+| **Officer Dashboard** | ✅ Done (Sprint 16) | Dedicated landing for all 5 officer roles; greeting + role badge; role-adaptive KPIs; "Next in Queue" spotlight; recent decisions; Team Snapshot (TL); performance stats | — |
+| **Officer Queue** | ✅ Done | My / Team / Unassigned / Auto-certified tabs; assign modal; SLA circles; KPI row; advanced filters; Auto-cert tab (Sprint 15) | — |
+| **Active Review (Officer)** | ✅ Done | Split view: PDF viewer + decision panel; audit trail; access guard; TL Reassign; Reclassify; Extension Requests; Fraud Signals panel (Sprint 16) | Real PDF rendering |
 | **Suppliers Management** | ✅ Done | Add / bulk CSV / soft-delete / restore; MCMC-added flag | — |
 | **Reports & Analytics** | ✅ Done | Monthly trend chart; top applicants; officer performance (TL only) | Real data export (CSV/PDF); live chart data |
 | **All Applications (Officer)** | ✅ Done | Cross-supplier master table; applicant + supplierId columns; status/scheme filters; bulk-select with bulk-assign modal + flag + export (TL/approver only) | — |
@@ -1786,6 +1787,7 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | **13** | Polish & workflow fidelity | #29 Grace-period status · #30 Role-aware decision panel · #31 App status timeline | S × 3 | Close last URS gaps; differentiate officer-tier decision flows; add per-application progression view |
 | **14** | Payments, certificates & officer views | #32 Invoice drawer · #33 Officer All-Applications · #34 Certificate download | S + S–M + S | Full invoice/receipt experience; split supplier vs officer app list; real certificate/label download |
 | **15** | UX completeness & smart automation | #35 Scheme C auto-cert fast-track · #36 Supplier user management · #37 Global search | S + M + M | Close URS §5.2.4 auto-accept gap; multi-user supplier team management; functional app-wide search panel |
+| **16** | Dashboard & decision polish | #38 Officer Dashboard · #39 Supplier dashboard activity feed · #40 Fraud signals in Active Review | M + S + S | Dedicated officer landing page for all 5 roles; live supplier activity feed + cert health; fraud detection panel closing §5.14 gap |
 
 ---
 
@@ -2222,6 +2224,59 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 
 ---
 
+#### Sprint 16 Completion Notes (2026-05-06)
+
+**Initiative #38 — Officer Dashboard (`index.html`)**
+
+New `SCREENS['officer-dashboard']` component added to `index.html` (before the Plotly wrapper):
+- Greeting header: "Good morning/afternoon/evening, {first name}" + role tag with role-accent colour + today's full date
+- KPI row adapts by role:
+  - Team Lead: My Queue / Team Pending (unassigned count) / Team Approvals Today / Team SLA %
+  - Approver: Awaiting My Decision / Approved This Month / Avg Decision Time / My SLA
+  - Other officer roles: In My Queue / Decisions This Week / Avg Turnaround / SLA Compliance
+- "Next in Queue" spotlight card: shows the first queued application for the logged-in officer (product, applicant, App ID, scheme tag, AI score, SLA hours) with "Open Review" CTA. Shows `antd.Result` success state when queue is empty
+- "My Recent Decisions" list: 5 hardcoded historical decisions with outcome tags (Approved / Recommend / Verified / Returned for Revision / Rejected)
+- Right column: Quick Actions card (role-sensitive — approver/TL see Reports, all see Queue/Audit/Profile) + My Performance card (total approved/rejected/AI overrides/avg turnaround from `officerPerformance` mock)
+- Team Snapshot card (team-lead only): up to 4 team members with avatar, queue count, SLA % badge
+- All 5 officer nav arrays (NAV_TEAM_LEAD, NAV_OFFICER, NAV_RECOMMENDER, NAV_VERIFIER, NAV_APPROVER) now include `officer-dashboard` as the first item
+- `DEFAULT_SCREEN_BY_ROLE` updated: all officer roles now land on `officer-dashboard` instead of `officer-queue`
+
+**Initiative #39 — Supplier Dashboard Activity Feed + Certificate Health (`screens-a.jsx`)**
+
+Right column of `SCREENS.dashboard` enhanced — replaces static notification list with two new widgets:
+
+*Certificate Health widget:*
+- 3 stat boxes: Active / Expiring / Expired count from `MOCK.certificates`
+- If next expiring cert is ≤ 90 days away: shows orange/red countdown bar (`expires in Xd · product name`)
+- "Manage Certificates →" button shortcut
+- Bilingual labels (EN/BM via `lang`)
+
+*Recent Activity feed:*
+- Reads `MOCK.notifications.slice(0, 5)` — real data, not hardcoded strings
+- Each item: category icon (emoji), title (bold if unread), relative date ("Today" / "Yesterday" / "Xd ago" relative to 2026-05-06), unread blue dot indicator
+- Clickable — navigates to `notifications` screen
+- "View all" link in card header
+
+**Initiative #40 — Fraud Detection Signals Panel (`screens-b.jsx`)**
+
+Added inline Fraud Signals panel in the right sidebar of `SCREENS['officer-review']`, inserted directly below `AiScoreCard`:
+
+- When `aiScore >= 70`: green `antd.Alert` "No fraud signals detected — document hashes, supplier history, and submission patterns all clear"
+- When `aiScore < 70` (warning): collapsed `antd.Collapse.Panel` with orange "2 Fraud Signals Detected" header showing:
+  - AI confidence below threshold warning
+  - Frequency band overlap with related pending application
+- When `aiScore < 50` (critical — matches the mock "Jammer Device (R&D)" rejected app): 3 signals including:
+  - 🔴 Document hash collision with a previously rejected application
+  - 🔴 Supplier enforcement history (2 actions in 24 months)
+  - 🟠 Submission pattern flagged by IntelliGenCE (3× same category in 30 days)
+- Signals collapsed by default (non-intrusive); expand to see details
+- Footer note: "Source: IntelliGenCE AI · Signals auto-logged to Audit Trail on review save"
+- Closes gap E (Fraud detection) with a prototype-appropriate visual representation
+
+**Gap table update:** Fraud detection in category E marked ✅ Done (Sprint 16 #40)
+
+---
+
 ### 12.5 URS Gap Analysis — Remaining Prototype Gaps (as of 06 May 2026)
 
 Cross-referencing the URS v1.7 requirements against the current prototype state. Items below are URS-mandated flows not yet fully prototyped. Items marked 🚫 are out-of-scope for the prototype (production-only).
@@ -2262,7 +2317,7 @@ Cross-referencing the URS v1.7 requirements against the current prototype state.
 
 | Gap | URS Reference | Notes |
 |---|---|---|
-| **Fraud detection** — AI flags forged documents, duplicate applications, suspicious patterns for officer investigation. | §5.14 | No visual in prototype; real AI call out-of-scope |
+| ~~**Fraud detection**~~ — AI flags forged documents, duplicate applications, suspicious patterns for officer investigation. | §5.14 | ✅ Done — Sprint 16 (#40). Fraud Signals panel in Active Review right sidebar; 3-tier severity (green clear / orange warning / red critical); signals driven by aiScore threshold; IntelliGenCE attribution. Real AI call out-of-scope. |
 | ~~**Scheme C auto-accept routing**~~ — Score ≥ 90 skips the officer queue; RCN issued immediately at payment confirmation. | §5.2.4 | ✅ Done — Sprint 15 (#35). SDoC wizard detects score ≥ 90 at AI step, ConfirmStep shows issued RCN + download. TL officer queue has "Auto-certified" tab. |
 | **AI confidence feeds PMS** — Non-conformance records from PMS auto-adjust AI risk scoring thresholds. | §5.8 | Requires live AI backend; out-of-scope for prototype |
 | **Real waiver code validation** — WaiverCodeInput accepts any 8-char code starting with `WVR-` (mock). | §5.13 | Backend out-of-scope |
@@ -2284,7 +2339,7 @@ Cross-referencing the URS v1.7 requirements against the current prototype state.
 | Admin config | ~~Notification templates~~, ~~equipment type master list~~, ~~application expiry~~ — all resolved | — |
 | Reporting | ~~Export CSV/XLSX~~ — resolved | — |
 | Role coverage | ~~Content Manager~~ — resolved Sprint 12 | — |
-| AI / automation | ~~Auto-accept routing~~ (✅ Sprint 15), fraud detection, waiver backend | Fraud detection + waiver backend out-of-scope for prototype |
+| AI / automation | ~~Auto-accept routing~~ (✅ Sprint 15), ~~fraud detection~~ (✅ Sprint 16), waiver backend | Waiver backend out-of-scope for prototype |
 | Bilingual / A11y | ~~BM translation~~ (supplier + public portal) — resolved Sprint 12; WCAG out-of-scope | — |
 
 ---

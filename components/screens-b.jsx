@@ -1443,6 +1443,58 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
         <div style={{ padding: 24, background: 'var(--color-bg-elevated)', borderLeft: '1px solid var(--color-divider)', overflow: 'auto' }}>
           <AiScoreCard score={a.aiScore} reasoning={MOCK.aiReasoning} viz={tweaks.aiViz} />
 
+          {/* Fraud Signals Panel */}
+          {(() => {
+            const score = a.aiScore;
+            const signals = score < 50
+              ? [
+                  { level: 'critical', msg: 'Document hash collision — test report matches a previously rejected application (APP-0426-00071)', icon: '🔴' },
+                  { level: 'critical', msg: 'Supplier compliance history: 2 enforcement actions in last 24 months', icon: '🔴' },
+                  { level: 'high',     msg: 'Application submitted 3× within 30 days for the same product category — pattern flagged by IntelliGenCE', icon: '🟠' },
+                ]
+              : score < 70
+              ? [
+                  { level: 'high',   msg: 'AI confidence below threshold (score < 70) — manual document cross-check recommended', icon: '🟠' },
+                  { level: 'medium', msg: 'Declared frequency band (2.4 GHz) overlaps with a pending iteration on a related application', icon: '🟡' },
+                ]
+              : null;
+
+            if (!signals) return (
+              <antd.Alert type="success" showIcon icon={<span>🛡️</span>} style={{ marginBottom: 12, fontSize: 12 }}
+                message="No fraud signals detected"
+                description="Document hashes, supplier history, and submission patterns all clear." />
+            );
+
+            return (
+              <antd.Collapse size="small" style={{ marginBottom: 12, borderColor: signals[0].level === 'critical' ? 'var(--color-danger)' : 'var(--color-warning)' }}>
+                <antd.Collapse.Panel
+                  key="fraud"
+                  header={
+                    <antd.Space size={6}>
+                      <span>{signals[0].level === 'critical' ? '🔴' : '🟠'}</span>
+                      <span style={{ fontWeight: 700, fontSize: 12, color: signals[0].level === 'critical' ? 'var(--color-danger)' : 'var(--color-warning)' }}>
+                        {signals.length} Fraud Signal{signals.length > 1 ? 's' : ''} Detected
+                      </span>
+                      <antd.Tag color={signals[0].level === 'critical' ? 'red' : 'orange'} style={{ fontSize: 10 }}>{signals[0].level.toUpperCase()}</antd.Tag>
+                    </antd.Space>
+                  }
+                >
+                  <antd.Space direction="vertical" size={8} style={{ width: '100%' }}>
+                    {signals.map((s, i) => (
+                      <div key={i} style={{ fontSize: 12, display: 'flex', gap: 8, alignItems: 'flex-start', padding: '6px 8px', borderRadius: 6, background: s.level === 'critical' ? 'var(--color-danger-bg)' : s.level === 'high' ? '#FFF8E1' : '#FFFDE7' }}>
+                        <span style={{ flexShrink: 0 }}>{s.icon}</span>
+                        <span style={{ color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>{s.msg}</span>
+                      </div>
+                    ))}
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-divider)', paddingTop: 8 }}>
+                      Source: IntelliGenCE AI · Signals auto-logged to Audit Trail on review save
+                    </div>
+                  </antd.Space>
+                </antd.Collapse.Panel>
+              </antd.Collapse>
+            );
+          })()}
+
           <Divider />
           <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 10 }}>Applicant</div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 }}>

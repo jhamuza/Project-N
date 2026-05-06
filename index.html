@@ -101,6 +101,7 @@ const NAV_SUPPLIER = [
   { key: 'profile',          label: 'Profile & Settings',    icon: <SettingOutlined /> },
 ];
 const NAV_TEAM_LEAD = [
+  { key: 'officer-dashboard',label: 'Dashboard',                 icon: <DashboardOutlined /> },
   { key: 'officer-queue',    label: 'Review Queue',              icon: <FlagOutlined /> },
   { key: 'officer-review',   label: 'Active Review',             icon: <EyeOutlined /> },
   { key: 'applications',     label: 'All Applications',          icon: <FileSearchOutlined /> },
@@ -117,6 +118,7 @@ const NAV_TEAM_LEAD = [
   { key: 'profile',          label: 'Profile & Settings',        icon: <SettingOutlined /> },
 ];
 const NAV_OFFICER = [
+  { key: 'officer-dashboard',label: 'Dashboard',                 icon: <DashboardOutlined /> },
   { key: 'officer-queue',    label: 'My Queue',                  icon: <FlagOutlined /> },
   { key: 'officer-review',   label: 'Active Review',             icon: <EyeOutlined /> },
   { key: 'modification',     label: 'Modification Review',       icon: <FormOutlined /> },
@@ -128,18 +130,21 @@ const NAV_OFFICER = [
   { key: 'profile',          label: 'Profile & Settings',        icon: <SettingOutlined /> },
 ];
 const NAV_RECOMMENDER = [
+  { key: 'officer-dashboard',label: 'Dashboard',        icon: <DashboardOutlined /> },
   { key: 'officer-queue',  label: 'My Queue',           icon: <FlagOutlined /> },
   { key: 'officer-review', label: 'Active Review',      icon: <EyeOutlined /> },
   { key: 'sa-letter',      label: 'SA Letter',          icon: <FileTextOutlined /> },
   { key: 'profile',        label: 'Profile & Settings', icon: <SettingOutlined /> },
 ];
 const NAV_VERIFIER = [
+  { key: 'officer-dashboard',label: 'Dashboard',        icon: <DashboardOutlined /> },
   { key: 'officer-queue',  label: 'My Queue',           icon: <FlagOutlined /> },
   { key: 'officer-review', label: 'Active Review',      icon: <EyeOutlined /> },
   { key: 'sa-letter',      label: 'SA Letter',          icon: <FileTextOutlined /> },
   { key: 'profile',        label: 'Profile & Settings', icon: <SettingOutlined /> },
 ];
 const NAV_APPROVER = [
+  { key: 'officer-dashboard',label: 'Dashboard',         icon: <DashboardOutlined /> },
   { key: 'officer-queue',  label: 'Review Queue',        icon: <FlagOutlined /> },
   { key: 'officer-review', label: 'Active Review',       icon: <EyeOutlined /> },
   { key: 'sa-letter',      label: 'SA Letter',           icon: <FileTextOutlined /> },
@@ -154,7 +159,7 @@ const NAV_CONTENT_MANAGER = [
   { key: 'profile',         label: 'Profile & Settings',  icon: <SettingOutlined /> },
 ];
 const NAV_BY_ROLE = { supplier: NAV_SUPPLIER, 'team-lead': NAV_TEAM_LEAD, officer: NAV_OFFICER, recommender: NAV_RECOMMENDER, verifier: NAV_VERIFIER, approver: NAV_APPROVER, 'content-manager': NAV_CONTENT_MANAGER };
-const DEFAULT_SCREEN_BY_ROLE = { supplier: 'dashboard', 'team-lead': 'officer-queue', officer: 'officer-queue', recommender: 'officer-queue', verifier: 'officer-queue', approver: 'officer-queue', 'content-manager': 'cm-dashboard' };
+const DEFAULT_SCREEN_BY_ROLE = { supplier: 'dashboard', 'team-lead': 'officer-dashboard', officer: 'officer-dashboard', recommender: 'officer-dashboard', verifier: 'officer-dashboard', approver: 'officer-dashboard', 'content-manager': 'cm-dashboard' };
 
 // ──── ASSIGN OFFICER MODAL ────────────────────────────────────────────────────
 function AssignOfficerModal({ open, onClose, onAssign, applicationId, currentAssigneeId }) {
@@ -406,6 +411,183 @@ function OfficerQueue({ nav, currentUser }) {
   );
 }
 SCREENS['officer-queue'] = OfficerQueue;
+
+// ──── OFFICER DASHBOARD ───────────────────────────────────────────────────────
+SCREENS['officer-dashboard'] = function OfficerDashboard({ nav, currentUser }) {
+  const role    = currentUser?.role || 'officer';
+  const myId    = currentUser?.id;
+  const isLead  = role === 'team-lead';
+  const isApprover = role === 'approver';
+
+  const officerPerf = (MOCK.officerPerformance || []);
+  const myPerf  = officerPerf.find(o => o.id === myId) || officerPerf[0] || {};
+  const myQueue = (MOCK.officerQueue || []).filter(q => q.assignedTo === myId);
+  const urgentCount = myQueue.filter(q => q.slaHours <= 12).length;
+
+  const today = new Date();
+  const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 18 ? 'Good afternoon' : 'Good evening';
+
+  const roleLabel = { 'team-lead': 'Team Lead', officer: 'CPPG Officer', recommender: 'Recommender (P5/P6)', verifier: 'Verifier (P7)', approver: 'Approver (P8)' }[role] || 'MCMC Officer';
+  const roleColor = { 'team-lead': '#7B3FA0', officer: '#0F6ABF', recommender: '#2E7D32', verifier: '#E65100', approver: '#B71C1C' }[role] || 'var(--color-primary)';
+
+  const kpis = isLead ? [
+    { label: 'My Queue',           value: myQueue.length,        delta: urgentCount > 0 ? `${urgentCount} urgent` : 'All clear',           color: urgentCount > 0 ? 'var(--color-warning)' : 'var(--color-success)' },
+    { label: 'Team Pending',       value: (MOCK.officerQueue||[]).filter(q=>q.assignedTo).length, delta: `${(MOCK.officerQueue||[]).filter(q=>!q.assignedTo).length} unassigned`, color: 'var(--color-text-primary)' },
+    { label: 'Team Approvals Today', value: 8,                   delta: '↑ 2 vs yesterday',       color: 'var(--color-success)' },
+    { label: 'Team SLA',           value: `${myPerf.slaCompliance || 96}%`,  delta: 'Monthly target 95%',    color: (myPerf.slaCompliance||96) >= 95 ? 'var(--color-success)' : 'var(--color-warning)' },
+  ] : isApprover ? [
+    { label: 'Awaiting My Decision', value: myQueue.length,      delta: urgentCount ? `${urgentCount} urgent` : 'All clear', color: urgentCount ? 'var(--color-warning)' : 'var(--color-success)' },
+    { label: 'Approved This Month',  value: myPerf.approved || 0, delta: 'Lifetime total',         color: 'var(--color-success)' },
+    { label: 'Avg Decision Time',    value: `${myPerf.avgTurnaround || 0}h`, delta: 'Team avg 4.6h',        color: 'var(--color-text-primary)' },
+    { label: 'My SLA Compliance',    value: `${myPerf.slaCompliance || 0}%`, delta: 'Monthly target 95%',   color: (myPerf.slaCompliance||0) >= 95 ? 'var(--color-success)' : 'var(--color-warning)' },
+  ] : [
+    { label: 'In My Queue',          value: myQueue.length,       delta: urgentCount ? `${urgentCount} urgent` : 'All clear', color: urgentCount ? 'var(--color-warning)' : 'var(--color-success)' },
+    { label: 'Decisions This Week',  value: Math.round((myPerf.approved||0)/8), delta: `${myPerf.approved||0} lifetime`, color: 'var(--color-success)' },
+    { label: 'Avg Turnaround',       value: `${myPerf.avgTurnaround || 0}h`,    delta: 'Team avg 4.6h',       color: 'var(--color-text-primary)' },
+    { label: 'SLA Compliance',       value: `${myPerf.slaCompliance || 0}%`,    delta: 'Monthly target 95%',  color: (myPerf.slaCompliance||0) >= 95 ? 'var(--color-success)' : 'var(--color-warning)' },
+  ];
+
+  const nextReview = myQueue[0];
+  const nextSchemeColor = { A: 'red', B: 'orange', C: 'green', SA: 'purple' };
+
+  const recentDecisions = [
+    { id: 'APP-0426-00079', product: 'OPPO Find X7 Ultra',    decision: 'Approved',      ts: '18 Apr 2026 · 15:42', scheme: 'A' },
+    { id: 'APP-0426-00076', product: 'Redmi Note 13 Pro',     decision: 'Recommend',     ts: '17 Apr 2026 · 11:28', scheme: 'B' },
+    { id: 'APP-0426-00074', product: 'TP-Link Deco BE85',     decision: 'Verified',      ts: '16 Apr 2026 · 09:14', scheme: 'C' },
+    { id: 'APP-0426-00071', product: 'Sony WH-1000XM6',       decision: 'Returned for Revision', ts: '15 Apr 2026 · 16:55', scheme: 'B' },
+    { id: 'APP-0426-00069', product: 'Huawei MatePad Pro 13', decision: 'Rejected',      ts: '14 Apr 2026 · 14:03', scheme: 'A' },
+  ];
+  const decisionColor = { Approved: 'green', Recommend: 'blue', Verified: 'cyan', 'Returned for Revision': 'orange', Rejected: 'red' };
+
+  const teamSnap = officerPerf.filter(o => o.team === (myPerf.team || 'CPPG-TL-01') && o.id !== myId).slice(0, 4);
+
+  return (
+    <div style={{ padding: 32, maxWidth: 1300, margin: '0 auto' }}>
+      {/* Welcome header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <antd.Typography.Title level={3} style={{ margin: 0 }}>{greeting}, {(currentUser?.name || '').split(' ')[1] || currentUser?.name}</antd.Typography.Title>
+            <antd.Tag color={roleColor} style={{ fontSize: 11, fontWeight: 700 }}>{roleLabel}</antd.Tag>
+          </div>
+          <antd.Typography.Text type="secondary">{today.toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · CPPG Division · MCMC</antd.Typography.Text>
+        </div>
+        <antd.Space>
+          <antd.Button icon={<FlagOutlined />} onClick={() => nav('officer-queue')}>View Queue</antd.Button>
+          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('officer-review')}>Start Review</antd.Button>}
+        </antd.Space>
+      </div>
+
+      {/* KPI row */}
+      <antd.Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        {kpis.map((k, i) => (
+          <antd.Col xs={12} md={6} key={i}>
+            <div className="kpi-card" onClick={() => nav('officer-queue')}>
+              <div className="kpi-label">{k.label}</div>
+              <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
+              <div className="kpi-delta">{k.delta}</div>
+            </div>
+          </antd.Col>
+        ))}
+      </antd.Row>
+
+      <antd.Row gutter={[16, 16]}>
+        {/* Left column */}
+        <antd.Col xs={24} lg={isLead ? 16 : 14}>
+          <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
+            {/* Next in queue spotlight */}
+            <antd.Card bordered title={<antd.Space><FlagOutlined style={{ color: 'var(--color-primary)' }} /> Next in Queue</antd.Space>}
+              extra={<antd.Button size="small" onClick={() => nav('officer-queue')}>View all</antd.Button>}>
+              {nextReview ? (
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{nextReview.product}</div>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 8 }}>{nextReview.applicant} · <span style={{ fontFamily: 'var(--font-mono)' }}>{nextReview.id}</span></div>
+                    <antd.Space size={6} wrap>
+                      <antd.Tag color={nextSchemeColor[nextReview.scheme] || 'default'}>{nextReview.scheme === 'SA' ? 'Special Approval' : `Scheme ${nextReview.scheme}`}</antd.Tag>
+                      <antd.Tag color={nextReview.aiScore >= 90 ? 'green' : nextReview.aiScore >= 70 ? 'orange' : 'red'}>AI {nextReview.aiScore}</antd.Tag>
+                      <antd.Tag color={nextReview.slaHours <= 12 ? 'red' : nextReview.slaHours <= 24 ? 'orange' : 'default'}>{nextReview.slaHours}h SLA</antd.Tag>
+                    </antd.Space>
+                  </div>
+                  <antd.Button type="primary" size="large" icon={<EyeOutlined />} onClick={() => nav('officer-review')}>Open Review</antd.Button>
+                </div>
+              ) : (
+                <antd.Result status="success" title="Queue is clear" subTitle="No applications pending review. Check back later." extra={<antd.Button onClick={() => nav('officer-queue')}>Refresh Queue</antd.Button>} style={{ padding: '20px 0' }} />
+              )}
+            </antd.Card>
+
+            {/* Recent decisions */}
+            <antd.Card bordered title={<antd.Space><HistoryOutlined style={{ color: 'var(--color-text-muted)' }} /> My Recent Decisions</antd.Space>}>
+              {recentDecisions.map((d, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: i < recentDecisions.length - 1 ? '1px solid var(--color-divider)' : 'none' }}>
+                  <antd.Tag color={decisionColor[d.decision] || 'default'} style={{ fontSize: 11, margin: 0, minWidth: 100, textAlign: 'center' }}>{d.decision}</antd.Tag>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>{d.product}</span>
+                    <span style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)', marginLeft: 8 }}>{d.id}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{d.ts}</div>
+                </div>
+              ))}
+            </antd.Card>
+          </antd.Space>
+        </antd.Col>
+
+        {/* Right column */}
+        <antd.Col xs={24} lg={isLead ? 8 : 10}>
+          <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
+            {/* Quick actions */}
+            <antd.Card bordered title="Quick Actions" bodyStyle={{ padding: '12px 16px' }}>
+              <antd.Space direction="vertical" style={{ width: '100%' }} size={8}>
+                {myQueue.length > 0 && <antd.Button block type="primary" icon={<EyeOutlined />} onClick={() => nav('officer-review')}>Start Next Review ({myQueue.length})</antd.Button>}
+                <antd.Button block icon={<FlagOutlined />} onClick={() => nav('officer-queue')}>My Review Queue</antd.Button>
+                {(isLead || isApprover) && <antd.Button block icon={<BarChartOutlined />} onClick={() => nav('reports')}>Reports & Analytics</antd.Button>}
+                <antd.Button block icon={<AuditOutlined />} onClick={() => nav('audit')}>Audit Log</antd.Button>
+                <antd.Button block icon={<SettingOutlined />} onClick={() => nav('profile')}>Profile & Settings</antd.Button>
+              </antd.Space>
+            </antd.Card>
+
+            {/* Team snapshot — TL only */}
+            {isLead && teamSnap.length > 0 && (
+              <antd.Card bordered title={<antd.Space><TeamOutlined /> Team Snapshot</antd.Space>}
+                extra={<antd.Button size="small" onClick={() => nav('reports')}>Full Report</antd.Button>}>
+                {teamSnap.map((m, i) => {
+                  const memberQueue = (MOCK.officerQueue||[]).filter(q => q.assignedTo === m.id).length;
+                  return (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: i < teamSnap.length - 1 ? '1px solid var(--color-divider)' : 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <antd.Avatar size={28} style={{ background: 'var(--color-primary)', fontSize: 11 }}>{m.name.split(' ').map(n=>n[0]).slice(0,2).join('')}</antd.Avatar>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 600 }}>{m.name.split(' ').slice(-2).join(' ')}</div>
+                          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{memberQueue} in queue · {m.slaCompliance}% SLA</div>
+                        </div>
+                      </div>
+                      <antd.Tag color={m.slaCompliance >= 95 ? 'green' : 'orange'} style={{ fontSize: 10 }}>{m.slaCompliance}%</antd.Tag>
+                    </div>
+                  );
+                })}
+              </antd.Card>
+            )}
+
+            {/* SLA summary */}
+            <antd.Card bordered title="My Performance" bodyStyle={{ padding: '16px' }}>
+              {[
+                { label: 'Total Approved', value: myPerf.approved || 0, color: 'var(--color-success)' },
+                { label: 'Total Rejected', value: myPerf.rejected || 0, color: 'var(--color-danger)' },
+                { label: 'AI Overrides',   value: myPerf.aiOverrides || 0, color: 'var(--color-warning)' },
+                { label: 'Avg Turnaround', value: `${myPerf.avgTurnaround || 0}h`, color: 'var(--color-text-primary)' },
+              ].map((s, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: i < 3 ? '1px solid var(--color-divider)' : 'none' }}>
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{s.label}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: s.color }}>{s.value}</span>
+                </div>
+              ))}
+            </antd.Card>
+          </antd.Space>
+        </antd.Col>
+      </antd.Row>
+    </div>
+  );
+};
 
 // ──── PLOTLY WRAPPER ─────────────────────────────────────────────────────────
 const PLOTLY_LAYOUT_BASE = {
