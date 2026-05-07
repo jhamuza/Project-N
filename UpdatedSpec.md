@@ -2522,3 +2522,122 @@ All of the following have working UI + mock data interactions:
 | Mobile application | ❌ Out-of-scope | Flutter development required |
 | Data migration | ❌ Out-of-scope | 3-phase ETL tool required |
 | WCAG 2.1 AA | ❌ Out-of-scope | A11y audit + remediation |
+
+---
+
+### 12.6 Sprint 17 Completion Notes (2026-05-07)
+
+**Theme:** Workflow completeness — URS §4.X gap closure  
+**Commit:** `4b4f30d`  
+**Bundle:** 14,041 lines · 933 KB  
+**URS Coverage improvement:** 88% → ~92% (6 prototype-implementable gaps closed)
+
+---
+
+**Initiative #41 — Modification → Officer Queue Integration (`index.html` OfficerQueue, `data/mock.js`)**
+
+Added `MOCK.modificationQueue` with 2 entries:
+- `MOD-0426-00014` — Ericsson Router 6672 marketing name update (Minor, assigned to OFF-001)
+- `MOD-0426-00015` — TP-Link AX73 model variant addition (Minor, unassigned)
+
+OfficerQueue Segmented (Team Lead view) now has a 5th tab:
+```jsx
+{ label: <antd.Space size={4}><FormOutlined />{`Modifications (${modCount})`}</antd.Space>, value: 'modification' }
+```
+
+Modifications tab renders:
+- `antd.Alert` banner citing URS §5.6.3
+- `antd.Table` with columns: Mod ID, RCN, Applicant, Product, Type (Minor/Others), Proposed Change, AI Score, Submitted, Decision
+- Decision column shows inline **Accept** (primary) / **Not Accept** (danger) buttons; on click → sets `modDecisions[row.id]` state → renders `antd.Tag` with decision result + `antd.message` success/warning
+- `modDecisions` local state (React.useState) — decisions persist for session
+
+**Initiative #42 — Certificate Version History Viewer (`screens-c.jsx`)**
+
+`CertificateDetail` component (inside `SCREENS.certificates` drawer) now renders version history section after the IMEI/Label Registry block when `cert.versions` exists:
+
+```jsx
+<antd.Timeline items={[...cert.versions].reverse().map((v, i) => ({
+  color: i === 0 ? 'green' : 'blue',
+  dot: i === 0 ? <SafetyCertificateOutlined /> : <HistoryOutlined />,
+  children: (
+    // Version badge + event + date/actor
+    // Diff block: field · red strikethrough (old) → green bold (new)
+  ),
+}))} />
+```
+
+Mock data: `RCN-0326-00449` has v1.0 (initial issue); `RCN-0326-00442` has v1.0 + v1.1 showing Marketing Name and Model Number changes from a prior approved Minor modification.
+
+**Initiative #43 — Document Date Validation / 6-Month Rule (`screens-b.jsx` DocFindingsPanel)**
+
+`MOCK.documentFindings` entries now include `issuedDate` field (ISO date string):
+- `reg` (SSM): `2024-02-15` (>6 months old → stale)
+- `bro` (Technical Brochure): `2025-10-20` (>6 months old → stale)
+- `test` (Test Report): `2026-03-12` (valid — issued 56 days ago)
+- `photo`, `form`: `2026-04-01`, `2026-04-15` (valid)
+- `decl` (Standards Declaration): `2025-11-05` (>6 months old → stale)
+
+`DocFindingsPanel` changes:
+- `SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000` constant
+- `isStale` per-document flag; `staleCount` KPI tile (orange, `#E65100`)
+- Per-doc shows: `Issued: DD MMM YYYY · Valid until DD MMM YYYY` (or `⚠ N days old — exceeds 6-month limit`)
+- Stale doc card: orange border + `#FFF3E0` background + `⚠️` emoji + `"Stale"` tag
+- Banner: `antd.Alert type="warning"` "N documents older than 6 months — URS §5.2.1 requires..."
+- Guidance note updated: mentions staleness alongside existing findings
+- Documents remain non-blocking (guidance only, per design note 12.4)
+
+**Initiative #44 — Public Document Repository (`screens-k.jsx`)**
+
+`DocsSection.downloadDoc(d)` function added — generates mock `.txt` file via Blob download:
+- Filename: `NCEF-{doc-id}-{sanitised-title}.txt`
+- Content: MCMC letterhead, doc metadata, "placeholder document" note, source URL
+- `antd.message.success` confirmation on click
+- `MOCK.publicDocs` was already populated (11 documents, 6 categories) — download button now functional
+
+**Initiative #45 — Suspended Supplier SDoC Block (`screens-a.jsx`, `index.html`)**
+
+Tweaks panel now has a **"Supplier suspended (§5.10.2)"** checkbox (supplier role only):
+```jsx
+<antd.Checkbox checked={tweaks.suspendedMode} onChange={e => updateTweak('suspendedMode', e.target.checked)}>
+  Supplier suspended (§5.10.2)
+</antd.Checkbox>
+```
+
+Dashboard (`SCREENS.dashboard`) changes when `tweaks.suspendedMode === true`:
+- Error `antd.Alert` at top: "Account Suspended — new applications, renewals, and IMEI registrations are blocked"
+- "Contact MCMC" CTA button links to `mailto:cppg@mcmc.gov.my`
+- SDoC, Special Approval, IMEI Register buttons: `disabled={true}` + tooltip "Account suspended — contact MCMC"
+- Clicking a disabled button opens `antd.Modal` with `antd.Result status="error"`:
+  - Title: "New applications are blocked"
+  - Body: references §5.10.2, lists affected actions, shows account ID, MCMC contact
+  - Buttons: "Contact MCMC (cppg@mcmc.gov.my)" + "Close"
+- Certificate Renewal and Account Renewal remain accessible (compliance path still open)
+
+**Initiative #46 — Officer Full Task List (`index.html` OfficerDashboard)**
+
+Replaced "Next in Queue" spotlight card with "My Assigned Applications" full task list:
+
+```jsx
+<antd.Card title="My Assigned Applications" extra={<antd.Button onClick={() => nav('officer-queue')}>Full Queue →</antd.Button>}>
+  <antd.Segmented options={['All (N)', 'Urgent (N)', 'SDoC / SA', 'Modifications (N)']} />
+  <antd.Table rowKey="id" dataSource={filtered} pagination={{ pageSize: 5 }} size="small"
+    columns={[ID, Product+Applicant, Scheme badge, SLA tag, Review button]}
+  />
+</antd.Card>
+```
+
+- `allQueue` = `MOCK.officerQueue` entries assigned to `myId`
+- `modQueue` = `MOCK.modificationQueue` entries assigned to `myId` (TL only)
+- Filter tabs: All / Urgent (SLA ≤ 24h) / SDoC-SA / Modifications (if any assigned)
+- Scheme column: `MOD` tag for modification entries (no scheme field)
+- Pagination: 5 rows per page (handles queues of any size)
+- Empty state: `antd.Result status="success"` "All clear" with "No assigned applications"
+- "Review" button in each row navigates to `officer-review`
+
+**Gap table updates (§12.5 / §13.3):**
+- §5.6 Modification officer queue → ✅ Done (Sprint 17 #41)
+- §5.6 Version history viewer → ✅ Done (Sprint 17 #42)
+- §5.2 Document date validation → ✅ Done (Sprint 17 #43)
+- §5.10b Document repository download → ✅ Done (Sprint 17 #44)
+- §5.10 Suspended supplier block demo → ✅ Done (Sprint 17 #45)
+- §5.14 Officer full task list → ✅ Done (Sprint 17 #46)
