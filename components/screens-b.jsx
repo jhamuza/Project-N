@@ -1271,6 +1271,261 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
 };
 
 // ============ OFFICER REVIEW SPLIT VIEW ============
+// ──── OFFICER REVIEW PANEL (embeddable in split-pane review-list) ─────────────
+// Self-contained panel with its own state; no breadcrumb/back-button.
+// rowId: selects which officerQueue row to show assignment info for.
+// onDecision(rowId): called after submission so the list can auto-advance.
+function OfficerReviewPanel({ nav, tweaks, currentUser, rowId, onDecision }) {
+  const [decision, setDecision] = React.useState(null);
+  const [iterMsg, setIterMsg] = React.useState('');
+  const [showDocViewer, setShowDocViewer] = React.useState(false);
+  const [activeDoc, setActiveDoc] = React.useState(null);
+  const [reassignOpen, setReassignOpen] = React.useState(false);
+  const [assignedOverride, setAssignedOverride] = React.useState(null);
+  const [reclassScheme, setReclassScheme] = React.useState(null);
+  const [reclassReason, setReclassReason] = React.useState('');
+  const [reclassConfirmOpen, setReclassConfirmOpen] = React.useState(false);
+  const [reclassDone, setReclassDone] = React.useState(false);
+  const [submitted, setSubmitted] = React.useState(false);
+
+  const a = MOCK.assessments[0];
+  const isLead = currentUser?.role === 'team-lead';
+  const queueEntry = rowId
+    ? (MOCK.officerQueue.find(q => q.id === rowId) || MOCK.officerQueue[0])
+    : MOCK.officerQueue[0];
+  const assignedId = assignedOverride ?? queueEntry?.assignedTo;
+  const assignedOfficer = (MOCK.officerPerformance || []).find(o => o.id === assignedId);
+
+  if (submitted) return (
+    <div style={{ padding: 48, textAlign: 'center' }}>
+      <antd.Result status="success" title="Decision recorded"
+        subTitle={`Your decision for ${queueEntry?.id || a.id} has been submitted.`}
+        extra={<Button type="primary" onClick={() => { setSubmitted(false); setDecision(null); if (onDecision) onDecision(rowId); }}>Next application</Button>} />
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Compact header */}
+      <div style={{ padding: '10px 20px', background: 'var(--color-bg-elevated)', borderBottom: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flexShrink: 0 }}>
+        <Typography.Text code style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{queueEntry?.id || a.id}</Typography.Text>
+        <SchemeBadge scheme={a.scheme} />
+        <span style={{ fontWeight: 600, fontSize: 14 }}>{a.product}</span>
+        <StatusPill status={a.status} />
+        {assignedOfficer && <Tag color={assignedOfficer.role === 'team-lead' ? 'purple' : 'blue'}>{assignedOfficer.name}</Tag>}
+        <div style={{ flex: 1 }} />
+        <Space size="small">
+          {isLead && <Button size="small" onClick={() => setReassignOpen(true)}>Reassign</Button>}
+          <Button size="small" type="text" danger>Flag</Button>
+        </Space>
+      </div>
+
+      {isLead && window.AssignOfficerModal && (
+        <window.AssignOfficerModal
+          open={reassignOpen}
+          onClose={() => setReassignOpen(false)}
+          applicationId={queueEntry?.id || a.id}
+          currentAssigneeId={assignedId}
+          onAssign={(officerId) => {
+            setAssignedOverride(officerId);
+            const name = (MOCK.officerPerformance || []).find(o => o.id === officerId)?.name;
+            antd.message.success(`Reassigned to ${name}`);
+          }}
+        />
+      )}
+
+      <div className="officer-split" style={{ flex: 1, overflow: 'hidden' }}>
+        {/* LEFT: Document viewer */}
+        <div style={{ padding: 24, overflow: 'auto', background: 'var(--color-bg-base)' }}>
+          <Tabs defaultActiveKey="docs" items={[
+            {
+              key: 'docs', label: 'Documents (6)',
+              children: (
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {MOCK.documents.map((d, i) => (
+                    <div key={i} className="doc-tile" onClick={() => { setActiveDoc(d); setShowDocViewer(true); }} style={{ cursor: 'pointer' }}>
+                      <div className="icon">📄</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{d.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{d.type} · {d.size}</div>
+                      </div>
+                      {d.ocrStatus === 'verified' && <Tag color="green" style={{ fontSize: 10, margin: 0 }}>✓ OCR Verified</Tag>}
+                      {d.ocrStatus === 'pending' && <Tag color="orange" style={{ fontSize: 10, margin: 0 }}>Pending</Tag>}
+                    </div>
+                  ))}
+                </div>
+              ),
+            },
+            {
+              key: 'fields', label: 'Extracted Fields',
+              children: (
+                <Card bordered>
+                  <Row gutter={[16, 16]}>
+                    {[['Brand','Samsung','verified'],['Model / PN','SM-S928B','verified'],['Marketing Name','— (blank)','warn'],['Frequency Band','2400–2483.5 MHz','verified'],['Max Output Power','26 dBm','verified'],['Antenna Gain','3.5 dBi','verified'],['Modulation','OFDMA, 256-QAM','verified'],['Test Lab','SIRIM QAS (#LM-15-004)','verified'],['Standards','MCMC MTSFB TC G015:2022','warn'],['Country of Origin','Vietnam','verified']].map(([k,v,s],i) => (
+                      <Col span={12} key={i}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: 10, background: s === 'warn' ? 'var(--color-warning-bg)' : 'var(--color-bg-subtle)', borderRadius: 6 }}>
+                          <div>
+                            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>{k}</div>
+                            <div style={{ fontSize: 13, fontWeight: 500, marginTop: 2 }}>{v}</div>
+                          </div>
+                          {s === 'verified' ? <Tag color="green" style={{ fontSize: 10, margin: 0 }}>✓</Tag> : <Tag color="orange" style={{ fontSize: 10, margin: 0 }}>!</Tag>}
+                        </div>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card>
+              ),
+            },
+            {
+              key: 'audit', label: 'Audit Trail',
+              children: (
+                <Card bordered>
+                  <List size="small" dataSource={[
+                    { t: 'Application submitted', u: 'Nurul Aisyah (SUP-0426-00142)', d: '15 Apr 2026, 14:20', icon: '📤' },
+                    { t: 'AI validation complete (score 87)', u: 'Qwen2.5-VL', d: '15 Apr 2026, 14:21', icon: '🤖' },
+                    { t: 'Auto-assigned to En. Faisal', u: 'NCEF Router', d: '15 Apr 2026, 14:21', icon: '➡️' },
+                    { t: 'Opened for review', u: 'En. Faisal Rahman', d: '18 Apr 2026, 10:30', icon: '👁' },
+                  ]} renderItem={e => (
+                    <List.Item style={{ padding: '10px 0' }}>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <div style={{ fontSize: 16 }}>{e.icon}</div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500 }}>{e.t}</div>
+                          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{e.u} · {e.d}</div>
+                        </div>
+                      </div>
+                    </List.Item>
+                  )} />
+                </Card>
+              ),
+            },
+          ]} />
+        </div>
+
+        {/* RIGHT: Decision panel */}
+        <div style={{ padding: 24, background: 'var(--color-bg-elevated)', borderLeft: '1px solid var(--color-divider)', overflow: 'auto' }}>
+          <AiScoreCard score={a.aiScore} reasoning={MOCK.aiReasoning} viz={tweaks?.aiViz || 'bar'} />
+
+          {(() => {
+            const score = a.aiScore;
+            const signals = score < 50
+              ? [
+                  { level: 'critical', msg: 'Document hash collision — test report matches a previously rejected application (APP-0426-00071)', icon: '🔴' },
+                  { level: 'critical', msg: 'Supplier compliance history: 2 enforcement actions in last 24 months', icon: '🔴' },
+                  { level: 'high',     msg: 'Application submitted 3× within 30 days for the same product category', icon: '🟠' },
+                ]
+              : score < 70
+              ? [
+                  { level: 'high',   msg: 'AI confidence below threshold (score < 70) — manual document cross-check recommended', icon: '🟠' },
+                  { level: 'medium', msg: 'Declared frequency band (2.4 GHz) overlaps with a pending iteration on a related application', icon: '🟡' },
+                ]
+              : null;
+            if (!signals) return (
+              <antd.Alert type="success" showIcon icon={<span>🛡️</span>} style={{ marginBottom: 12, fontSize: 12 }}
+                message="No fraud signals detected"
+                description="Document hashes, supplier history, and submission patterns all clear." />
+            );
+            return (
+              <antd.Collapse size="small" style={{ marginBottom: 12, borderColor: signals[0].level === 'critical' ? 'var(--color-danger)' : 'var(--color-warning)' }}>
+                <antd.Collapse.Panel key="fraud"
+                  header={<antd.Space size={6}><span>{signals[0].level === 'critical' ? '🔴' : '🟠'}</span><span style={{ fontWeight: 700, fontSize: 12, color: signals[0].level === 'critical' ? 'var(--color-danger)' : 'var(--color-warning)' }}>{signals.length} Fraud Signal{signals.length > 1 ? 's' : ''} Detected</span><antd.Tag color={signals[0].level === 'critical' ? 'red' : 'orange'} style={{ fontSize: 10 }}>{signals[0].level.toUpperCase()}</antd.Tag></antd.Space>}>
+                  <antd.Space direction="vertical" size={8} style={{ width: '100%' }}>
+                    {signals.map((s, i) => (
+                      <div key={i} style={{ fontSize: 12, display: 'flex', gap: 8, alignItems: 'flex-start', padding: '6px 8px', borderRadius: 6, background: s.level === 'critical' ? 'var(--color-danger-bg)' : '#FFF8E1' }}>
+                        <span style={{ flexShrink: 0 }}>{s.icon}</span>
+                        <span style={{ color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>{s.msg}</span>
+                      </div>
+                    ))}
+                  </antd.Space>
+                </antd.Collapse.Panel>
+              </antd.Collapse>
+            );
+          })()}
+
+          <Divider />
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 10 }}>Decision</div>
+          {reclassDone ? (
+            <antd.Alert type="success" showIcon message={`Reclassified to Scheme ${reclassScheme} — application returned to applicant`} style={{ marginBottom: 8 }} />
+          ) : (
+            <Radio.Group value={decision} onChange={e => { setDecision(e.target.value); setReclassScheme(null); setReclassReason(''); }} style={{ width: '100%', display: 'grid', gap: 8 }}>
+              {[
+                { v: 'approve',    t: 'Approve',          d: 'Issue RCN certificate',                     color: 'var(--color-success)' },
+                { v: 'iterate',    t: 'Request Iteration', d: 'Return to applicant for amendment',         color: 'var(--color-warning)' },
+                { v: 'reclassify', t: 'Reclassify',        d: 'Change scheme — applicant must resubmit',   color: '#7B3FA0' },
+                { v: 'reject',     t: 'Reject',            d: 'Close application with documented reason',  color: 'var(--color-danger)' },
+              ].map(o => (
+                <Radio key={o.v} value={o.v} style={{ padding: 10, border: `1px solid ${decision === o.v ? o.color : 'var(--color-border)'}`, borderRadius: 8, margin: 0, background: decision === o.v ? `${o.color}10` : '#fff' }}>
+                  <span style={{ display: 'inline-block' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: decision === o.v ? o.color : 'inherit' }}>{o.t}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{o.d}</div>
+                  </span>
+                </Radio>
+              ))}
+            </Radio.Group>
+          )}
+
+          {decision === 'iterate' && (
+            <div style={{ marginTop: 16 }}>
+              <TextArea value={iterMsg} onChange={e => setIterMsg(e.target.value)} rows={4} placeholder="Notes to applicant…" />
+              <DatePicker placeholder="Resubmission deadline" style={{ width: '100%', marginTop: 8 }} />
+            </div>
+          )}
+          {decision === 'reject' && (
+            <div style={{ marginTop: 16 }}>
+              <Select placeholder="Primary reason…" style={{ width: '100%' }} options={[{ value: 'specs', label: 'Technical specifications do not meet standards' }, { value: 'docs', label: 'Documents insufficient / not authentic' }, { value: 'fraud', label: 'Suspected misrepresentation' }]} />
+              <TextArea rows={4} placeholder="Detailed rationale…" style={{ marginTop: 8 }} />
+            </div>
+          )}
+          {decision === 'approve' && (
+            <Alert type="success" showIcon style={{ marginTop: 16 }} message="Certificate will be issued on submit" description="RCN will be auto-generated and emailed to the applicant." />
+          )}
+
+          <div style={{ marginTop: 24 }}>
+            <Button type="primary" size="large" block
+              disabled={!decision || reclassDone}
+              onClick={() => { antd.message.success('Decision recorded'); setSubmitted(true); }}>
+              Submit Decision
+            </Button>
+          </div>
+
+          <Divider />
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <Progress type="circle" size={60} percent={62} strokeColor="var(--color-warning)" />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>18 hrs remaining</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Scheme A · 48 hr SLA</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Drawer title={activeDoc?.name || 'Document Preview'} open={showDocViewer} onClose={() => setShowDocViewer(false)} width={760}>
+        <div style={{ background: '#3c3c3c', borderRadius: '6px 6px 0 0', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, color: '#ddd' }}>
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<LeftOutlined />} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<RightOutlined />} />
+          <span style={{ fontSize: 12, color: '#aaa', marginLeft: 4 }}>Page 1 / 3</span>
+          <div style={{ flex: 1 }} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<ZoomInOutlined />} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<ZoomOutOutlined />} />
+          <div style={{ flex: 1 }} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<DownloadOutlined />}>Download</Button>
+        </div>
+        <div style={{ background: '#525659', padding: 16, borderRadius: '0 0 6px 6px', minHeight: 200, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', width: '100%', maxWidth: 540, minHeight: 200, borderRadius: 2, boxShadow: '0 2px 12px rgba(0,0,0,0.4)', padding: 32 }}>
+            <div style={{ fontSize: 11, color: '#888', marginBottom: 8, textAlign: 'right', fontFamily: 'monospace' }}>{activeDoc?.name || 'document.pdf'}</div>
+            {[[160,'#333'],[220,'#555'],[180,'#555'],[240,'#555'],[200,'#555']].map(([w,c],i) => (
+              <div key={i} style={{ height: 7, background: c, borderRadius: 2, width: w, marginBottom: 10 }} />
+            ))}
+          </div>
+        </div>
+        <Divider>OCR Extraction</Divider>
+        <List size="small" dataSource={['Model: SM-S928B ✓','Frequency: 2400–2483.5 MHz ✓','Max Power: 26 dBm ✓','Test Lab: SIRIM QAS (#LM-15-004) ✓']} renderItem={i => <List.Item>{i}</List.Item>} />
+      </Drawer>
+    </div>
+  );
+}
+window.OfficerReviewPanel = OfficerReviewPanel;
+
 SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser }) {
   const [decision, setDecision] = React.useState(null);
   const [iterMsg, setIterMsg] = React.useState('');
@@ -1309,7 +1564,7 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
     <div>
       <div style={{ padding: '16px 32px', background: 'var(--color-bg-elevated)', borderBottom: '1px solid var(--color-divider)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <Breadcrumb items={[{ title: <a onClick={() => nav('officer-queue')}>Queue</a> }, { title: <span style={{ fontFamily: 'var(--font-mono)' }}>{a.id}</span> }]} />
+          <Breadcrumb items={[{ title: <a onClick={() => nav('officer-review-list')}>Review List</a> }, { title: <span style={{ fontFamily: 'var(--font-mono)' }}>{a.id}</span> }]} />
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6 }}>
             <SchemeBadge scheme={a.scheme} />
             <span style={{ fontSize: 18, fontWeight: 600 }}>{a.product}</span>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <title>NCEF Portal · MCMC</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<base href="/Project-N/">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -4188,6 +4188,261 @@ SCREENS['special-approval'] = function SpecialApproval({ nav, tweaks }) {
 };
 
 // ============ OFFICER REVIEW SPLIT VIEW ============
+// ──── OFFICER REVIEW PANEL (embeddable in split-pane review-list) ─────────────
+// Self-contained panel with its own state; no breadcrumb/back-button.
+// rowId: selects which officerQueue row to show assignment info for.
+// onDecision(rowId): called after submission so the list can auto-advance.
+function OfficerReviewPanel({ nav, tweaks, currentUser, rowId, onDecision }) {
+  const [decision, setDecision] = React.useState(null);
+  const [iterMsg, setIterMsg] = React.useState('');
+  const [showDocViewer, setShowDocViewer] = React.useState(false);
+  const [activeDoc, setActiveDoc] = React.useState(null);
+  const [reassignOpen, setReassignOpen] = React.useState(false);
+  const [assignedOverride, setAssignedOverride] = React.useState(null);
+  const [reclassScheme, setReclassScheme] = React.useState(null);
+  const [reclassReason, setReclassReason] = React.useState('');
+  const [reclassConfirmOpen, setReclassConfirmOpen] = React.useState(false);
+  const [reclassDone, setReclassDone] = React.useState(false);
+  const [submitted, setSubmitted] = React.useState(false);
+
+  const a = MOCK.assessments[0];
+  const isLead = currentUser?.role === 'team-lead';
+  const queueEntry = rowId
+    ? (MOCK.officerQueue.find(q => q.id === rowId) || MOCK.officerQueue[0])
+    : MOCK.officerQueue[0];
+  const assignedId = assignedOverride ?? queueEntry?.assignedTo;
+  const assignedOfficer = (MOCK.officerPerformance || []).find(o => o.id === assignedId);
+
+  if (submitted) return (
+    <div style={{ padding: 48, textAlign: 'center' }}>
+      <antd.Result status="success" title="Decision recorded"
+        subTitle={`Your decision for ${queueEntry?.id || a.id} has been submitted.`}
+        extra={<Button type="primary" onClick={() => { setSubmitted(false); setDecision(null); if (onDecision) onDecision(rowId); }}>Next application</Button>} />
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Compact header */}
+      <div style={{ padding: '10px 20px', background: 'var(--color-bg-elevated)', borderBottom: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flexShrink: 0 }}>
+        <Typography.Text code style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{queueEntry?.id || a.id}</Typography.Text>
+        <SchemeBadge scheme={a.scheme} />
+        <span style={{ fontWeight: 600, fontSize: 14 }}>{a.product}</span>
+        <StatusPill status={a.status} />
+        {assignedOfficer && <Tag color={assignedOfficer.role === 'team-lead' ? 'purple' : 'blue'}>{assignedOfficer.name}</Tag>}
+        <div style={{ flex: 1 }} />
+        <Space size="small">
+          {isLead && <Button size="small" onClick={() => setReassignOpen(true)}>Reassign</Button>}
+          <Button size="small" type="text" danger>Flag</Button>
+        </Space>
+      </div>
+
+      {isLead && window.AssignOfficerModal && (
+        <window.AssignOfficerModal
+          open={reassignOpen}
+          onClose={() => setReassignOpen(false)}
+          applicationId={queueEntry?.id || a.id}
+          currentAssigneeId={assignedId}
+          onAssign={(officerId) => {
+            setAssignedOverride(officerId);
+            const name = (MOCK.officerPerformance || []).find(o => o.id === officerId)?.name;
+            antd.message.success(`Reassigned to ${name}`);
+          }}
+        />
+      )}
+
+      <div className="officer-split" style={{ flex: 1, overflow: 'hidden' }}>
+        {/* LEFT: Document viewer */}
+        <div style={{ padding: 24, overflow: 'auto', background: 'var(--color-bg-base)' }}>
+          <Tabs defaultActiveKey="docs" items={[
+            {
+              key: 'docs', label: 'Documents (6)',
+              children: (
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {MOCK.documents.map((d, i) => (
+                    <div key={i} className="doc-tile" onClick={() => { setActiveDoc(d); setShowDocViewer(true); }} style={{ cursor: 'pointer' }}>
+                      <div className="icon">📄</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{d.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{d.type} · {d.size}</div>
+                      </div>
+                      {d.ocrStatus === 'verified' && <Tag color="green" style={{ fontSize: 10, margin: 0 }}>✓ OCR Verified</Tag>}
+                      {d.ocrStatus === 'pending' && <Tag color="orange" style={{ fontSize: 10, margin: 0 }}>Pending</Tag>}
+                    </div>
+                  ))}
+                </div>
+              ),
+            },
+            {
+              key: 'fields', label: 'Extracted Fields',
+              children: (
+                <Card bordered>
+                  <Row gutter={[16, 16]}>
+                    {[['Brand','Samsung','verified'],['Model / PN','SM-S928B','verified'],['Marketing Name','— (blank)','warn'],['Frequency Band','2400–2483.5 MHz','verified'],['Max Output Power','26 dBm','verified'],['Antenna Gain','3.5 dBi','verified'],['Modulation','OFDMA, 256-QAM','verified'],['Test Lab','SIRIM QAS (#LM-15-004)','verified'],['Standards','MCMC MTSFB TC G015:2022','warn'],['Country of Origin','Vietnam','verified']].map(([k,v,s],i) => (
+                      <Col span={12} key={i}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: 10, background: s === 'warn' ? 'var(--color-warning-bg)' : 'var(--color-bg-subtle)', borderRadius: 6 }}>
+                          <div>
+                            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .3, fontWeight: 600 }}>{k}</div>
+                            <div style={{ fontSize: 13, fontWeight: 500, marginTop: 2 }}>{v}</div>
+                          </div>
+                          {s === 'verified' ? <Tag color="green" style={{ fontSize: 10, margin: 0 }}>✓</Tag> : <Tag color="orange" style={{ fontSize: 10, margin: 0 }}>!</Tag>}
+                        </div>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card>
+              ),
+            },
+            {
+              key: 'audit', label: 'Audit Trail',
+              children: (
+                <Card bordered>
+                  <List size="small" dataSource={[
+                    { t: 'Application submitted', u: 'Nurul Aisyah (SUP-0426-00142)', d: '15 Apr 2026, 14:20', icon: '📤' },
+                    { t: 'AI validation complete (score 87)', u: 'Qwen2.5-VL', d: '15 Apr 2026, 14:21', icon: '🤖' },
+                    { t: 'Auto-assigned to En. Faisal', u: 'NCEF Router', d: '15 Apr 2026, 14:21', icon: '➡️' },
+                    { t: 'Opened for review', u: 'En. Faisal Rahman', d: '18 Apr 2026, 10:30', icon: '👁' },
+                  ]} renderItem={e => (
+                    <List.Item style={{ padding: '10px 0' }}>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <div style={{ fontSize: 16 }}>{e.icon}</div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500 }}>{e.t}</div>
+                          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{e.u} · {e.d}</div>
+                        </div>
+                      </div>
+                    </List.Item>
+                  )} />
+                </Card>
+              ),
+            },
+          ]} />
+        </div>
+
+        {/* RIGHT: Decision panel */}
+        <div style={{ padding: 24, background: 'var(--color-bg-elevated)', borderLeft: '1px solid var(--color-divider)', overflow: 'auto' }}>
+          <AiScoreCard score={a.aiScore} reasoning={MOCK.aiReasoning} viz={tweaks?.aiViz || 'bar'} />
+
+          {(() => {
+            const score = a.aiScore;
+            const signals = score < 50
+              ? [
+                  { level: 'critical', msg: 'Document hash collision — test report matches a previously rejected application (APP-0426-00071)', icon: '🔴' },
+                  { level: 'critical', msg: 'Supplier compliance history: 2 enforcement actions in last 24 months', icon: '🔴' },
+                  { level: 'high',     msg: 'Application submitted 3× within 30 days for the same product category', icon: '🟠' },
+                ]
+              : score < 70
+              ? [
+                  { level: 'high',   msg: 'AI confidence below threshold (score < 70) — manual document cross-check recommended', icon: '🟠' },
+                  { level: 'medium', msg: 'Declared frequency band (2.4 GHz) overlaps with a pending iteration on a related application', icon: '🟡' },
+                ]
+              : null;
+            if (!signals) return (
+              <antd.Alert type="success" showIcon icon={<span>🛡️</span>} style={{ marginBottom: 12, fontSize: 12 }}
+                message="No fraud signals detected"
+                description="Document hashes, supplier history, and submission patterns all clear." />
+            );
+            return (
+              <antd.Collapse size="small" style={{ marginBottom: 12, borderColor: signals[0].level === 'critical' ? 'var(--color-danger)' : 'var(--color-warning)' }}>
+                <antd.Collapse.Panel key="fraud"
+                  header={<antd.Space size={6}><span>{signals[0].level === 'critical' ? '🔴' : '🟠'}</span><span style={{ fontWeight: 700, fontSize: 12, color: signals[0].level === 'critical' ? 'var(--color-danger)' : 'var(--color-warning)' }}>{signals.length} Fraud Signal{signals.length > 1 ? 's' : ''} Detected</span><antd.Tag color={signals[0].level === 'critical' ? 'red' : 'orange'} style={{ fontSize: 10 }}>{signals[0].level.toUpperCase()}</antd.Tag></antd.Space>}>
+                  <antd.Space direction="vertical" size={8} style={{ width: '100%' }}>
+                    {signals.map((s, i) => (
+                      <div key={i} style={{ fontSize: 12, display: 'flex', gap: 8, alignItems: 'flex-start', padding: '6px 8px', borderRadius: 6, background: s.level === 'critical' ? 'var(--color-danger-bg)' : '#FFF8E1' }}>
+                        <span style={{ flexShrink: 0 }}>{s.icon}</span>
+                        <span style={{ color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>{s.msg}</span>
+                      </div>
+                    ))}
+                  </antd.Space>
+                </antd.Collapse.Panel>
+              </antd.Collapse>
+            );
+          })()}
+
+          <Divider />
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 700, marginBottom: 10 }}>Decision</div>
+          {reclassDone ? (
+            <antd.Alert type="success" showIcon message={`Reclassified to Scheme ${reclassScheme} — application returned to applicant`} style={{ marginBottom: 8 }} />
+          ) : (
+            <Radio.Group value={decision} onChange={e => { setDecision(e.target.value); setReclassScheme(null); setReclassReason(''); }} style={{ width: '100%', display: 'grid', gap: 8 }}>
+              {[
+                { v: 'approve',    t: 'Approve',          d: 'Issue RCN certificate',                     color: 'var(--color-success)' },
+                { v: 'iterate',    t: 'Request Iteration', d: 'Return to applicant for amendment',         color: 'var(--color-warning)' },
+                { v: 'reclassify', t: 'Reclassify',        d: 'Change scheme — applicant must resubmit',   color: '#7B3FA0' },
+                { v: 'reject',     t: 'Reject',            d: 'Close application with documented reason',  color: 'var(--color-danger)' },
+              ].map(o => (
+                <Radio key={o.v} value={o.v} style={{ padding: 10, border: `1px solid ${decision === o.v ? o.color : 'var(--color-border)'}`, borderRadius: 8, margin: 0, background: decision === o.v ? `${o.color}10` : '#fff' }}>
+                  <span style={{ display: 'inline-block' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: decision === o.v ? o.color : 'inherit' }}>{o.t}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{o.d}</div>
+                  </span>
+                </Radio>
+              ))}
+            </Radio.Group>
+          )}
+
+          {decision === 'iterate' && (
+            <div style={{ marginTop: 16 }}>
+              <TextArea value={iterMsg} onChange={e => setIterMsg(e.target.value)} rows={4} placeholder="Notes to applicant…" />
+              <DatePicker placeholder="Resubmission deadline" style={{ width: '100%', marginTop: 8 }} />
+            </div>
+          )}
+          {decision === 'reject' && (
+            <div style={{ marginTop: 16 }}>
+              <Select placeholder="Primary reason…" style={{ width: '100%' }} options={[{ value: 'specs', label: 'Technical specifications do not meet standards' }, { value: 'docs', label: 'Documents insufficient / not authentic' }, { value: 'fraud', label: 'Suspected misrepresentation' }]} />
+              <TextArea rows={4} placeholder="Detailed rationale…" style={{ marginTop: 8 }} />
+            </div>
+          )}
+          {decision === 'approve' && (
+            <Alert type="success" showIcon style={{ marginTop: 16 }} message="Certificate will be issued on submit" description="RCN will be auto-generated and emailed to the applicant." />
+          )}
+
+          <div style={{ marginTop: 24 }}>
+            <Button type="primary" size="large" block
+              disabled={!decision || reclassDone}
+              onClick={() => { antd.message.success('Decision recorded'); setSubmitted(true); }}>
+              Submit Decision
+            </Button>
+          </div>
+
+          <Divider />
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <Progress type="circle" size={60} percent={62} strokeColor="var(--color-warning)" />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>18 hrs remaining</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Scheme A · 48 hr SLA</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Drawer title={activeDoc?.name || 'Document Preview'} open={showDocViewer} onClose={() => setShowDocViewer(false)} width={760}>
+        <div style={{ background: '#3c3c3c', borderRadius: '6px 6px 0 0', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, color: '#ddd' }}>
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<LeftOutlined />} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<RightOutlined />} />
+          <span style={{ fontSize: 12, color: '#aaa', marginLeft: 4 }}>Page 1 / 3</span>
+          <div style={{ flex: 1 }} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<ZoomInOutlined />} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<ZoomOutOutlined />} />
+          <div style={{ flex: 1 }} />
+          <Button size="small" style={{ background: '#555', border: 'none', color: '#ddd' }} icon={<DownloadOutlined />}>Download</Button>
+        </div>
+        <div style={{ background: '#525659', padding: 16, borderRadius: '0 0 6px 6px', minHeight: 200, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', width: '100%', maxWidth: 540, minHeight: 200, borderRadius: 2, boxShadow: '0 2px 12px rgba(0,0,0,0.4)', padding: 32 }}>
+            <div style={{ fontSize: 11, color: '#888', marginBottom: 8, textAlign: 'right', fontFamily: 'monospace' }}>{activeDoc?.name || 'document.pdf'}</div>
+            {[[160,'#333'],[220,'#555'],[180,'#555'],[240,'#555'],[200,'#555']].map(([w,c],i) => (
+              <div key={i} style={{ height: 7, background: c, borderRadius: 2, width: w, marginBottom: 10 }} />
+            ))}
+          </div>
+        </div>
+        <Divider>OCR Extraction</Divider>
+        <List size="small" dataSource={['Model: SM-S928B ✓','Frequency: 2400–2483.5 MHz ✓','Max Power: 26 dBm ✓','Test Lab: SIRIM QAS (#LM-15-004) ✓']} renderItem={i => <List.Item>{i}</List.Item>} />
+      </Drawer>
+    </div>
+  );
+}
+window.OfficerReviewPanel = OfficerReviewPanel;
+
 SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser }) {
   const [decision, setDecision] = React.useState(null);
   const [iterMsg, setIterMsg] = React.useState('');
@@ -4226,7 +4481,7 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
     <div>
       <div style={{ padding: '16px 32px', background: 'var(--color-bg-elevated)', borderBottom: '1px solid var(--color-divider)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <Breadcrumb items={[{ title: <a onClick={() => nav('officer-queue')}>Queue</a> }, { title: <span style={{ fontFamily: 'var(--font-mono)' }}>{a.id}</span> }]} />
+          <Breadcrumb items={[{ title: <a onClick={() => nav('officer-review-list')}>Review List</a> }, { title: <span style={{ fontFamily: 'var(--font-mono)' }}>{a.id}</span> }]} />
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6 }}>
             <SchemeBadge scheme={a.scheme} />
             <span style={{ fontSize: 18, fontWeight: 600 }}>{a.product}</span>
@@ -12351,8 +12606,8 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
           <antd.Typography.Text type="secondary">{today.toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · {team} · MCMC</antd.Typography.Text>
         </div>
         <antd.Space wrap>
-          <antd.Button icon={<FlagOutlined />} onClick={() => nav('tl-queue')}>View Team Queue</antd.Button>
-          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('officer-review')}>Start Review</antd.Button>}
+          <antd.Button icon={<FlagOutlined />} onClick={() => nav('tl-review-list')}>View Team Queue</antd.Button>
+          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('tl-review-list')}>Start Review</antd.Button>}
         </antd.Space>
       </div>
 
@@ -12361,7 +12616,7 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
         <antd.Alert type="warning" showIcon icon={<ExclamationCircleOutlined />} style={{ marginBottom: 20 }}
           message={`${unassigned.length} application${unassigned.length > 1 ? 's' : ''} awaiting assignment`}
           description="These applications are in the queue but not yet assigned to an officer. Route them to prevent SLA breaches."
-          action={<antd.Button size="small" type="primary" onClick={() => nav('tl-queue')}>Go to Queue →</antd.Button>}
+          action={<antd.Button size="small" type="primary" onClick={() => nav('tl-review-list')}>Go to Queue →</antd.Button>}
         />
       )}
 
@@ -12369,7 +12624,7 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
       <antd.Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {kpis.map((k, i) => (
           <antd.Col xs={12} md={6} key={i}>
-            <div className="kpi-card" onClick={() => nav('tl-queue')} style={{ cursor: 'pointer' }}>
+            <div className="kpi-card" onClick={() => nav('tl-review-list')} style={{ cursor: 'pointer' }}>
               <div className="kpi-label">{k.label}</div>
               <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
               <div className="kpi-delta">{k.delta}</div>
@@ -12392,7 +12647,7 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
               return (
                 <antd.Card bordered
                   title={<antd.Space><FlagOutlined style={{ color: 'var(--color-primary)' }} /> Applications</antd.Space>}
-                  extra={<antd.Button size="small" onClick={() => nav('tl-queue')}>Full Queue →</antd.Button>}>
+                  extra={<antd.Button size="small" onClick={() => nav('tl-review-list')}>Full Queue →</antd.Button>}>
                   <antd.Segmented value={taskFilter} onChange={setTaskFilter} size="small" style={{ marginBottom: 12 }} options={[
                     { label: `My assigned (${myQueue.length + modQueue.length})`, value: 'mine' },
                     { label: `Unassigned (${unassigned.length})`, value: 'unassigned' },
@@ -12414,7 +12669,7 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
                             : <antd.Button className="assign-btn" size="small" type="primary" icon={<TeamOutlined />} style={{ fontSize: 10, padding: '0 6px' }}
                                 onClick={e => { e.stopPropagation(); setAssignTarget(row.id); setAssignOpen(true); }}>Assign</antd.Button>;
                         }},
-                        { title: '', width: 80, render: (_, r) => <antd.Button size="small" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('officer-review'); }}>Review</antd.Button> },
+                        { title: '', width: 80, render: (_, r) => <antd.Button size="small" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('tl-review-list'); }}>Review</antd.Button> },
                       ]}
                     />
                   )}
@@ -12444,8 +12699,8 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
             {/* Quick actions */}
             <antd.Card bordered title="Quick Actions" bodyStyle={{ padding: '12px 16px' }}>
               <antd.Space direction="vertical" style={{ width: '100%' }} size={8}>
-                {myQueue.length > 0 && <antd.Button block type="primary" icon={<EyeOutlined />} onClick={() => nav('officer-review')}>Start Review ({myQueue.length})</antd.Button>}
-                <antd.Button block icon={<FlagOutlined />} onClick={() => nav('tl-queue')}>Team Review Queue</antd.Button>
+                {myQueue.length > 0 && <antd.Button block type="primary" icon={<EyeOutlined />} onClick={() => nav('tl-review-list')}>Start Review ({myQueue.length})</antd.Button>}
+                <antd.Button block icon={<FlagOutlined />} onClick={() => nav('tl-review-list')}>Team Review Queue</antd.Button>
                 <antd.Button block icon={<BarChartOutlined />} onClick={() => nav('reports')}>Reports & Analytics</antd.Button>
                 <antd.Button block icon={<AuditOutlined />} onClick={() => nav('audit')}>Audit Log</antd.Button>
                 <antd.Button block icon={<SettingOutlined />} onClick={() => nav('admin-config')}>Configuration</antd.Button>
@@ -12679,7 +12934,7 @@ SCREENS['tl-queue'] = function TLQueue({ nav, currentUser }) {
           </>
         ) : (
           <antd.Table rowKey="id" dataSource={list} pagination={false} scroll={{ x: 'max-content' }}
-            onRow={row => ({ onClick: e => { if (e.target.closest('.assign-btn')) return; nav('officer-review'); }, style: { cursor: 'pointer' } })}
+            onRow={row => ({ onClick: e => { if (e.target.closest('.assign-btn')) return; nav('tl-review-list'); }, style: { cursor: 'pointer' } })}
             columns={[
               { title: 'App ID',    dataIndex: 'id',       width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
               { title: 'Scheme',    dataIndex: 'scheme',   width: 130, render: s => <antd.Tag style={{ fontSize: 11 }}>{s === 'SA' ? 'Special Approval' : `Scheme ${s}`}</antd.Tag> },
@@ -12700,6 +12955,153 @@ SCREENS['tl-queue'] = function TLQueue({ nav, currentUser }) {
           />
         )}
       </antd.Card>
+
+      <AssignOfficerModal open={assignOpen} onClose={() => setAssignOpen(false)}
+        applicationId={assignTarget}
+        currentAssigneeId={assignTarget ? (overrides[assignTarget] ?? resolved.find(r => r.id === assignTarget)?.assignedTo) : null}
+        onAssign={officerId => {
+          setOverrides(prev => ({ ...prev, [assignTarget]: officerId }));
+          antd.message.success(`Assigned ${assignTarget} to ${officerById[officerId]?.name}`);
+        }} />
+    </div>
+  );
+};
+
+// ──── TL REVIEW LIST (split-pane inbox for Team Lead) ────────────────────────
+SCREENS['tl-review-list'] = function TLReviewList({ nav, tweaks, currentUser }) {
+  const myId   = currentUser?.id || 'OFF-001';
+  const team   = currentUser?.team || 'CPPG-TL-01';
+  const OfficerReviewPanelFn = window.OfficerReviewPanel;
+
+  const officerPerf = MOCK.officerPerformance || [];
+  const officerById = React.useMemo(() => {
+    const m = {};
+    officerPerf.forEach(o => { m[o.id] = o; });
+    return m;
+  }, [officerPerf]);
+
+  const [overrides, setOverrides] = React.useState({});
+  const resolved = React.useMemo(
+    () => (MOCK.officerQueue || []).map(r => ({ ...r, assignedTo: overrides[r.id] ?? r.assignedTo })),
+    [overrides]
+  );
+
+  const myQueue         = resolved.filter(x => x.assignedTo === myId);
+  const teamQueue       = resolved.filter(x => x.assignedTo != null);
+  const unassigned      = resolved.filter(x => x.assignedTo == null);
+  const modList         = MOCK.modificationQueue || [];
+
+  const [filter, setFilter]       = React.useState('mine');
+  const [selectedId, setSelectedId] = React.useState(() => myQueue[0]?.id || null);
+  const [decided, setDecided]     = React.useState({});
+  const [modDecisions, setModDecisions] = React.useState({});
+  const [assignOpen, setAssignOpen]   = React.useState(false);
+  const [assignTarget, setAssignTarget] = React.useState(null);
+
+  const baseList = filter === 'mine'         ? myQueue
+    : filter === 'team'         ? teamQueue
+    : filter === 'unassigned'   ? unassigned
+    : filter === 'modification' ? modList
+    : resolved;
+
+  const schemeColor = { A: 'red', B: 'orange', C: 'green', SA: 'purple' };
+
+  return (
+    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+      {/* LEFT PANE */}
+      <div style={{ width: 380, flexShrink: 0, borderRight: '1px solid var(--color-divider)', display: 'flex', flexDirection: 'column', background: 'var(--color-bg-elevated)' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--color-divider)', flexShrink: 0 }}>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600, marginBottom: 6 }}>Team Lead · {team}</div>
+          <antd.Segmented size="small" value={filter} onChange={v => { setFilter(v); setSelectedId(null); }} style={{ width: '100%' }} options={[
+            { label: `Mine (${myQueue.length})`,         value: 'mine' },
+            { label: `Team (${teamQueue.length})`,       value: 'team' },
+            { label: `Unassigned (${unassigned.length})`, value: 'unassigned' },
+            { label: `Mods (${modList.length})`,         value: 'modification' },
+          ]} />
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {baseList.length === 0 ? (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>No items in this view</div>
+          ) : (
+            baseList.map(row => {
+              const isSelected = selectedId === row.id;
+              const isDecided  = !!decided[row.id];
+              const effAssigned = overrides[row.id] ?? row.assignedTo;
+              const assignee    = officerById[effAssigned];
+
+              if (filter === 'modification') {
+                const d = modDecisions[row.id];
+                return (
+                  <div key={row.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--color-divider)', background: '#fff' }}>
+                    <antd.Typography.Text code style={{ fontSize: 11 }}>{row.id}</antd.Typography.Text>
+                    <antd.Tag color="blue" style={{ fontSize: 10, margin: '0 0 0 6px' }}>{row.change}</antd.Tag>
+                    <div style={{ fontWeight: 600, fontSize: 13, margin: '4px 0 2px' }}>{row.product}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>{row.applicant}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 8 }}>{row.reason}</div>
+                    {d ? (
+                      <antd.Tag color={d === 'accepted' ? 'green' : 'red'}>{d === 'accepted' ? 'Accepted' : 'Not Accepted'}</antd.Tag>
+                    ) : (
+                      <antd.Space size={6}>
+                        <antd.Button size="small" type="primary" icon={<CheckCircleOutlined />}
+                          onClick={() => { setModDecisions(p => ({ ...p, [row.id]: 'accepted' })); antd.message.success(`Modification ${row.id} accepted`); }}>Accept</antd.Button>
+                        <antd.Button size="small" danger icon={<CloseCircleOutlined />}
+                          onClick={() => { setModDecisions(p => ({ ...p, [row.id]: 'rejected' })); antd.message.warning(`Modification ${row.id} not accepted`); }}>Not Accept</antd.Button>
+                      </antd.Space>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <div key={row.id} onClick={() => setSelectedId(row.id)}
+                  style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--color-divider)', background: isSelected ? 'rgba(11,79,145,0.06)' : '#fff', borderLeft: isSelected ? '3px solid var(--color-primary)' : '3px solid transparent', transition: 'background 0.15s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <antd.Typography.Text code style={{ fontSize: 11 }}>{row.id}</antd.Typography.Text>
+                    <antd.Tag color={schemeColor[row.scheme] || 'blue'} style={{ fontSize: 10, margin: 0 }}>{row.scheme === 'SA' ? 'SA' : `Sch ${row.scheme}`}</antd.Tag>
+                    {isDecided && <antd.Tag color="green" style={{ fontSize: 10, margin: 0 }}>Decided</antd.Tag>}
+                    {row.slaHours <= 12 && !isDecided && <antd.Tag color="red" style={{ fontSize: 10, margin: 0 }}>Urgent</antd.Tag>}
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.product}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.applicant}</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <antd.Tag color={row.priority === 'high' ? 'red' : 'blue'} style={{ fontSize: 10, margin: 0 }}>{row.priority}</antd.Tag>
+                    <antd.Tag color={row.slaHours < 12 ? 'red' : row.slaHours < 24 ? 'orange' : 'default'} style={{ fontSize: 10, margin: 0 }}>{row.slaHours}h SLA</antd.Tag>
+                    {assignee ? (
+                      <antd.Tag color={assignee.role === 'team-lead' ? 'purple' : 'default'} style={{ fontSize: 10, margin: 0 }}>{assignee.name.split(' ').slice(-1)[0]}</antd.Tag>
+                    ) : (
+                      <antd.Button size="small" type="primary"
+                        style={{ fontSize: 10, padding: '0 6px', height: 20, lineHeight: '18px' }}
+                        onClick={e => { e.stopPropagation(); setAssignTarget(row.id); setAssignOpen(true); }}>
+                        Assign…
+                      </antd.Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* RIGHT PANE */}
+      <div style={{ flex: 1, overflow: 'auto', background: 'var(--color-bg-base)' }}>
+        {selectedId && filter !== 'modification' && OfficerReviewPanelFn ? (
+          <OfficerReviewPanelFn key={selectedId} nav={nav} tweaks={tweaks} currentUser={currentUser} rowId={selectedId}
+            onDecision={(id) => {
+              setDecided(prev => ({ ...prev, [id]: true }));
+              const next = baseList.find(r => !decided[r.id] && r.id !== id);
+              if (next) setSelectedId(next.id);
+            }}
+          />
+        ) : (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <antd.Result icon={<FileSearchOutlined style={{ color: 'var(--color-text-muted)', fontSize: 48 }} />}
+              title={filter === 'modification' ? 'Modification decisions inline' : 'Select an application'}
+              subTitle={filter === 'modification' ? 'Accept or Not Accept using the buttons in the list on the left.' : 'Click an application in the queue to load its review panel.'} />
+          </div>
+        )}
+      </div>
 
       <AssignOfficerModal open={assignOpen} onClose={() => setAssignOpen(false)}
         applicationId={assignTarget}
@@ -12804,15 +13206,15 @@ SCREENS['rec-dashboard'] = function RecDashboard({ nav, currentUser }) {
           <antd.Typography.Text type="secondary">{today.toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · Special Approvals Unit</antd.Typography.Text>
         </div>
         <antd.Space wrap>
-          <antd.Button icon={<FlagOutlined />} onClick={() => nav('rec-queue')}>My SA Queue</antd.Button>
-          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('rec-review')}>Start Review</antd.Button>}
+          <antd.Button icon={<FlagOutlined />} onClick={() => nav('rec-review-list')}>My SA Queue</antd.Button>
+          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('rec-review-list')}>Start Review</antd.Button>}
         </antd.Space>
       </div>
 
       <antd.Row gutter={[16,16]} style={{ marginBottom: 24 }}>
         {kpis.map((k, i) => (
           <antd.Col xs={12} md={6} key={i}>
-            <div className="kpi-card" onClick={() => nav('rec-queue')} style={{ cursor: 'pointer' }}>
+            <div className="kpi-card" onClick={() => nav('rec-review-list')} style={{ cursor: 'pointer' }}>
               <div className="kpi-label">{k.label}</div>
               <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
               <div className="kpi-delta">{k.delta}</div>
@@ -12826,18 +13228,18 @@ SCREENS['rec-dashboard'] = function RecDashboard({ nav, currentUser }) {
           <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
             {/* My pending SA apps */}
             <antd.Card bordered title={<antd.Space><FlagOutlined style={{ color: 'var(--color-primary)' }} /> Pending Recommendation</antd.Space>}
-              extra={<antd.Button size="small" onClick={() => nav('rec-queue')}>All →</antd.Button>}>
+              extra={<antd.Button size="small" onClick={() => nav('rec-review-list')}>All →</antd.Button>}>
               {myQueue.length === 0 ? (
                 <antd.Result status="success" title="All clear" subTitle="No SA applications awaiting your recommendation." style={{ padding: '16px 0' }} />
               ) : (
                 <antd.Table rowKey="id" dataSource={myQueue} pagination={{ pageSize: 4, size: 'small' }} size="small"
-                  onRow={() => ({ onClick: () => nav('rec-review'), style: { cursor: 'pointer' } })}
+                  onRow={() => ({ onClick: () => nav('rec-review-list'), style: { cursor: 'pointer' } })}
                   columns={[
                     { title: 'SA ID',    dataIndex: 'id',       width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
                     { title: 'Product',  dataIndex: 'product',  ellipsis: true, render: (v,r) => <div><div style={{ fontWeight:600, fontSize:12 }}>{v}</div><div style={{ fontSize:11, color:'var(--color-text-muted)' }}>{r.applicant}</div></div> },
                     { title: 'Category', dataIndex: 'category', width: 150, render: v => <antd.Tag style={{ fontSize:10 }}>{v}</antd.Tag> },
                     { title: 'SLA',      dataIndex: 'slaHours', width: 70,  render: h => <antd.Tag color={h<=12?'red':h<=24?'orange':'default'} style={{ fontSize:10,margin:0 }}>{h}h</antd.Tag> },
-                    { title: '', width: 90, render: () => <antd.Button size="small" type="primary" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('rec-review'); }}>Review</antd.Button> },
+                    { title: '', width: 90, render: () => <antd.Button size="small" type="primary" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('rec-review-list'); }}>Review</antd.Button> },
                   ]}
                 />
               )}
@@ -12939,7 +13341,7 @@ SCREENS['rec-review'] = function RecReview({ nav, currentUser }) {
       <antd.Result status="success" title="Recommendation submitted"
         subTitle={`Your finding for ${app.id} has been forwarded to the Verifier (P7). The application is now in the Verification stage.`}
         extra={[
-          <antd.Button type="primary" key="queue" onClick={() => { setSubmitted(false); nav('rec-queue'); }}>Back to Queue</antd.Button>,
+          <antd.Button type="primary" key="queue" onClick={() => { setSubmitted(false); nav('rec-review-list'); }}>Back to Queue</antd.Button>,
           <antd.Button key="dash" onClick={() => { setSubmitted(false); nav('rec-dashboard'); }}>Dashboard</antd.Button>,
         ]} />
     </div>
@@ -12947,7 +13349,7 @@ SCREENS['rec-review'] = function RecReview({ nav, currentUser }) {
 
   return (
     <div style={{ padding:32, maxWidth:1100, margin:'0 auto' }}>
-      <antd.Button icon={<ArrowLeftOutlined />} style={{ marginBottom:16 }} onClick={() => nav('rec-queue')}>Back to Queue</antd.Button>
+      <antd.Button icon={<ArrowLeftOutlined />} style={{ marginBottom:16 }} onClick={() => nav('rec-review-list')}>Back to Queue</antd.Button>
 
       <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20, flexWrap:'wrap' }}>
         <antd.Typography.Title level={3} style={{ margin:0 }}>{app.id}</antd.Typography.Title>
@@ -13080,14 +13482,14 @@ SCREENS['ver-dashboard'] = function VerDashboard({ nav, currentUser }) {
           <antd.Typography.Text type="secondary">{today.toLocaleDateString('en-MY', { weekday:'long', day:'numeric', month:'long', year:'numeric' })} · Special Approvals Unit</antd.Typography.Text>
         </div>
         <antd.Space wrap>
-          <antd.Button icon={<FlagOutlined />} onClick={() => nav('ver-queue')}>My SA Queue</antd.Button>
-          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('ver-review')}>Start Review</antd.Button>}
+          <antd.Button icon={<FlagOutlined />} onClick={() => nav('ver-review-list')}>My SA Queue</antd.Button>
+          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('ver-review-list')}>Start Review</antd.Button>}
         </antd.Space>
       </div>
 
       <antd.Row gutter={[16,16]} style={{ marginBottom:24 }}>
         {kpis.map((k,i) => (
-          <antd.Col xs={12} md={6} key={i}><div className="kpi-card" onClick={() => nav('ver-queue')} style={{ cursor:'pointer' }}><div className="kpi-label">{k.label}</div><div className="kpi-value" style={{ color:k.color }}>{k.value}</div><div className="kpi-delta">{k.delta}</div></div></antd.Col>
+          <antd.Col xs={12} md={6} key={i}><div className="kpi-card" onClick={() => nav('ver-review-list')} style={{ cursor:'pointer' }}><div className="kpi-label">{k.label}</div><div className="kpi-value" style={{ color:k.color }}>{k.value}</div><div className="kpi-delta">{k.delta}</div></div></antd.Col>
         ))}
       </antd.Row>
 
@@ -13095,18 +13497,18 @@ SCREENS['ver-dashboard'] = function VerDashboard({ nav, currentUser }) {
         <antd.Col xs={24} lg={16}>
           <antd.Space direction="vertical" size={16} style={{ width:'100%' }}>
             <antd.Card bordered title={<antd.Space><FlagOutlined style={{ color:'var(--color-primary)' }} /> Awaiting Verification</antd.Space>}
-              extra={<antd.Button size="small" onClick={() => nav('ver-queue')}>All →</antd.Button>}>
+              extra={<antd.Button size="small" onClick={() => nav('ver-review-list')}>All →</antd.Button>}>
               {myQueue.length === 0 ? (
                 <antd.Result status="success" title="All clear" subTitle="No SA applications awaiting your verification." style={{ padding:'16px 0' }} />
               ) : (
                 <antd.Table rowKey="id" dataSource={myQueue} pagination={{ pageSize:4, size:'small' }} size="small"
-                  onRow={() => ({ onClick: () => nav('ver-review'), style:{ cursor:'pointer' } })}
+                  onRow={() => ({ onClick: () => nav('ver-review-list'), style:{ cursor:'pointer' } })}
                   columns={[
                     { title:'SA ID',    dataIndex:'id',       width:140, render:v => <antd.Typography.Text code style={{ fontSize:11 }}>{v}</antd.Typography.Text> },
                     { title:'Product',  dataIndex:'product',  ellipsis:true, render:(v,r) => <div><div style={{ fontWeight:600,fontSize:12 }}>{v}</div><div style={{ fontSize:11,color:'var(--color-text-muted)' }}>{r.applicant}</div></div> },
                     { title:'Recommender Notes', dataIndex:'recommenderNotes', ellipsis:true, render:v => <span style={{ fontSize:11,color:'var(--color-text-secondary)' }}>{v}</span> },
                     { title:'SLA',      dataIndex:'slaHours', width:70, render:h => <antd.Tag color={h<=12?'red':h<=24?'orange':'default'} style={{ fontSize:10,margin:0 }}>{h}h</antd.Tag> },
-                    { title:'', width:90, render:() => <antd.Button size="small" type="primary" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('ver-review'); }}>Verify</antd.Button> },
+                    { title:'', width:90, render:() => <antd.Button size="small" type="primary" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('ver-review-list'); }}>Verify</antd.Button> },
                   ]} />
               )}
             </antd.Card>
@@ -13197,7 +13599,7 @@ SCREENS['ver-review'] = function VerReview({ nav, currentUser }) {
       <antd.Result status="success" title="Verification submitted"
         subTitle={`Your verification for ${app.id} has been forwarded to the Approver (P8). The application is now in the Approval stage.`}
         extra={[
-          <antd.Button type="primary" key="queue" onClick={() => { setSubmitted(false); nav('ver-queue'); }}>Back to Queue</antd.Button>,
+          <antd.Button type="primary" key="queue" onClick={() => { setSubmitted(false); nav('ver-review-list'); }}>Back to Queue</antd.Button>,
           <antd.Button key="dash" onClick={() => { setSubmitted(false); nav('ver-dashboard'); }}>Dashboard</antd.Button>,
         ]} />
     </div>
@@ -13205,7 +13607,7 @@ SCREENS['ver-review'] = function VerReview({ nav, currentUser }) {
 
   return (
     <div style={{ padding:32, maxWidth:1100, margin:'0 auto' }}>
-      <antd.Button icon={<ArrowLeftOutlined />} style={{ marginBottom:16 }} onClick={() => nav('ver-queue')}>Back to Queue</antd.Button>
+      <antd.Button icon={<ArrowLeftOutlined />} style={{ marginBottom:16 }} onClick={() => nav('ver-review-list')}>Back to Queue</antd.Button>
       <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20, flexWrap:'wrap' }}>
         <antd.Typography.Title level={3} style={{ margin:0 }}>{app.id}</antd.Typography.Title>
         <SAStageTag stage="verification" />
@@ -13311,15 +13713,15 @@ SCREENS['app-dashboard'] = function AppDashboard({ nav, currentUser }) {
         </div>
         <antd.Space wrap>
           <antd.Button icon={<BarChartOutlined />} onClick={() => nav('reports')}>Reports</antd.Button>
-          <antd.Button icon={<FlagOutlined />} onClick={() => nav('app-queue')}>My Queue</antd.Button>
-          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('app-review')}>Decide Now</antd.Button>}
+          <antd.Button icon={<FlagOutlined />} onClick={() => nav('app-review-list')}>My Queue</antd.Button>
+          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('app-review-list')}>Decide Now</antd.Button>}
         </antd.Space>
       </div>
 
       <antd.Row gutter={[16,16]} style={{ marginBottom:24 }}>
         {kpis.map((k,i) => (
           <antd.Col xs={12} md={6} key={i}>
-            <div className="kpi-card" onClick={() => nav('app-queue')} style={{ cursor:'pointer' }}>
+            <div className="kpi-card" onClick={() => nav('app-review-list')} style={{ cursor:'pointer' }}>
               <div className="kpi-label">{k.label}</div>
               <div className="kpi-value" style={{ color:k.color }}>{k.value}</div>
               <div className="kpi-delta">{k.delta}</div>
@@ -13330,7 +13732,7 @@ SCREENS['app-dashboard'] = function AppDashboard({ nav, currentUser }) {
 
       {/* SA Pipeline overview */}
       <antd.Card bordered title={<antd.Space><ApartmentOutlined /> SA Pipeline Overview</antd.Space>} style={{ marginBottom:16 }}
-        extra={<antd.Button size="small" onClick={() => nav('app-queue')}>View All →</antd.Button>}>
+        extra={<antd.Button size="small" onClick={() => nav('app-review-list')}>View All →</antd.Button>}>
         <antd.Row gutter={[16,16]}>
           {[
             { stage:'recommendation', label:'At Recommender', color:'#1B7F48' },
@@ -13354,18 +13756,18 @@ SCREENS['app-dashboard'] = function AppDashboard({ nav, currentUser }) {
         <antd.Col xs={24} lg={16}>
           <antd.Space direction="vertical" size={16} style={{ width:'100%' }}>
             <antd.Card bordered title={<antd.Space><FlagOutlined style={{ color:'var(--color-danger)' }} /> Awaiting My Decision</antd.Space>}
-              extra={<antd.Button size="small" onClick={() => nav('app-queue')}>All →</antd.Button>}>
+              extra={<antd.Button size="small" onClick={() => nav('app-review-list')}>All →</antd.Button>}>
               {myQueue.length === 0 ? (
                 <antd.Result status="success" title="All clear" subTitle="No SA applications awaiting your approval at this time." style={{ padding:'16px 0' }} />
               ) : (
                 <antd.Table rowKey="id" dataSource={myQueue} pagination={{ pageSize:4, size:'small' }} size="small"
-                  onRow={() => ({ onClick:() => nav('app-review'), style:{ cursor:'pointer' } })}
+                  onRow={() => ({ onClick:() => nav('app-review-list'), style:{ cursor:'pointer' } })}
                   columns={[
                     { title:'SA ID',    dataIndex:'id',       width:140, render:v => <antd.Typography.Text code style={{ fontSize:11 }}>{v}</antd.Typography.Text> },
                     { title:'Product',  dataIndex:'product',  ellipsis:true, render:(v,r) => <div><div style={{ fontWeight:600,fontSize:12 }}>{v}</div><div style={{ fontSize:11,color:'var(--color-text-muted)' }}>{r.applicant}</div></div> },
                     { title:'Verifier Notes', dataIndex:'verifierNotes', ellipsis:true, render:v => <span style={{ fontSize:11,color:'var(--color-text-secondary)' }}>{v}</span> },
                     { title:'SLA', dataIndex:'slaHours', width:70, render:h => <antd.Tag color={h<=12?'red':h<=24?'orange':'default'} style={{ fontSize:10,margin:0 }}>{h}h</antd.Tag> },
-                    { title:'', width:90, render:() => <antd.Button size="small" type="primary" danger icon={<CheckCircleOutlined />} onClick={e => { e.stopPropagation(); nav('app-review'); }}>Decide</antd.Button> },
+                    { title:'', width:90, render:() => <antd.Button size="small" type="primary" danger icon={<CheckCircleOutlined />} onClick={e => { e.stopPropagation(); nav('app-review-list'); }}>Decide</antd.Button> },
                   ]} />
               )}
             </antd.Card>
@@ -13385,8 +13787,8 @@ SCREENS['app-dashboard'] = function AppDashboard({ nav, currentUser }) {
           <antd.Space direction="vertical" size={16} style={{ width:'100%' }}>
             <antd.Card bordered title="Quick Actions" bodyStyle={{ padding:'12px 16px' }}>
               <antd.Space direction="vertical" style={{ width:'100%' }} size={8}>
-                {myQueue.length > 0 && <antd.Button block type="primary" danger icon={<CheckCircleOutlined />} onClick={() => nav('app-review')}>Decide on ({myQueue.length})</antd.Button>}
-                <antd.Button block icon={<FlagOutlined />} onClick={() => nav('app-queue')}>My Approval Queue</antd.Button>
+                {myQueue.length > 0 && <antd.Button block type="primary" danger icon={<CheckCircleOutlined />} onClick={() => nav('app-review-list')}>Decide on ({myQueue.length})</antd.Button>}
+                <antd.Button block icon={<FlagOutlined />} onClick={() => nav('app-review-list')}>My Approval Queue</antd.Button>
                 <antd.Button block icon={<BarChartOutlined />} onClick={() => nav('reports')}>Reports & Analytics</antd.Button>
                 <antd.Button block icon={<SettingOutlined />} onClick={() => nav('profile')}>Profile & Settings</antd.Button>
               </antd.Space>
@@ -13462,7 +13864,7 @@ SCREENS['app-review'] = function AppReview({ nav, currentUser }) {
       <antd.Result status={decision === 'approve' ? 'success' : 'error'} title={decision === 'approve' ? 'Special Approval Granted' : 'Application Rejected'}
         subTitle={`Your decision for ${app.id} has been recorded and the applicant notified. ${decision==='approve' ? 'An SA letter will be generated within 1 working day.' : 'The application has been closed.'}`}
         extra={[
-          <antd.Button type="primary" key="queue" onClick={() => { setSubmitted(false); nav('app-queue'); }}>Back to Queue</antd.Button>,
+          <antd.Button type="primary" key="queue" onClick={() => { setSubmitted(false); nav('app-review-list'); }}>Back to Queue</antd.Button>,
           <antd.Button key="dash" onClick={() => { setSubmitted(false); nav('app-dashboard'); }}>Dashboard</antd.Button>,
         ]} />
     </div>
@@ -13470,7 +13872,7 @@ SCREENS['app-review'] = function AppReview({ nav, currentUser }) {
 
   return (
     <div style={{ padding:32, maxWidth:1100, margin:'0 auto' }}>
-      <antd.Button icon={<ArrowLeftOutlined />} style={{ marginBottom:16 }} onClick={() => nav('app-queue')}>Back to Queue</antd.Button>
+      <antd.Button icon={<ArrowLeftOutlined />} style={{ marginBottom:16 }} onClick={() => nav('app-review-list')}>Back to Queue</antd.Button>
       <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20, flexWrap:'wrap' }}>
         <antd.Typography.Title level={3} style={{ margin:0 }}>{app.id}</antd.Typography.Title>
         <SAStageTag stage="approval" />
@@ -13543,6 +13945,359 @@ SCREENS['app-review'] = function AppReview({ nav, currentUser }) {
   );
 };
 
+// ════════════════════════════════════════════════════════════════
+//  Review-List split-pane screens (Sprint 19)
+//  Each combines the queue list + inline review panel in one screen.
+// ════════════════════════════════════════════════════════════════
+
+// ── Compact left-pane row for SA applications ─────────────────────────────────
+function SAReviewListRow({ row, isSelected, isDecided, onSelect }) {
+  const stageColor = { recommendation: 'blue', verification: 'orange', approval: 'red' };
+  return (
+    <div onClick={onSelect}
+      style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--color-divider)', background: isSelected ? 'rgba(11,79,145,0.06)' : '#fff', borderLeft: isSelected ? '3px solid var(--color-primary)' : '3px solid transparent', transition: 'background 0.15s' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+        <antd.Typography.Text code style={{ fontSize: 11 }}>{row.id}</antd.Typography.Text>
+        <antd.Tag color={stageColor[row.stage] || 'default'} style={{ fontSize: 10, margin: 0 }}>{row.stage}</antd.Tag>
+        {row.needsMosti && <antd.Tag color="purple" style={{ fontSize: 10, margin: 0 }}>MOSTI</antd.Tag>}
+        {isDecided && <antd.Tag color="green" style={{ fontSize: 10, margin: 0 }}>Decided</antd.Tag>}
+        {row.slaHours <= 12 && !isDecided && <antd.Tag color="red" style={{ fontSize: 10, margin: 0 }}>Urgent</antd.Tag>}
+      </div>
+      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.product}</div>
+      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.applicant}</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <antd.Tag color={row.priority === 'high' ? 'red' : row.priority === 'critical' ? 'volcano' : 'blue'} style={{ fontSize: 10, margin: 0 }}>{row.priority}</antd.Tag>
+        <antd.Tag color={row.slaHours < 12 ? 'red' : row.slaHours < 24 ? 'orange' : 'default'} style={{ fontSize: 10, margin: 0 }}>{row.slaHours}h SLA</antd.Tag>
+        <antd.Tag color={row.aiScore >= 80 ? 'green' : row.aiScore >= 60 ? 'orange' : 'red'} style={{ fontSize: 10, margin: 0 }}>AI {row.aiScore}</antd.Tag>
+      </div>
+    </div>
+  );
+}
+
+// ── Recommender inline review panel ──────────────────────────────────────────
+function RecReviewPanel({ app, nav, currentUser, onDecision }) {
+  const [decision, setDecision]   = React.useState('');
+  const [notes, setNotes]         = React.useState('');
+  const [mostiOk, setMostiOk]     = React.useState(false);
+  const [submitted, setSubmitted] = React.useState(false);
+
+  if (!app) return <antd.Empty description="No application selected" style={{ padding: 48 }} />;
+
+  if (submitted) return (
+    <div style={{ padding: 48, textAlign: 'center' }}>
+      <antd.Result status="success" title="Recommendation submitted"
+        subTitle={`Your finding for ${app.id} has been forwarded to the Verifier (P7).`}
+        extra={<antd.Button type="primary" onClick={() => { setSubmitted(false); setDecision(''); setNotes(''); setMostiOk(false); if (onDecision) onDecision(); }}>Review next</antd.Button>} />
+    </div>
+  );
+
+  return (
+    <div style={{ padding: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <antd.Typography.Title level={4} style={{ margin: 0 }}>{app.id}</antd.Typography.Title>
+        <SAStageTag stage="recommendation" />
+        {app.needsMosti && <antd.Tag color="purple" icon={<StarOutlined />}>MOSTI Required</antd.Tag>}
+      </div>
+      <antd.Row gutter={[16,16]}>
+        <antd.Col xs={24} lg={14}>
+          <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
+            <antd.Card bordered title="Application Details" size="small">
+              {[['Applicant',app.applicant],['Product',app.product],['Category',app.category],['Purpose',app.purpose],['MOSTI Ref',app.mosteRef||'(none)'],['Submitted',app.submitted?new Date(app.submitted).toLocaleString('en-GB'):'—']].map(([k,v]) => (
+                <div key={k} style={{ display:'flex', gap:12, padding:'6px 0', borderBottom:'1px solid var(--color-divider)' }}>
+                  <span style={{ width:110, fontSize:12, fontWeight:600, color:'var(--color-text-muted)', flexShrink:0 }}>{k}</span>
+                  <span style={{ fontSize:13 }}>{v}</span>
+                </div>
+              ))}
+            </antd.Card>
+            <antd.Card bordered title="Approval Chain" size="small"><SAChainStatus app={app} /></antd.Card>
+            <antd.Card bordered title={<antd.Space><RobotOutlined style={{ color:'var(--color-primary)' }} /> AI Pre-screening</antd.Space>} size="small">
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10 }}>
+                <antd.Progress type="circle" percent={app.aiScore} size={56} strokeColor={app.aiScore>=80?'#1B7F48':app.aiScore>=60?'#B87200':'#C62828'} format={p => <span style={{ fontWeight:700, fontSize:13 }}>{p}</span>} />
+                <div>
+                  <div style={{ fontWeight:600 }}>AI Confidence Score</div>
+                  <div style={{ fontSize:12, color:'var(--color-text-muted)' }}>{app.aiScore>=80?'Low risk — documentation complete':app.aiScore>=60?'Medium risk — review flagged items':'High risk — multiple flags'}</div>
+                </div>
+              </div>
+              {app.needsMosti && (
+                <antd.Checkbox checked={mostiOk} onChange={e => setMostiOk(e.target.checked)} style={{ marginTop:8 }}>
+                  MOSTI endorsement letter received and verified
+                </antd.Checkbox>
+              )}
+            </antd.Card>
+          </antd.Space>
+        </antd.Col>
+        <antd.Col xs={24} lg={10}>
+          <antd.Card bordered title="Recommender Decision" style={{ position:'sticky', top:20 }}>
+            <antd.Space direction="vertical" style={{ width:'100%', marginBottom:16 }} size={8}>
+              {[
+                { key:'recommend',    label:'Recommend',          color:'#1B7F48', desc:'Endorse and escalate to Verifier (P7).' },
+                { key:'returnrevise', label:'Return for Revision', color:'#B87200', desc:'Send back to applicant with amendment notes.' },
+                { key:'notrecommend', label:'Do Not Recommend',   color:'#C62828', desc:'Decline with documented reasons.' },
+              ].map(opt => (
+                <div key={opt.key} onClick={() => setDecision(opt.key)}
+                  style={{ padding:'10px 14px', borderRadius:8, cursor:'pointer', border:`1.5px solid ${decision===opt.key?opt.color:'var(--color-border)'}`, background:decision===opt.key?`${opt.color}12`:'#fff' }}>
+                  <div style={{ fontWeight:600, color:opt.color, fontSize:13 }}>{opt.label}</div>
+                  <div style={{ fontSize:11, color:'var(--color-text-muted)', marginTop:2 }}>{opt.desc}</div>
+                </div>
+              ))}
+            </antd.Space>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontSize:12, fontWeight:600, marginBottom:6 }}>Recommendation Notes <span style={{ color:'var(--color-danger)' }}>*</span></div>
+              <antd.Input.TextArea rows={4} placeholder="Document your recommendation reasoning…" value={notes} onChange={e => setNotes(e.target.value)} />
+            </div>
+            {app.needsMosti && !mostiOk && decision === 'recommend' && (
+              <antd.Alert type="warning" showIcon style={{ marginBottom:12, fontSize:12 }} message="MOSTI letter not yet confirmed" description="Tick the MOSTI checkbox above before recommending." />
+            )}
+            <antd.Button type="primary" block icon={<SendOutlined />}
+              disabled={!decision || !notes.trim() || (app.needsMosti && decision === 'recommend' && !mostiOk)}
+              onClick={() => { antd.message.success(`Recommendation submitted for ${app.id}`); setSubmitted(true); }}>
+              Submit Recommendation
+            </antd.Button>
+          </antd.Card>
+        </antd.Col>
+      </antd.Row>
+    </div>
+  );
+}
+
+// ── Verifier inline review panel ──────────────────────────────────────────────
+function VerReviewPanel({ app, nav, currentUser, onDecision }) {
+  const [decision, setDecision]   = React.useState('');
+  const [notes, setNotes]         = React.useState('');
+  const [submitted, setSubmitted] = React.useState(false);
+
+  if (!app) return <antd.Empty description="No application selected" style={{ padding: 48 }} />;
+
+  if (submitted) return (
+    <div style={{ padding: 48, textAlign: 'center' }}>
+      <antd.Result status="success" title="Verification submitted"
+        subTitle={`Your verification for ${app.id} has been forwarded to the Approver (P8).`}
+        extra={<antd.Button type="primary" onClick={() => { setSubmitted(false); setDecision(''); setNotes(''); if (onDecision) onDecision(); }}>Review next</antd.Button>} />
+    </div>
+  );
+
+  return (
+    <div style={{ padding: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <antd.Typography.Title level={4} style={{ margin: 0 }}>{app.id}</antd.Typography.Title>
+        <SAStageTag stage="verification" />
+        {app.needsMosti && <antd.Tag color="purple" icon={<StarOutlined />}>MOSTI Required</antd.Tag>}
+      </div>
+      <antd.Row gutter={[16,16]}>
+        <antd.Col xs={24} lg={14}>
+          <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
+            <antd.Card bordered title="Application Details" size="small">
+              {[['Applicant',app.applicant],['Product',app.product],['Category',app.category],['Purpose',app.purpose],['MOSTI Ref',app.mosteRef||'(none)']].map(([k,v]) => (
+                <div key={k} style={{ display:'flex', gap:12, padding:'6px 0', borderBottom:'1px solid var(--color-divider)' }}>
+                  <span style={{ width:110, fontSize:12, fontWeight:600, color:'var(--color-text-muted)', flexShrink:0 }}>{k}</span>
+                  <span style={{ fontSize:13 }}>{v}</span>
+                </div>
+              ))}
+            </antd.Card>
+            <antd.Card bordered title="Approval Chain" size="small"><SAChainStatus app={app} /></antd.Card>
+            <antd.Card bordered title={<antd.Space><CheckCircleOutlined style={{ color:'var(--color-success)' }} /> Recommender Finding</antd.Space>} size="small">
+              <antd.Alert type="success" showIcon style={{ marginBottom:12, fontSize:12 }}
+                message={`Recommended by ${(MOCK.officerPerformance||[]).find(o=>o.id===app.recommendedBy)?.name || app.recommendedBy || 'Recommender'}`}
+                description={app.recommenderNotes || 'No notes provided.'} />
+              {app.recommendedAt && <div style={{ fontSize:11, color:'var(--color-text-muted)' }}>Recommended on {new Date(app.recommendedAt).toLocaleString('en-GB')}</div>}
+            </antd.Card>
+          </antd.Space>
+        </antd.Col>
+        <antd.Col xs={24} lg={10}>
+          <antd.Card bordered title="Verifier Decision" style={{ position:'sticky', top:20 }}>
+            <antd.Space direction="vertical" style={{ width:'100%', marginBottom:16 }} size={8}>
+              {[
+                { key:'verify',    label:'Verify & Escalate', color:'#1B7F48', desc:'Endorses recommender finding and escalates to Approver (P8).' },
+                { key:'referback', label:'Refer Back',        color:'#B87200', desc:'Return to recommender for further review or clarification.' },
+                { key:'reject',    label:'Reject',            color:'#C62828', desc:'Issue a rejection finding — application closed.' },
+              ].map(opt => (
+                <div key={opt.key} onClick={() => setDecision(opt.key)}
+                  style={{ padding:'10px 14px', borderRadius:8, cursor:'pointer', border:`1.5px solid ${decision===opt.key?opt.color:'var(--color-border)'}`, background:decision===opt.key?`${opt.color}12`:'#fff' }}>
+                  <div style={{ fontWeight:600, color:opt.color, fontSize:13 }}>{opt.label}</div>
+                  <div style={{ fontSize:11, color:'var(--color-text-muted)', marginTop:2 }}>{opt.desc}</div>
+                </div>
+              ))}
+            </antd.Space>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontSize:12, fontWeight:600, marginBottom:6 }}>Verifier Notes <span style={{ color:'var(--color-danger)' }}>*</span></div>
+              <antd.Input.TextArea rows={4} placeholder="Document your verification assessment. Visible to the Approver." value={notes} onChange={e => setNotes(e.target.value)} />
+            </div>
+            <antd.Button type="primary" block icon={<SendOutlined />}
+              disabled={!decision || !notes.trim()}
+              onClick={() => { antd.message.success(`Verification submitted for ${app.id}`); setSubmitted(true); }}>
+              Submit Verification
+            </antd.Button>
+          </antd.Card>
+        </antd.Col>
+      </antd.Row>
+    </div>
+  );
+}
+
+// ── Approver inline review panel ──────────────────────────────────────────────
+function AppReviewPanel({ app, nav, currentUser, onDecision }) {
+  const [decision, setDecision]     = React.useState('');
+  const [notes, setNotes]           = React.useState('');
+  const [dgEscalate, setDgEscalate] = React.useState(false);
+  const [submitted, setSubmitted]   = React.useState(false);
+
+  if (!app) return <antd.Empty description="No application selected" style={{ padding: 48 }} />;
+
+  const isProhibited = app.category === 'Prohibited Equipment';
+
+  if (submitted) return (
+    <div style={{ padding: 48, textAlign: 'center' }}>
+      <antd.Result status={decision === 'approve' ? 'success' : 'error'}
+        title={decision === 'approve' ? 'Special Approval Granted' : 'Application Rejected'}
+        subTitle={`Your decision for ${app.id} has been recorded. ${decision==='approve'?'SA letter will be generated within 1 working day.':'Application closed.'}`}
+        extra={<antd.Button type="primary" onClick={() => { setSubmitted(false); setDecision(''); setNotes(''); if (onDecision) onDecision(); }}>Review next</antd.Button>} />
+    </div>
+  );
+
+  return (
+    <div style={{ padding: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <antd.Typography.Title level={4} style={{ margin: 0 }}>{app.id}</antd.Typography.Title>
+        <SAStageTag stage="approval" />
+        {app.needsMosti && <antd.Tag color="purple" icon={<StarOutlined />}>MOSTI Endorsed</antd.Tag>}
+        {isProhibited && <antd.Tag color="volcano" icon={<ExclamationCircleOutlined />}>Prohibited Category</antd.Tag>}
+      </div>
+      <antd.Row gutter={[16,16]}>
+        <antd.Col xs={24} lg={14}>
+          <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
+            <antd.Card bordered title="Application Details" size="small">
+              {[['Applicant',app.applicant],['Product',app.product],['Category',app.category],['Purpose',app.purpose],['MOSTI Ref',app.mosteRef||'(none)']].map(([k,v]) => (
+                <div key={k} style={{ display:'flex', gap:12, padding:'6px 0', borderBottom:'1px solid var(--color-divider)' }}>
+                  <span style={{ width:110, fontSize:12, fontWeight:600, color:'var(--color-text-muted)', flexShrink:0 }}>{k}</span>
+                  <span style={{ fontSize:13 }}>{v}</span>
+                </div>
+              ))}
+            </antd.Card>
+            <antd.Card bordered title="Approval Chain" size="small"><SAChainStatus app={app} /></antd.Card>
+            <antd.Card bordered title="Recommender & Verifier Findings" size="small">
+              <antd.Alert type="success" showIcon message="Recommender finding" style={{ marginBottom:10, fontSize:12 }} description={app.recommenderNotes || 'No notes.'} />
+              <antd.Alert type="info" showIcon message="Verifier endorsement" style={{ fontSize:12 }} description={app.verifierNotes || 'No notes.'} />
+            </antd.Card>
+          </antd.Space>
+        </antd.Col>
+        <antd.Col xs={24} lg={10}>
+          <antd.Card bordered title="Approval Decision" style={{ position:'sticky', top:20 }}>
+            {isProhibited && (
+              <antd.Alert type="error" showIcon icon={<ExclamationCircleOutlined />} style={{ marginBottom:16, fontSize:12 }}
+                message="Prohibited equipment category"
+                description="Your approval must be documented and DG MCMC pre-notified per URS §5.5.4." />
+            )}
+            <antd.Space direction="vertical" style={{ width:'100%', marginBottom:16 }} size={8}>
+              {[
+                { key:'approve', label:'Approve',            color:'#1B7F48', desc:'Grant Special Approval. SA letter generated within 1 working day.' },
+                { key:'iterate', label:'Return to Verifier', color:'#B87200', desc:'Return for additional verification before final decision.' },
+                { key:'reject',  label:'Reject',             color:'#C62828', desc:'Reject the SA application — no further escalation.' },
+              ].map(opt => (
+                <div key={opt.key} onClick={() => setDecision(opt.key)}
+                  style={{ padding:'10px 14px', borderRadius:8, cursor:'pointer', border:`1.5px solid ${decision===opt.key?opt.color:'var(--color-border)'}`, background:decision===opt.key?`${opt.color}12`:'#fff' }}>
+                  <div style={{ fontWeight:600, color:opt.color, fontSize:13 }}>{opt.label}</div>
+                  <div style={{ fontSize:11, color:'var(--color-text-muted)', marginTop:2 }}>{opt.desc}</div>
+                </div>
+              ))}
+            </antd.Space>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontSize:12, fontWeight:600, marginBottom:6 }}>Approval Notes <span style={{ color:'var(--color-danger)' }}>*</span></div>
+              <antd.Input.TextArea rows={4} placeholder="Provide the rationale for your decision. This appears in the audit log and SA letter." value={notes} onChange={e => setNotes(e.target.value)} />
+            </div>
+            {decision === 'approve' && (
+              <antd.Checkbox style={{ marginBottom:12, fontSize:12 }} checked={dgEscalate} onChange={e => setDgEscalate(e.target.checked)}>
+                Flag for DG MCMC notification (prohibited / high-profile equipment)
+              </antd.Checkbox>
+            )}
+            <antd.Button type="primary" danger={decision === 'reject'} block icon={<SendOutlined />}
+              disabled={!decision || !notes.trim()}
+              onClick={() => { antd.message.success(`Decision "${decision}" recorded for ${app.id}`); setSubmitted(true); }}>
+              Confirm Decision
+            </antd.Button>
+            <div style={{ fontSize:11, color:'var(--color-text-muted)', marginTop:8, textAlign:'center' }}>This decision is final and will be recorded in the audit log.</div>
+          </antd.Card>
+        </antd.Col>
+      </antd.Row>
+    </div>
+  );
+}
+
+// ── Factory: build SA split-pane review-list screen ──────────────────────────
+function buildSAReviewList(roleName, rowFilter, PanelComponent) {
+  return function SAReviewList({ nav, currentUser }) {
+    const myId = currentUser?.id;
+    const saQueue = MOCK.saQueue || [];
+    const rows = React.useMemo(() => saQueue.filter(q => rowFilter(q, myId)), [myId]);
+    const [selectedId, setSelectedId] = React.useState(() => rows[0]?.id || null);
+    const [decided, setDecided] = React.useState({});
+    const selectedApp = rows.find(r => r.id === selectedId);
+
+    return (
+      <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+        {/* LEFT PANE */}
+        <div style={{ width: 340, flexShrink: 0, borderRight: '1px solid var(--color-divider)', display: 'flex', flexDirection: 'column', background: 'var(--color-bg-elevated)' }}>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-divider)', flexShrink: 0 }}>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>{roleName} · SA Queue</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{rows.length} application{rows.length !== 1 ? 's' : ''}</div>
+              <antd.Tag color={Object.keys(decided).length > 0 ? 'green' : 'default'} style={{ margin: 0 }}>{Object.keys(decided).length}/{rows.length} decided</antd.Tag>
+            </div>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {rows.length === 0 ? (
+              <div style={{ padding: 24, textAlign: 'center' }}>
+                <antd.Result status="success" title="Queue clear" subTitle="No SA applications awaiting your review at this time." style={{ padding: '20px 0' }} />
+              </div>
+            ) : (
+              rows.map(row => (
+                <SAReviewListRow key={row.id} row={row}
+                  isSelected={selectedId === row.id} isDecided={!!decided[row.id]}
+                  onSelect={() => setSelectedId(row.id)} />
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT PANE */}
+        <div style={{ flex: 1, overflow: 'auto', background: 'var(--color-bg-base)' }}>
+          {selectedApp ? (
+            <PanelComponent key={selectedId} app={selectedApp} nav={nav} currentUser={currentUser}
+              onDecision={() => {
+                setDecided(prev => ({ ...prev, [selectedId]: true }));
+                const next = rows.find(r => !decided[r.id] && r.id !== selectedId);
+                if (next) setSelectedId(next.id);
+              }} />
+          ) : (
+            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <antd.Result icon={<FileSearchOutlined style={{ color: 'var(--color-text-muted)', fontSize: 48 }} />}
+                title="Select an application to review"
+                subTitle="Click an application in the SA queue list on the left to load its review panel." />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+}
+
+SCREENS['rec-review-list'] = buildSAReviewList(
+  'Recommender (P5/P6)',
+  (q, myId) => q.stage === 'recommendation' && q.assignedRecommender === myId,
+  RecReviewPanel
+);
+
+SCREENS['ver-review-list'] = buildSAReviewList(
+  'Verifier (P7)',
+  (q, myId) => q.stage === 'verification' && q.assignedVerifier === myId,
+  VerReviewPanel
+);
+
+SCREENS['app-review-list'] = buildSAReviewList(
+  'Approver (P8)',
+  (q, myId) => q.stage === 'approval' && q.assignedApprover === myId,
+  AppReviewPanel
+);
+
 </script>
 
 <script type="text/babel">
@@ -13592,10 +14347,8 @@ const NAV_SUPPLIER = [
 ];
 const NAV_TEAM_LEAD = [
   { key: 'tl-dashboard',     label: 'Dashboard',                 icon: <DashboardOutlined /> },
-  { key: 'tl-queue',         label: 'Team Queue',                icon: <FlagOutlined /> },
-  { key: 'officer-review',   label: 'Active Review',             icon: <EyeOutlined /> },
+  { key: 'tl-review-list',   label: 'Review List',               icon: <UnorderedListOutlined /> },
   { key: 'applications',     label: 'All Applications',          icon: <FileSearchOutlined /> },
-  { key: 'modification',     label: 'Modification Review',       icon: <FormOutlined /> },
   { key: 'suppliers-mgmt',   label: 'Suppliers',                 icon: <ShopOutlined /> },
   { key: 'pms',              label: 'Post-Market Surveillance',  icon: <AimOutlined /> },
   { key: 'post-monitoring',  label: 'Post Monitoring',           icon: <AlertOutlined /> },
@@ -13608,38 +14361,33 @@ const NAV_TEAM_LEAD = [
   { key: 'profile',          label: 'Profile & Settings',        icon: <SettingOutlined /> },
 ];
 const NAV_OFFICER = [
-  { key: 'officer-dashboard',label: 'Dashboard',                 icon: <DashboardOutlined /> },
-  { key: 'officer-queue',    label: 'My Queue',                  icon: <FlagOutlined /> },
-  { key: 'officer-review',   label: 'Active Review',             icon: <EyeOutlined /> },
-  { key: 'modification',     label: 'Modification Review',       icon: <FormOutlined /> },
-  { key: 'suppliers-mgmt',   label: 'Suppliers',                 icon: <ShopOutlined /> },
-  { key: 'pms',              label: 'Post-Market Surveillance',  icon: <AimOutlined /> },
-  { key: 'post-monitoring',  label: 'Post Monitoring',           icon: <AlertOutlined /> },
-  { key: 'compliance-status',label: 'Compliance Status',         icon: <SafetyOutlined /> },
-  { key: 'integrations',     label: 'Integrations',              icon: <ApartmentOutlined /> },
-  { key: 'profile',          label: 'Profile & Settings',        icon: <SettingOutlined /> },
+  { key: 'officer-dashboard',  label: 'Dashboard',                 icon: <DashboardOutlined /> },
+  { key: 'officer-review-list',label: 'Review List',               icon: <UnorderedListOutlined /> },
+  { key: 'suppliers-mgmt',     label: 'Suppliers',                 icon: <ShopOutlined /> },
+  { key: 'pms',                label: 'Post-Market Surveillance',  icon: <AimOutlined /> },
+  { key: 'post-monitoring',    label: 'Post Monitoring',           icon: <AlertOutlined /> },
+  { key: 'compliance-status',  label: 'Compliance Status',         icon: <SafetyOutlined /> },
+  { key: 'integrations',       label: 'Integrations',              icon: <ApartmentOutlined /> },
+  { key: 'profile',            label: 'Profile & Settings',        icon: <SettingOutlined /> },
 ];
 const NAV_RECOMMENDER = [
-  { key: 'rec-dashboard', label: 'Dashboard',        icon: <DashboardOutlined /> },
-  { key: 'rec-queue',     label: 'My SA Queue',      icon: <FlagOutlined /> },
-  { key: 'rec-review',    label: 'Active Review',    icon: <EyeOutlined /> },
-  { key: 'sa-letter',     label: 'SA Letter',        icon: <FileTextOutlined /> },
-  { key: 'profile',       label: 'Profile & Settings', icon: <SettingOutlined /> },
+  { key: 'rec-dashboard',    label: 'Dashboard',          icon: <DashboardOutlined /> },
+  { key: 'rec-review-list',  label: 'Review List',        icon: <UnorderedListOutlined /> },
+  { key: 'sa-letter',        label: 'SA Letter',          icon: <FileTextOutlined /> },
+  { key: 'profile',          label: 'Profile & Settings', icon: <SettingOutlined /> },
 ];
 const NAV_VERIFIER = [
-  { key: 'ver-dashboard', label: 'Dashboard',        icon: <DashboardOutlined /> },
-  { key: 'ver-queue',     label: 'My SA Queue',      icon: <FlagOutlined /> },
-  { key: 'ver-review',    label: 'Active Review',    icon: <EyeOutlined /> },
-  { key: 'sa-letter',     label: 'SA Letter',        icon: <FileTextOutlined /> },
-  { key: 'profile',       label: 'Profile & Settings', icon: <SettingOutlined /> },
+  { key: 'ver-dashboard',    label: 'Dashboard',          icon: <DashboardOutlined /> },
+  { key: 'ver-review-list',  label: 'Review List',        icon: <UnorderedListOutlined /> },
+  { key: 'sa-letter',        label: 'SA Letter',          icon: <FileTextOutlined /> },
+  { key: 'profile',          label: 'Profile & Settings', icon: <SettingOutlined /> },
 ];
 const NAV_APPROVER = [
-  { key: 'app-dashboard', label: 'Dashboard',         icon: <DashboardOutlined /> },
-  { key: 'app-queue',     label: 'Approval Queue',    icon: <FlagOutlined /> },
-  { key: 'app-review',    label: 'Active Review',     icon: <EyeOutlined /> },
-  { key: 'sa-letter',     label: 'SA Letter',         icon: <FileTextOutlined /> },
-  { key: 'reports',       label: 'Reports & Analytics', icon: <BarChartOutlined /> },
-  { key: 'profile',       label: 'Profile & Settings',  icon: <SettingOutlined /> },
+  { key: 'app-dashboard',    label: 'Dashboard',            icon: <DashboardOutlined /> },
+  { key: 'app-review-list',  label: 'Review List',          icon: <UnorderedListOutlined /> },
+  { key: 'sa-letter',        label: 'SA Letter',            icon: <FileTextOutlined /> },
+  { key: 'reports',          label: 'Reports & Analytics',  icon: <BarChartOutlined /> },
+  { key: 'profile',          label: 'Profile & Settings',   icon: <SettingOutlined /> },
 ];
 const NAV_CONTENT_MANAGER = [
   { key: 'cm-dashboard',    label: 'Content Dashboard',   icon: <DashboardOutlined /> },
@@ -13820,7 +14568,7 @@ function OfficerQueue({ nav, currentUser }) {
 
         {(
           <antd.Table rowKey="id" dataSource={list} pagination={false} scroll={{ x: 'max-content' }}
-            onRow={() => ({ onClick: () => nav('officer-review'), style: { cursor: 'pointer' } })}
+            onRow={() => ({ onClick: () => nav('officer-review-list'), style: { cursor: 'pointer' } })}
             columns={[
               { title: 'App ID',    dataIndex: 'id',       width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
               { title: 'Scheme',    dataIndex: 'scheme',   width: 130, render: s => <antd.Tag style={{ fontSize: 11 }}>{s === 'SA' ? 'Special Approval' : `Scheme ${s}`}</antd.Tag> },
@@ -13879,8 +14627,8 @@ SCREENS['officer-dashboard'] = function OfficerDashboard({ nav, currentUser }) {
           <antd.Typography.Text type="secondary">{today.toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · CPPG Division · MCMC</antd.Typography.Text>
         </div>
         <antd.Space>
-          <antd.Button icon={<FlagOutlined />} onClick={() => nav('officer-queue')}>My Queue</antd.Button>
-          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('officer-review')}>Start Review</antd.Button>}
+          <antd.Button icon={<UnorderedListOutlined />} onClick={() => nav('officer-review-list')}>Review List</antd.Button>
+          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('officer-review-list')}>Start Review</antd.Button>}
         </antd.Space>
       </div>
 
@@ -13888,7 +14636,7 @@ SCREENS['officer-dashboard'] = function OfficerDashboard({ nav, currentUser }) {
       <antd.Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {kpis.map((k, i) => (
           <antd.Col xs={12} md={6} key={i}>
-            <div className="kpi-card" onClick={() => nav('officer-queue')} style={{ cursor: 'pointer' }}>
+            <div className="kpi-card" onClick={() => nav('officer-review-list')} style={{ cursor: 'pointer' }}>
               <div className="kpi-label">{k.label}</div>
               <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
               <div className="kpi-delta">{k.delta}</div>
@@ -13910,7 +14658,7 @@ SCREENS['officer-dashboard'] = function OfficerDashboard({ nav, currentUser }) {
               return (
                 <antd.Card bordered
                   title={<antd.Space><FlagOutlined style={{ color: 'var(--color-primary)' }} /> My Assigned Applications</antd.Space>}
-                  extra={<antd.Button size="small" onClick={() => nav('officer-queue')}>Full Queue →</antd.Button>}>
+                  extra={<antd.Button size="small" onClick={() => nav('officer-review-list')}>Review List →</antd.Button>}>
                   <antd.Segmented value={taskFilter} onChange={setTaskFilter} size="small" style={{ marginBottom: 12 }} options={[
                     { label: `All (${allQueue.length})`, value: 'all' },
                     { label: `Urgent (${allQueue.filter(q=>q.slaHours<=24).length})`, value: 'urgent' },
@@ -13919,13 +14667,13 @@ SCREENS['officer-dashboard'] = function OfficerDashboard({ nav, currentUser }) {
                     <antd.Result status="success" title="All clear" subTitle="No assigned applications at this time." style={{ padding: '16px 0' }} />
                   ) : (
                     <antd.Table rowKey="id" dataSource={filtered} pagination={{ pageSize: 5, size: 'small', showSizeChanger: false }} size="small"
-                      onRow={() => ({ onClick: () => nav('officer-review'), style: { cursor: 'pointer' } })}
+                      onRow={() => ({ onClick: () => nav('officer-review-list'), style: { cursor: 'pointer' } })}
                       columns={[
                         { title: 'ID', dataIndex: 'id', width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
                         { title: 'Product', dataIndex: 'product', ellipsis: true, render: (v, r) => <div><div style={{ fontWeight: 600, fontSize: 12 }}>{v}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.applicant}</div></div> },
                         { title: 'Scheme', dataIndex: 'scheme', width: 80, render: s => <antd.Tag color={schemeColor[s] || 'blue'} style={{ fontSize: 10, margin: 0 }}>{s === 'SA' ? 'SA' : `Sch ${s}`}</antd.Tag> },
                         { title: 'SLA', dataIndex: 'slaHours', width: 70, render: h => <antd.Tag color={h <= 12 ? 'red' : h <= 24 ? 'orange' : 'default'} style={{ fontSize: 10, margin: 0 }}>{h}h</antd.Tag> },
-                        { title: '', width: 90, render: () => <antd.Button size="small" type="primary" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('officer-review'); }}>Review</antd.Button> },
+                        { title: '', width: 90, render: () => <antd.Button size="small" type="primary" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('officer-review-list'); }}>Review</antd.Button> },
                       ]}
                     />
                   )}
@@ -13955,8 +14703,8 @@ SCREENS['officer-dashboard'] = function OfficerDashboard({ nav, currentUser }) {
             {/* Quick actions */}
             <antd.Card bordered title="Quick Actions" bodyStyle={{ padding: '12px 16px' }}>
               <antd.Space direction="vertical" style={{ width: '100%' }} size={8}>
-                {myQueue.length > 0 && <antd.Button block type="primary" icon={<EyeOutlined />} onClick={() => nav('officer-review')}>Start Next Review ({myQueue.length})</antd.Button>}
-                <antd.Button block icon={<FlagOutlined />} onClick={() => nav('officer-queue')}>My Review Queue</antd.Button>
+                {myQueue.length > 0 && <antd.Button block type="primary" icon={<EyeOutlined />} onClick={() => nav('officer-review-list')}>Start Next Review ({myQueue.length})</antd.Button>}
+                <antd.Button block icon={<FlagOutlined />} onClick={() => nav('officer-review-list')}>My Review Queue</antd.Button>
                 <antd.Button block icon={<SettingOutlined />} onClick={() => nav('profile')}>Profile & Settings</antd.Button>
               </antd.Space>
             </antd.Card>
@@ -13978,6 +14726,79 @@ SCREENS['officer-dashboard'] = function OfficerDashboard({ nav, currentUser }) {
           </antd.Space>
         </antd.Col>
       </antd.Row>
+    </div>
+  );
+};
+
+// ──── OFFICER REVIEW LIST (split-pane inbox for normal officer) ───────────────
+SCREENS['officer-review-list'] = function OfficerReviewList({ nav, tweaks, currentUser }) {
+  const myId = currentUser?.id;
+  const rows = React.useMemo(() => (MOCK.officerQueue || []).filter(r => r.assignedTo === myId), [myId]);
+  const [selectedId, setSelectedId] = React.useState(() => rows[0]?.id || null);
+  const [decided, setDecided] = React.useState({});
+
+  const schemeColor = { A: 'red', B: 'orange', C: 'green', SA: 'purple' };
+  const OfficerReviewPanelFn = window.OfficerReviewPanel;
+
+  return (
+    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+      {/* LEFT PANE — compact queue list */}
+      <div style={{ width: 360, flexShrink: 0, borderRight: '1px solid var(--color-divider)', display: 'flex', flexDirection: 'column', background: 'var(--color-bg-elevated)' }}>
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-divider)', flexShrink: 0 }}>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>My Review Queue</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{rows.length} application{rows.length !== 1 ? 's' : ''}</div>
+            <antd.Tag color={Object.keys(decided).length > 0 ? 'green' : 'default'} style={{ margin: 0 }}>{Object.keys(decided).length}/{rows.length} decided</antd.Tag>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {rows.length === 0 ? (
+            <div style={{ padding: 32, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>Queue is empty — all clear!</div>
+          ) : (
+            rows.map(row => {
+              const isSelected = selectedId === row.id;
+              const isDecided = !!decided[row.id];
+              return (
+                <div key={row.id} onClick={() => setSelectedId(row.id)}
+                  style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--color-divider)', background: isSelected ? 'rgba(11,79,145,0.06)' : '#fff', borderLeft: isSelected ? '3px solid var(--color-primary)' : '3px solid transparent', transition: 'background 0.15s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <antd.Typography.Text code style={{ fontSize: 11 }}>{row.id}</antd.Typography.Text>
+                    <antd.Tag color={schemeColor[row.scheme] || 'blue'} style={{ fontSize: 10, margin: 0 }}>{row.scheme === 'SA' ? 'SA' : `Sch ${row.scheme}`}</antd.Tag>
+                    {isDecided && <antd.Tag color="green" style={{ fontSize: 10, margin: 0 }}>Decided</antd.Tag>}
+                    {row.slaHours <= 12 && !isDecided && <antd.Tag color="red" style={{ fontSize: 10, margin: 0 }}>Urgent</antd.Tag>}
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.product}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.applicant}</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <antd.Tag color={row.priority === 'high' ? 'red' : row.priority === 'low' ? 'default' : 'blue'} style={{ fontSize: 10, margin: 0 }}>{row.priority}</antd.Tag>
+                    <antd.Tag color={row.slaHours < 12 ? 'red' : row.slaHours < 24 ? 'orange' : 'default'} style={{ fontSize: 10, margin: 0 }}>{row.slaHours}h SLA</antd.Tag>
+                    <antd.Tag color={row.aiScore >= 90 ? 'green' : row.aiScore >= 70 ? 'orange' : 'red'} style={{ fontSize: 10, margin: 0 }}>AI {row.aiScore}</antd.Tag>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* RIGHT PANE — review panel for selected row */}
+      <div style={{ flex: 1, overflow: 'auto', background: 'var(--color-bg-base)' }}>
+        {selectedId && OfficerReviewPanelFn ? (
+          <OfficerReviewPanelFn key={selectedId} nav={nav} tweaks={tweaks} currentUser={currentUser} rowId={selectedId}
+            onDecision={(id) => {
+              setDecided(prev => ({ ...prev, [id]: true }));
+              const nextRow = rows.find(r => !decided[r.id] && r.id !== id);
+              if (nextRow) setSelectedId(nextRow.id);
+            }}
+          />
+        ) : (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <antd.Result icon={<FileSearchOutlined style={{ color: 'var(--color-text-muted)', fontSize: 48 }} />}
+              title="Select an application to review"
+              subTitle="Click any application in the queue on the left to load the review panel." />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -14010,7 +14831,7 @@ SCREENS.reports = function Reports({ nav, currentUser }) {
     <antd.Result status="403" icon={<LockOutlined style={{ color: 'var(--color-warning)' }} />}
       title="Restricted — Team Leads only"
       subTitle="Reports & Analytics is available to CPPG Team Leads. Contact your Team Lead for a shared summary."
-      extra={<Button type="primary" onClick={() => nav('officer-queue')}>Back to My Queue</Button>}
+      extra={<Button type="primary" onClick={() => nav('officer-review-list')}>Back to My Queue</Button>}
       style={{ padding: '80px 24px' }} />
   );
 
@@ -14245,7 +15066,7 @@ SCREENS.audit = function AuditLog({ nav, currentUser }) {
     <antd.Result status="403" icon={<LockOutlined style={{ color:'var(--color-warning)' }} />}
       title="Restricted — Team Leads only"
       subTitle="The Audit Log is restricted to CPPG Team Leads for compliance reasons."
-      extra={<Button type="primary" onClick={() => nav('officer-queue')}>Back to My Queue</Button>}
+      extra={<Button type="primary" onClick={() => nav('officer-review-list')}>Back to My Queue</Button>}
       style={{ padding:'80px 24px' }} />
   );
   const [actorFilter, setActorFilter] = React.useState('all');
@@ -14710,7 +15531,7 @@ function GlobalSearchModal({ open, query, setQuery, onClose, onNavigate }) {
   const totalResults = results.reduce((s, g) => s + g.items.length, 0);
 
   const quickLinks = [
-    { label: 'Review Queue',   screen: 'officer-queue',  icon: <FlagOutlined /> },
+    { label: 'Review List',    screen: 'officer-review-list', icon: <UnorderedListOutlined /> },
     { label: 'My Applications', screen: 'applications',  icon: <FileTextOutlined /> },
     { label: 'Certificates',   screen: 'certificates',   icon: <SafetyCertificateOutlined /> },
     { label: 'Notifications',  screen: 'notifications',  icon: <BellOutlined /> },

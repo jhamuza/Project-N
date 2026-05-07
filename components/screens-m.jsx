@@ -61,8 +61,8 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
           <antd.Typography.Text type="secondary">{today.toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · {team} · MCMC</antd.Typography.Text>
         </div>
         <antd.Space wrap>
-          <antd.Button icon={<FlagOutlined />} onClick={() => nav('tl-queue')}>View Team Queue</antd.Button>
-          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('officer-review')}>Start Review</antd.Button>}
+          <antd.Button icon={<FlagOutlined />} onClick={() => nav('tl-review-list')}>View Team Queue</antd.Button>
+          {myQueue.length > 0 && <antd.Button type="primary" icon={<EyeOutlined />} onClick={() => nav('tl-review-list')}>Start Review</antd.Button>}
         </antd.Space>
       </div>
 
@@ -71,7 +71,7 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
         <antd.Alert type="warning" showIcon icon={<ExclamationCircleOutlined />} style={{ marginBottom: 20 }}
           message={`${unassigned.length} application${unassigned.length > 1 ? 's' : ''} awaiting assignment`}
           description="These applications are in the queue but not yet assigned to an officer. Route them to prevent SLA breaches."
-          action={<antd.Button size="small" type="primary" onClick={() => nav('tl-queue')}>Go to Queue →</antd.Button>}
+          action={<antd.Button size="small" type="primary" onClick={() => nav('tl-review-list')}>Go to Queue →</antd.Button>}
         />
       )}
 
@@ -79,7 +79,7 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
       <antd.Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {kpis.map((k, i) => (
           <antd.Col xs={12} md={6} key={i}>
-            <div className="kpi-card" onClick={() => nav('tl-queue')} style={{ cursor: 'pointer' }}>
+            <div className="kpi-card" onClick={() => nav('tl-review-list')} style={{ cursor: 'pointer' }}>
               <div className="kpi-label">{k.label}</div>
               <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
               <div className="kpi-delta">{k.delta}</div>
@@ -102,7 +102,7 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
               return (
                 <antd.Card bordered
                   title={<antd.Space><FlagOutlined style={{ color: 'var(--color-primary)' }} /> Applications</antd.Space>}
-                  extra={<antd.Button size="small" onClick={() => nav('tl-queue')}>Full Queue →</antd.Button>}>
+                  extra={<antd.Button size="small" onClick={() => nav('tl-review-list')}>Full Queue →</antd.Button>}>
                   <antd.Segmented value={taskFilter} onChange={setTaskFilter} size="small" style={{ marginBottom: 12 }} options={[
                     { label: `My assigned (${myQueue.length + modQueue.length})`, value: 'mine' },
                     { label: `Unassigned (${unassigned.length})`, value: 'unassigned' },
@@ -124,7 +124,7 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
                             : <antd.Button className="assign-btn" size="small" type="primary" icon={<TeamOutlined />} style={{ fontSize: 10, padding: '0 6px' }}
                                 onClick={e => { e.stopPropagation(); setAssignTarget(row.id); setAssignOpen(true); }}>Assign</antd.Button>;
                         }},
-                        { title: '', width: 80, render: (_, r) => <antd.Button size="small" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('officer-review'); }}>Review</antd.Button> },
+                        { title: '', width: 80, render: (_, r) => <antd.Button size="small" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('tl-review-list'); }}>Review</antd.Button> },
                       ]}
                     />
                   )}
@@ -154,8 +154,8 @@ SCREENS['tl-dashboard'] = function TLDashboard({ nav, currentUser }) {
             {/* Quick actions */}
             <antd.Card bordered title="Quick Actions" bodyStyle={{ padding: '12px 16px' }}>
               <antd.Space direction="vertical" style={{ width: '100%' }} size={8}>
-                {myQueue.length > 0 && <antd.Button block type="primary" icon={<EyeOutlined />} onClick={() => nav('officer-review')}>Start Review ({myQueue.length})</antd.Button>}
-                <antd.Button block icon={<FlagOutlined />} onClick={() => nav('tl-queue')}>Team Review Queue</antd.Button>
+                {myQueue.length > 0 && <antd.Button block type="primary" icon={<EyeOutlined />} onClick={() => nav('tl-review-list')}>Start Review ({myQueue.length})</antd.Button>}
+                <antd.Button block icon={<FlagOutlined />} onClick={() => nav('tl-review-list')}>Team Review Queue</antd.Button>
                 <antd.Button block icon={<BarChartOutlined />} onClick={() => nav('reports')}>Reports & Analytics</antd.Button>
                 <antd.Button block icon={<AuditOutlined />} onClick={() => nav('audit')}>Audit Log</antd.Button>
                 <antd.Button block icon={<SettingOutlined />} onClick={() => nav('admin-config')}>Configuration</antd.Button>
@@ -389,7 +389,7 @@ SCREENS['tl-queue'] = function TLQueue({ nav, currentUser }) {
           </>
         ) : (
           <antd.Table rowKey="id" dataSource={list} pagination={false} scroll={{ x: 'max-content' }}
-            onRow={row => ({ onClick: e => { if (e.target.closest('.assign-btn')) return; nav('officer-review'); }, style: { cursor: 'pointer' } })}
+            onRow={row => ({ onClick: e => { if (e.target.closest('.assign-btn')) return; nav('tl-review-list'); }, style: { cursor: 'pointer' } })}
             columns={[
               { title: 'App ID',    dataIndex: 'id',       width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{v}</antd.Typography.Text> },
               { title: 'Scheme',    dataIndex: 'scheme',   width: 130, render: s => <antd.Tag style={{ fontSize: 11 }}>{s === 'SA' ? 'Special Approval' : `Scheme ${s}`}</antd.Tag> },
@@ -410,6 +410,153 @@ SCREENS['tl-queue'] = function TLQueue({ nav, currentUser }) {
           />
         )}
       </antd.Card>
+
+      <AssignOfficerModal open={assignOpen} onClose={() => setAssignOpen(false)}
+        applicationId={assignTarget}
+        currentAssigneeId={assignTarget ? (overrides[assignTarget] ?? resolved.find(r => r.id === assignTarget)?.assignedTo) : null}
+        onAssign={officerId => {
+          setOverrides(prev => ({ ...prev, [assignTarget]: officerId }));
+          antd.message.success(`Assigned ${assignTarget} to ${officerById[officerId]?.name}`);
+        }} />
+    </div>
+  );
+};
+
+// ──── TL REVIEW LIST (split-pane inbox for Team Lead) ────────────────────────
+SCREENS['tl-review-list'] = function TLReviewList({ nav, tweaks, currentUser }) {
+  const myId   = currentUser?.id || 'OFF-001';
+  const team   = currentUser?.team || 'CPPG-TL-01';
+  const OfficerReviewPanelFn = window.OfficerReviewPanel;
+
+  const officerPerf = MOCK.officerPerformance || [];
+  const officerById = React.useMemo(() => {
+    const m = {};
+    officerPerf.forEach(o => { m[o.id] = o; });
+    return m;
+  }, [officerPerf]);
+
+  const [overrides, setOverrides] = React.useState({});
+  const resolved = React.useMemo(
+    () => (MOCK.officerQueue || []).map(r => ({ ...r, assignedTo: overrides[r.id] ?? r.assignedTo })),
+    [overrides]
+  );
+
+  const myQueue         = resolved.filter(x => x.assignedTo === myId);
+  const teamQueue       = resolved.filter(x => x.assignedTo != null);
+  const unassigned      = resolved.filter(x => x.assignedTo == null);
+  const modList         = MOCK.modificationQueue || [];
+
+  const [filter, setFilter]       = React.useState('mine');
+  const [selectedId, setSelectedId] = React.useState(() => myQueue[0]?.id || null);
+  const [decided, setDecided]     = React.useState({});
+  const [modDecisions, setModDecisions] = React.useState({});
+  const [assignOpen, setAssignOpen]   = React.useState(false);
+  const [assignTarget, setAssignTarget] = React.useState(null);
+
+  const baseList = filter === 'mine'         ? myQueue
+    : filter === 'team'         ? teamQueue
+    : filter === 'unassigned'   ? unassigned
+    : filter === 'modification' ? modList
+    : resolved;
+
+  const schemeColor = { A: 'red', B: 'orange', C: 'green', SA: 'purple' };
+
+  return (
+    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+      {/* LEFT PANE */}
+      <div style={{ width: 380, flexShrink: 0, borderRight: '1px solid var(--color-divider)', display: 'flex', flexDirection: 'column', background: 'var(--color-bg-elevated)' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--color-divider)', flexShrink: 0 }}>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600, marginBottom: 6 }}>Team Lead · {team}</div>
+          <antd.Segmented size="small" value={filter} onChange={v => { setFilter(v); setSelectedId(null); }} style={{ width: '100%' }} options={[
+            { label: `Mine (${myQueue.length})`,         value: 'mine' },
+            { label: `Team (${teamQueue.length})`,       value: 'team' },
+            { label: `Unassigned (${unassigned.length})`, value: 'unassigned' },
+            { label: `Mods (${modList.length})`,         value: 'modification' },
+          ]} />
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {baseList.length === 0 ? (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>No items in this view</div>
+          ) : (
+            baseList.map(row => {
+              const isSelected = selectedId === row.id;
+              const isDecided  = !!decided[row.id];
+              const effAssigned = overrides[row.id] ?? row.assignedTo;
+              const assignee    = officerById[effAssigned];
+
+              if (filter === 'modification') {
+                const d = modDecisions[row.id];
+                return (
+                  <div key={row.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--color-divider)', background: '#fff' }}>
+                    <antd.Typography.Text code style={{ fontSize: 11 }}>{row.id}</antd.Typography.Text>
+                    <antd.Tag color="blue" style={{ fontSize: 10, margin: '0 0 0 6px' }}>{row.change}</antd.Tag>
+                    <div style={{ fontWeight: 600, fontSize: 13, margin: '4px 0 2px' }}>{row.product}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>{row.applicant}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 8 }}>{row.reason}</div>
+                    {d ? (
+                      <antd.Tag color={d === 'accepted' ? 'green' : 'red'}>{d === 'accepted' ? 'Accepted' : 'Not Accepted'}</antd.Tag>
+                    ) : (
+                      <antd.Space size={6}>
+                        <antd.Button size="small" type="primary" icon={<CheckCircleOutlined />}
+                          onClick={() => { setModDecisions(p => ({ ...p, [row.id]: 'accepted' })); antd.message.success(`Modification ${row.id} accepted`); }}>Accept</antd.Button>
+                        <antd.Button size="small" danger icon={<CloseCircleOutlined />}
+                          onClick={() => { setModDecisions(p => ({ ...p, [row.id]: 'rejected' })); antd.message.warning(`Modification ${row.id} not accepted`); }}>Not Accept</antd.Button>
+                      </antd.Space>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <div key={row.id} onClick={() => setSelectedId(row.id)}
+                  style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--color-divider)', background: isSelected ? 'rgba(11,79,145,0.06)' : '#fff', borderLeft: isSelected ? '3px solid var(--color-primary)' : '3px solid transparent', transition: 'background 0.15s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <antd.Typography.Text code style={{ fontSize: 11 }}>{row.id}</antd.Typography.Text>
+                    <antd.Tag color={schemeColor[row.scheme] || 'blue'} style={{ fontSize: 10, margin: 0 }}>{row.scheme === 'SA' ? 'SA' : `Sch ${row.scheme}`}</antd.Tag>
+                    {isDecided && <antd.Tag color="green" style={{ fontSize: 10, margin: 0 }}>Decided</antd.Tag>}
+                    {row.slaHours <= 12 && !isDecided && <antd.Tag color="red" style={{ fontSize: 10, margin: 0 }}>Urgent</antd.Tag>}
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.product}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.applicant}</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <antd.Tag color={row.priority === 'high' ? 'red' : 'blue'} style={{ fontSize: 10, margin: 0 }}>{row.priority}</antd.Tag>
+                    <antd.Tag color={row.slaHours < 12 ? 'red' : row.slaHours < 24 ? 'orange' : 'default'} style={{ fontSize: 10, margin: 0 }}>{row.slaHours}h SLA</antd.Tag>
+                    {assignee ? (
+                      <antd.Tag color={assignee.role === 'team-lead' ? 'purple' : 'default'} style={{ fontSize: 10, margin: 0 }}>{assignee.name.split(' ').slice(-1)[0]}</antd.Tag>
+                    ) : (
+                      <antd.Button size="small" type="primary"
+                        style={{ fontSize: 10, padding: '0 6px', height: 20, lineHeight: '18px' }}
+                        onClick={e => { e.stopPropagation(); setAssignTarget(row.id); setAssignOpen(true); }}>
+                        Assign…
+                      </antd.Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* RIGHT PANE */}
+      <div style={{ flex: 1, overflow: 'auto', background: 'var(--color-bg-base)' }}>
+        {selectedId && filter !== 'modification' && OfficerReviewPanelFn ? (
+          <OfficerReviewPanelFn key={selectedId} nav={nav} tweaks={tweaks} currentUser={currentUser} rowId={selectedId}
+            onDecision={(id) => {
+              setDecided(prev => ({ ...prev, [id]: true }));
+              const next = baseList.find(r => !decided[r.id] && r.id !== id);
+              if (next) setSelectedId(next.id);
+            }}
+          />
+        ) : (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <antd.Result icon={<FileSearchOutlined style={{ color: 'var(--color-text-muted)', fontSize: 48 }} />}
+              title={filter === 'modification' ? 'Modification decisions inline' : 'Select an application'}
+              subTitle={filter === 'modification' ? 'Accept or Not Accept using the buttons in the list on the left.' : 'Click an application in the queue to load its review panel.'} />
+          </div>
+        )}
+      </div>
 
       <AssignOfficerModal open={assignOpen} onClose={() => setAssignOpen(false)}
         applicationId={assignTarget}
