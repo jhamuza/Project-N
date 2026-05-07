@@ -2641,3 +2641,115 @@ Replaced "Next in Queue" spotlight card with "My Assigned Applications" full tas
 - §5.10b Document repository download → ✅ Done (Sprint 17 #44)
 - §5.10 Suspended supplier block demo → ✅ Done (Sprint 17 #45)
 - §5.14 Officer full task list → ✅ Done (Sprint 17 #46)
+
+---
+
+### 12.7 Sprint 18 Completion Notes (2026-05-07)
+
+**Theme:** Role-dedicated screens — eliminate shared-screen branching  
+**Bundle:** 15,154 lines · 1,010 KB  
+**Rationale:** The prototype used `isLead`, `isApprover`, `role ===` guards within single shared screens (OfficerQueue, OfficerDashboard, officer-review). This made role-specific flows confusing to demo. Sprint 18 separates each officer role into its own screen set with no conditional branching.
+
+---
+
+**Role screen architecture after Sprint 18:**
+
+| Role | Landing | Queue | Review | Notes |
+|---|---|---|---|---|
+| Supplier | `dashboard` | `applications` | `officer-review` (read-only path) | Unchanged |
+| **Team Lead** | `tl-dashboard` | `tl-queue` | `officer-review` | **New dedicated screens** |
+| **Officer** | `officer-dashboard` | `officer-queue` | `officer-review` | Cleaned — TL branching removed |
+| **Recommender** | `rec-dashboard` | `rec-queue` | `rec-review` | **New SA dedicated screens** |
+| **Verifier** | `ver-dashboard` | `ver-queue` | `ver-review` | **New SA dedicated screens** |
+| **Approver** | `app-dashboard` | `app-queue` | `app-review` | **New SA dedicated screens** |
+| Content Manager | `cm-dashboard` | — | — | Unchanged |
+
+---
+
+**New file: `components/screens-m.jsx`** — Team Lead dedicated screens
+
+`SCREENS['tl-dashboard']`:
+- Team-focused KPIs: My Queue · Team Pending · Approvals Today · Team SLA
+- Unassigned-applications banner with "Go to Queue →" CTA (shown only when `unassigned.length > 0`)
+- Applications card with Segmented: "My assigned" / "Unassigned" / "All" — no hardcoded TL check
+- Inline **Assign** button in each unassigned row → opens `AssignOfficerModal`
+- Team Snapshot card: all team members with queue count + SLA %
+- My Performance card (personal metrics)
+- Quick Actions: Start Review, Team Queue, Reports, Audit, Configuration, Profile
+
+`SCREENS['tl-queue']`:
+- Always shows all 5 tabs: My queue / Team queue / Unassigned / Auto-cert / Modifications
+- No `isLead` flag required — this screen is TL-only by nav routing
+- Full advanced filters (Scheme, Priority, AI Score)
+- Modifications tab with Accept / Not Accept inline decision (same as Sprint 17 but TL-only view)
+- `AssignOfficerModal` wired to Unassigned tab rows
+
+**New file: `components/screens-n.jsx`** — SA officer dedicated screens (3 roles × 3 screens = 9 screens)
+
+*Recommender (P5/P6):*
+- `SCREENS['rec-dashboard']`: SA workflow guide timeline, pending recommendation queue, recent decisions
+- `SCREENS['rec-queue']`: KPIs, filtered `MOCK.saQueue` where `stage === 'recommendation'` and `assignedRecommender === myId`
+- `SCREENS['rec-review']`: Application details, AI pre-screening card, SA chain status (`<SAChainStatus />`), decision panel: Recommend / Return for Revision / Do Not Recommend with MOSTI checkbox guard
+
+*Verifier (P7):*
+- `SCREENS['ver-dashboard']`: Verifier role guide, pending queue, recent decisions
+- `SCREENS['ver-queue']`: Filtered `stage === 'verification'` rows, per-role KPIs
+- `SCREENS['ver-review']`: Recommender finding display, decision panel: Verify & Escalate / Refer Back / Reject
+
+*Approver (P8):*
+- `SCREENS['app-dashboard']`: SA pipeline overview (3-column count: at Recommender / Verifier / Awaiting My Decision), pending queue, recent decisions
+- `SCREENS['app-queue']`: Filtered `stage === 'approval'` rows, urgency prominence
+- `SCREENS['app-review']`: Full chain findings display (recommender + verifier notes), Prohibited Equipment alert, DG notification checkbox, decision: Approve / Return to Verifier / Reject
+
+**New mock data: `MOCK.saQueue`** (`data/mock.js`)
+
+5 SA applications with stage-based pipeline tracking:
+```
+SA-0426-00021 — 5G mmWave Test Unit (Maxis)           → stage: recommendation
+SA-0426-00022 — Ericsson 5G NR Radio Unit (Celcom)    → stage: recommendation
+SA-0426-00018 — Frequency Jammer Prototype (TM)       → stage: verification
+SA-0426-00015 — Huawei AAU 5900 (Axiata)              → stage: approval
+SA-0426-00012 — Spirent TestCenter (Digi)             → stage: approval
+```
+
+Each entry carries: `assignedRecommender`, `recommendedBy`, `recommenderNotes`, `assignedVerifier`, `verifiedBy`, `verifierNotes`, `assignedApprover`, `mosteRef`, `needsMosti`, `purpose`, `slaHours`, `priority`
+
+**Shared helpers in `screens-n.jsx`:**
+- `<SAStageTag stage={} />` — colored tag: blue (recommendation) / orange (verification) / red (approval)
+- `<SAChainStatus app={} />` — `antd.Steps` showing 3-step chain with finish/process/wait status per stage
+- `<SAQueueTable nav rows myId myStage />` — shared queue table layout for all 3 SA roles
+
+**Updated NAVs in `index.html`:**
+
+```js
+NAV_TEAM_LEAD: tl-dashboard, tl-queue, officer-review, All Applications, Modification Review, Suppliers, PMS, Post Monitoring, Compliance Status, SA Letter, Integrations, Configuration, Reports, Audit, Profile
+NAV_RECOMMENDER: rec-dashboard, rec-queue, rec-review, SA Letter, Profile
+NAV_VERIFIER:    ver-dashboard, ver-queue, ver-review, SA Letter, Profile
+NAV_APPROVER:    app-dashboard, app-queue, app-review, SA Letter, Reports, Profile
+```
+
+```js
+DEFAULT_SCREEN_BY_ROLE = {
+  supplier: 'dashboard', 'team-lead': 'tl-dashboard', officer: 'officer-dashboard',
+  recommender: 'rec-dashboard', verifier: 'ver-dashboard', approver: 'app-dashboard',
+  'content-manager': 'cm-dashboard',
+}
+```
+
+**Cleaned screens:**
+
+`OfficerQueue` (`index.html`):
+- Removed `isLead` flag entirely
+- `resolved` = `MOCK.officerQueue.filter(r => r.assignedTo === myId)` — officer-only
+- Removed Segmented (auto/modification/team tabs) — plain list view
+- Removed `...(isLead ? [assigned column] : [])` spread
+- Removed `AssignOfficerModal` render
+- KPIs: Assigned to Me · Approved This Week · Avg Turnaround · SLA Compliance (officer-only labels)
+
+`OfficerDashboard` (`index.html`):
+- Removed `isLead`, `isApprover`, `roleLabel`, `roleColor` variables
+- KPIs: officer-only 4-item set
+- Removed Team Snapshot card (`isLead` block)
+- Removed `{(isLead || isApprover) && Reports button}` from Quick Actions
+- Task list: simple 2-filter segmented (All / Urgent) — no Modifications tab
+- Greeting changed to Malay (Selamat pagi/tengah hari/petang)
