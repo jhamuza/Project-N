@@ -351,6 +351,11 @@ window.MOCK = {
     { id: 'APP-0426-00097', scheme: 'C', applicant: 'U Mobile Sdn Bhd', product: 'Xiaomi Redmi Note 14', submitted: '2026-05-04T14:33:00', aiScore: 91, rcn: 'RCN-0526-00510', issuedAt: '2026-05-04T14:35:02', certExpiry: '2027-05-04' },
     { id: 'APP-0426-00098', scheme: 'C', applicant: 'YTL Communications Sdn Bhd', product: 'TP-Link Archer BE9300', submitted: '2026-05-03T11:00:00', aiScore: 93, rcn: 'RCN-0526-00507', issuedAt: '2026-05-03T11:02:15', certExpiry: '2028-05-03' },
   ],
+  // Modification review queue — feeds #41 Officer Queue "Modifications" tab
+  modificationQueue: [
+    { id: 'MOD-0426-00014', rcn: 'RCN-1124-00612', applicant: 'Ericsson (Malaysia) Sdn Bhd', product: 'Ericsson Router 6672', change: 'Minor', reason: 'Update marketing name from "ERC-6672" to "Router 6672 v2"; add new colour variant (Slate Grey)', submitted: '2026-05-02T10:30:00', aiScore: 88, assignedTo: 'OFF-001' },
+    { id: 'MOD-0426-00015', rcn: 'RCN-0823-00084', applicant: 'TP-Link Technologies Sdn Bhd', product: 'TP-Link Archer AX73', change: 'Minor', reason: 'Add new model variant AX5400v2 under same RCN — identical RF parameters, firmware version updated to 1.3.2', submitted: '2026-05-03T14:15:00', aiScore: 82, assignedTo: null },
+  ],
   // Supplier-facing audit trail (no AI/system internals)
   supplierAuditTrail: {
     'APP-0426-00087': [
@@ -396,18 +401,20 @@ window.MOCK = {
     { category: 'Form Completeness',               score:  5, max: 10, note: 'The "Marketing Name" field is blank and the frequency band is missing from the product label photo. Completing these will improve your score.', pass: false },
   ],
   // Document-level findings shown to suppliers during validation step.
-  // Each entry maps to one uploaded document. Findings give specific guidance, not pass/fail verdicts.
+  // Each entry maps to one uploaded document. issuedDate drives the 6-month staleness check (#43).
   documentFindings: [
     {
       docKey: 'reg',
       docLabel: 'Company Registration (SSM)',
       status: 'accepted',
+      issuedDate: '2024-02-15',
       findings: [],
     },
     {
       docKey: 'bro',
       docLabel: 'Technical Brochure / Datasheet',
       status: 'review',
+      issuedDate: '2025-10-20',
       findings: [
         { field: 'Frequency Band', note: 'Secondary sub-band range not specified. Please include the full operating range in the technical brochure (e.g. 2400-2483.5 MHz including all sub-bands).' },
       ],
@@ -416,12 +423,14 @@ window.MOCK = {
       docKey: 'test',
       docLabel: 'Test Report (accredited lab)',
       status: 'accepted',
+      issuedDate: '2026-03-12',
       findings: [],
     },
     {
       docKey: 'photo',
       docLabel: 'Product Photos (front, back, label)',
       status: 'review',
+      issuedDate: '2026-04-01',
       findings: [
         { field: 'Label Photo', note: 'Frequency band is not visible on the label photo. Please ensure the label shows the operating frequency or resubmit a clearer image.' },
       ],
@@ -430,6 +439,7 @@ window.MOCK = {
       docKey: 'decl',
       docLabel: 'Standards Declaration (MCMC MTSFB TC G015:2022)',
       status: 'review',
+      issuedDate: '2025-11-05',
       findings: [
         { field: 'Clause 5.3.2', note: 'This clause is marked as N/A without a written justification. Please add a brief explanation for why this clause does not apply to your product.' },
       ],
@@ -438,6 +448,7 @@ window.MOCK = {
       docKey: 'form',
       docLabel: 'Application Form',
       status: 'review',
+      issuedDate: '2026-04-15',
       findings: [
         { field: 'Marketing Name', note: 'Field is blank. This is not mandatory but leaving it blank may delay the product being added to the label registry after approval.' },
       ],
@@ -514,9 +525,25 @@ window.MOCK = {
   ],
   // Certificates
   certificates: [
-    { rcn: 'RCN-0326-00449', app: 'APP-0426-00085', scheme: 'C', product: 'Mi Band 9 Pro', brand: 'Xiaomi', model: 'M2320B1', issued: '2026-04-10', expires: '2029-04-09', status: 'active', labelType: 'e-label' },
-    { rcn: 'RCN-0326-00442', app: 'APP-0426-00079', scheme: 'A', product: 'OPPO Find X7 Ultra', brand: 'OPPO', model: 'CPH2583', issued: '2026-04-05', expires: '2029-04-04', status: 'active', labelType: 'physical' },
-    { rcn: 'RCN-0125-00198', app: 'APP-0125-00198', scheme: 'A', product: 'Samsung Galaxy S23', brand: 'Samsung', model: 'SM-S911B', issued: '2025-01-18', expires: '2026-06-12', status: 'expiring', labelType: 'physical' },
+    { rcn: 'RCN-0326-00449', app: 'APP-0426-00085', scheme: 'C', product: 'Mi Band 9 Pro', brand: 'Xiaomi', model: 'M2320B1', issued: '2026-04-10', expires: '2029-04-09', status: 'active', labelType: 'e-label',
+      versions: [
+        { ver: '1.0', changedAt: '2026-04-10', changedBy: 'Nurul Aisyah binti Ahmad', event: 'Initial certificate issued', changes: [] },
+      ],
+    },
+    { rcn: 'RCN-0326-00442', app: 'APP-0426-00079', scheme: 'A', product: 'OPPO Find X7 Ultra', brand: 'OPPO', model: 'CPH2583', issued: '2026-04-05', expires: '2029-04-04', status: 'active', labelType: 'physical',
+      versions: [
+        { ver: '1.0', changedAt: '2026-04-05', changedBy: 'Kamarul Ariffin bin Osman', event: 'Initial certificate issued', changes: [] },
+        { ver: '1.1', changedAt: '2026-05-02', changedBy: 'Nurul Aisyah binti Ahmad', event: 'Minor modification approved by En. Faisal Rahman (MOD-0426-00012)', changes: [
+          { field: 'Marketing Name', from: 'OPPO Find X7 Ultra', to: 'OPPO Find X7 Ultra 5G' },
+          { field: 'Model Number', from: 'CPH2583', to: 'CPH2583 / CPH2583L' },
+        ]},
+      ],
+    },
+    { rcn: 'RCN-0125-00198', app: 'APP-0125-00198', scheme: 'A', product: 'Samsung Galaxy S23', brand: 'Samsung', model: 'SM-S911B', issued: '2025-01-18', expires: '2026-06-12', status: 'expiring', labelType: 'physical',
+      versions: [
+        { ver: '1.0', changedAt: '2025-01-18', changedBy: 'Nurul Aisyah binti Ahmad', event: 'Initial certificate issued', changes: [] },
+      ],
+    },
     { rcn: 'RCN-1124-00612', app: 'APP-1124-00612', scheme: 'B', product: 'Ericsson Router 6672', brand: 'Ericsson', model: 'KRY-901-6672', issued: '2024-11-02', expires: '2026-05-28', status: 'expiring', labelType: 'physical' },
     { rcn: 'RCN-0823-00084', app: 'APP-0823-00084', scheme: 'C', product: 'TP-Link Archer AX73', brand: 'TP-Link', model: 'AX5400', issued: '2023-08-14', expires: '2026-08-13', status: 'active', labelType: 'e-label' },
     { rcn: 'RCN-0722-00021', app: 'APP-0722-00021', scheme: 'A', product: 'Huawei P50 Pocket', brand: 'Huawei', model: 'BAL-L49', issued: '2022-07-05', expires: '2025-07-04', status: 'expired', labelType: 'physical' },
@@ -944,6 +971,8 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks, lang: _lang }) {
   const lang = _lang || 'en';
   const T = (k) => window.t(lang, k);
   const graceMode = tweaks?.graceMode;
+  const suspendedMode = tweaks?.suspendedMode;
+  const [suspendedModal, setSuspendedModal] = React.useState(false);
   const GRACE_EXPIRY = new Date('2026-07-05');
   const k = MOCK.kpi.supplier;
   const recent = MOCK.assessments.slice(0, 5);
@@ -960,7 +989,19 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks, lang: _lang }) {
 
   return (
     <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
-      {graceMode && (
+      {suspendedMode && (
+        <antd.Alert
+          type="error"
+          showIcon
+          style={{ marginBottom: 20 }}
+          message={<strong>{lang === 'bm' ? 'Akaun digantung' : 'Account Suspended'}</strong>}
+          description={lang === 'bm'
+            ? 'Akaun anda telah digantung oleh MCMC. Permohonan baharu, pembaharuan, dan pendaftaran IMEI disekat. Hubungi MCMC untuk maklumat lanjut.'
+            : 'Your account has been suspended by MCMC. New applications, renewals, and IMEI registrations are blocked. Contact MCMC to resolve this issue.'}
+          action={<antd.Button size="small" danger href="mailto:cppg@mcmc.gov.my">Contact MCMC</antd.Button>}
+        />
+      )}
+      {!suspendedMode && graceMode && (
         <antd.Alert
           type="error"
           showIcon
@@ -1034,17 +1075,31 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks, lang: _lang }) {
         <Col xs={24} lg={8}>
           <Card title={T('dash_quick_actions')} bordered style={{ marginBottom: 16 }}>
             <Space direction="vertical" style={{ width: '100%' }} size={8}>
-              <antd.Tooltip title={graceMode ? (lang === 'bm' ? 'Pembaharuan akaun diperlukan' : 'Account renewal required') : ''}>
-                <Button block type="primary" size="large" disabled={!!graceMode} onClick={() => nav('sdoc-wizard')}>{T('dash_new_sdoc')}</Button>
+              <antd.Tooltip title={suspendedMode ? 'Account suspended — contact MCMC' : graceMode ? (lang === 'bm' ? 'Pembaharuan akaun diperlukan' : 'Account renewal required') : ''}>
+                <Button block type="primary" size="large" disabled={!!graceMode || !!suspendedMode}
+                  onClick={() => suspendedMode ? setSuspendedModal(true) : nav('sdoc-wizard')}>{T('dash_new_sdoc')}</Button>
               </antd.Tooltip>
-              <antd.Tooltip title={graceMode ? (lang === 'bm' ? 'Pembaharuan akaun diperlukan' : 'Account renewal required') : ''}>
-                <Button block size="large" disabled={!!graceMode} onClick={() => nav('special-approval')}>{T('dash_new_sa')}</Button>
+              <antd.Tooltip title={suspendedMode ? 'Account suspended — contact MCMC' : graceMode ? (lang === 'bm' ? 'Pembaharuan akaun diperlukan' : 'Account renewal required') : ''}>
+                <Button block size="large" disabled={!!graceMode || !!suspendedMode}
+                  onClick={() => suspendedMode ? setSuspendedModal(true) : nav('special-approval')}>{T('dash_new_sa')}</Button>
               </antd.Tooltip>
-              <Button block size="large" onClick={() => nav('imei-register')}>{lang === 'bm' ? '+ Daftar IMEI / S/N' : '+ Register IMEI / SN'}</Button>
+              <antd.Tooltip title={suspendedMode ? 'Account suspended — contact MCMC' : ''}>
+                <Button block size="large" disabled={!!suspendedMode}
+                  onClick={() => suspendedMode ? setSuspendedModal(true) : nav('imei-register')}>{lang === 'bm' ? '+ Daftar IMEI / S/N' : '+ Register IMEI / SN'}</Button>
+              </antd.Tooltip>
               <Button block size="large" onClick={() => nav('cert-renewal')}>{T('dash_new_renewal')}</Button>
               <Button block size="large" onClick={() => nav('account-renewal')}>{T('dash_new_account_renewal')}</Button>
             </Space>
           </Card>
+          <antd.Modal open={suspendedModal} onCancel={() => setSuspendedModal(false)} footer={[
+            <antd.Button key="contact" type="primary" danger href="mailto:cppg@mcmc.gov.my">Contact MCMC (cppg@mcmc.gov.my)</antd.Button>,
+            <antd.Button key="ok" onClick={() => setSuspendedModal(false)}>Close</antd.Button>,
+          ]} title={<antd.Space><antd.Tag color="red">Account Suspended</antd.Tag></antd.Space>}>
+            <antd.Result status="error" style={{ padding: '12px 0' }}
+              title="New applications are blocked"
+              subTitle={<span>Your account has been <strong>suspended by MCMC</strong> under §5.10.2 of the NCEF framework. You cannot submit new SDoC applications, Special Approvals, or register IMEI / Serial Numbers until the suspension is lifted.<br /><br />Certificate renewals and account information remain accessible.<br /><br />Reference your <strong>Account ID: {MOCK.currentUser?.supplierId || 'SUP-0426-00142'}</strong> when contacting MCMC.</span>}
+            />
+          </antd.Modal>
           {/* Certificate Health widget */}
           <Card bordered bodyStyle={{ padding: '14px 16px' }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 12 }}>{lang === 'bm' ? 'Kesihatan Sijil' : 'Certificate Health'}</div>
@@ -3083,12 +3138,15 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
   };
 
   const DocFindingsPanel = () => {
+    const TODAY = new Date('2026-05-07');
+    const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
     const findings = MOCK.documentFindings || [];
     const reviewCount = findings.filter(d => d.status === 'review').length;
     const acceptedCount = findings.filter(d => d.status === 'accepted').length;
+    const staleCount = findings.filter(d => d.issuedDate && (TODAY - new Date(d.issuedDate)) > SIX_MONTHS_MS).length;
     return (
       <div>
-        <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
           <div style={{ padding: '10px 20px', background: 'var(--color-success-bg)', borderRadius: 8, textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-success)' }}>{acceptedCount}</div>
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Accepted</div>
@@ -3099,36 +3157,67 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
               <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Items to review</div>
             </div>
           )}
-        </div>
-        <div style={{ display: 'grid', gap: 10 }}>
-          {findings.map((doc, i) => (
-            <div key={i} style={{ padding: '12px 16px', border: `1px solid ${doc.findings.length > 0 ? 'var(--color-warning)' : 'var(--color-border)'}`, borderRadius: 10, background: doc.findings.length > 0 ? 'var(--color-warning-bg)' : 'var(--color-bg-subtle)' }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <span style={{ fontSize: 16 }}>{doc.status === 'accepted' ? '✅' : '📋'}</span>
-                <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>{doc.docLabel}</span>
-                <Tag color={doc.status === 'accepted' ? 'green' : 'orange'} style={{ margin: 0 }}>
-                  {doc.status === 'accepted' ? 'Accepted' : 'Please review'}
-                </Tag>
-              </div>
-              {doc.findings.length > 0 && (
-                <div style={{ marginTop: 10, paddingLeft: 26, display: 'grid', gap: 6 }}>
-                  {doc.findings.map((f, j) => (
-                    <div key={j} style={{ fontSize: 12 }}>
-                      <span style={{ fontWeight: 600, color: 'var(--color-warning)' }}>{f.field}:</span>{' '}
-                      <span style={{ color: 'var(--color-text-secondary)' }}>{f.note}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+          {staleCount > 0 && (
+            <div style={{ padding: '10px 20px', background: '#FFF3E0', borderRadius: 8, textAlign: 'center' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#E65100' }}>{staleCount}</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Stale (&gt;6 months)</div>
             </div>
-          ))}
+          )}
         </div>
-        {reviewCount > 0 && (
+        {staleCount > 0 && (
+          <Alert type="warning" showIcon style={{ marginBottom: 12 }}
+            message={`${staleCount} document${staleCount > 1 ? 's are' : ' is'} older than 6 months`}
+            description="URS §5.2.1 requires all supporting documents to be dated within the last 6 months of submission. Please resubmit updated versions to avoid delays." />
+        )}
+        <div style={{ display: 'grid', gap: 10 }}>
+          {findings.map((doc, i) => {
+            const issuedMs = doc.issuedDate ? TODAY - new Date(doc.issuedDate) : 0;
+            const isStale  = doc.issuedDate && issuedMs > SIX_MONTHS_MS;
+            const daysOld  = doc.issuedDate ? Math.floor(issuedMs / 864e5) : null;
+            const validUntil = doc.issuedDate ? new Date(new Date(doc.issuedDate).getTime() + SIX_MONTHS_MS) : null;
+            const borderColor = isStale ? '#E65100' : doc.findings.length > 0 ? 'var(--color-warning)' : 'var(--color-border)';
+            const bg = isStale ? '#FFF3E0' : doc.findings.length > 0 ? 'var(--color-warning-bg)' : 'var(--color-bg-subtle)';
+            return (
+              <div key={i} style={{ padding: '12px 16px', border: `1px solid ${borderColor}`, borderRadius: 10, background: bg }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <span style={{ fontSize: 16 }}>{isStale ? '⚠️' : doc.status === 'accepted' ? '✅' : '📋'}</span>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontWeight: 600, fontSize: 13 }}>{doc.docLabel}</span>
+                    {doc.issuedDate && (
+                      <div style={{ fontSize: 11, color: isStale ? '#E65100' : 'var(--color-text-muted)', marginTop: 2 }}>
+                        Issued: {new Date(doc.issuedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {' · '}
+                        {isStale
+                          ? `⚠ ${daysOld} days old — exceeds 6-month limit`
+                          : `Valid until ${validUntil.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                        }
+                      </div>
+                    )}
+                  </div>
+                  <Tag color={isStale ? 'warning' : doc.status === 'accepted' ? 'green' : 'orange'} style={{ margin: 0 }}>
+                    {isStale ? 'Stale' : doc.status === 'accepted' ? 'Accepted' : 'Please review'}
+                  </Tag>
+                </div>
+                {doc.findings.length > 0 && (
+                  <div style={{ marginTop: 10, paddingLeft: 26, display: 'grid', gap: 6 }}>
+                    {doc.findings.map((f, j) => (
+                      <div key={j} style={{ fontSize: 12 }}>
+                        <span style={{ fontWeight: 600, color: 'var(--color-warning)' }}>{f.field}:</span>{' '}
+                        <span style={{ color: 'var(--color-text-secondary)' }}>{f.note}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {(reviewCount > 0 || staleCount > 0) && (
           <Alert type="info" showIcon style={{ marginTop: 16 }}
             message="Items above are guidance, not blockers"
             description="You can proceed to submit. Addressing these items before submission will reduce the chance of an officer requesting changes later." />
         )}
-        {reviewCount === 0 && (
+        {reviewCount === 0 && staleCount === 0 && (
           <Alert type="success" showIcon style={{ marginTop: 16 }}
             message="All documents look good"
             description="No issues were identified. You can proceed to the review step." />
@@ -5137,6 +5226,41 @@ function CertificateDetail({ cert, nav }) {
           <div style={{ marginTop: 12 }}>
             <antd.Button type="primary" block icon={<ReloadOutlined />} onClick={() => nav && nav('cert-renewal')}>Start Renewal</antd.Button>
           </div>
+        </>
+      )}
+
+      {/* Version History — shown when cert has versions array */}
+      {cert.versions && cert.versions.length > 0 && (
+        <>
+          <antd.Divider orientation="left" orientationMargin={0} style={{ fontSize: 13 }}>Version History</antd.Divider>
+          <antd.Timeline
+            items={[...cert.versions].reverse().map((v, i) => ({
+              color: i === 0 ? 'green' : 'blue',
+              dot: i === 0 ? <SafetyCertificateOutlined style={{ fontSize: 14 }} /> : <HistoryOutlined style={{ fontSize: 12 }} />,
+              children: (
+                <div style={{ paddingBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <antd.Tag color={i === 0 ? 'green' : 'blue'} style={{ fontSize: 11, fontWeight: 700, margin: 0 }}>v{v.ver}</antd.Tag>
+                    <span style={{ fontSize: 12, fontWeight: 600 }}>{v.event}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>
+                    {new Date(v.changedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} · {v.changedBy}
+                  </div>
+                  {v.changes && v.changes.length > 0 && (
+                    <div style={{ background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '8px 10px' }}>
+                      {v.changes.map((c, j) => (
+                        <div key={j} style={{ fontSize: 12, marginBottom: j < v.changes.length - 1 ? 6 : 0 }}>
+                          <span style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>{c.field}: </span>
+                          <span style={{ color: 'var(--color-danger)', textDecoration: 'line-through', marginRight: 6 }}>{c.from}</span>
+                          <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>→ {c.to}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ),
+            }))}
+          />
         </>
       )}
     </div>
@@ -11457,10 +11581,43 @@ SCREENS['public-portal'] = function PublicPortal({ nav, lang: _lang }) {
     const cats = ['All', ...new Set(MOCK.publicDocs.map(d => d.cat))];
     const docs = MOCK.publicDocs.filter(d => docCat === 'All' || d.cat === docCat);
     const iconColor = { pdf: 'var(--color-danger)', docx: 'var(--color-info)' };
+
+    function downloadDoc(d) {
+      const lines = [
+        '══════════════════════════════════════════════════════════════════',
+        `  MCMC / NCEF — ${d.cat.toUpperCase()}`,
+        '══════════════════════════════════════════════════════════════════',
+        '',
+        `  Title    : ${d.title}`,
+        `  Category : ${d.cat}`,
+        `  Language : ${d.lang}`,
+        `  Updated  : ${d.date}`,
+        `  Size     : ${d.size}`,
+        '',
+        '  [This is a placeholder document for prototype demonstration.]',
+        '  In the production system, this button downloads the actual',
+        `  ${d.type.toUpperCase()} file from the MCMC document repository.`,
+        '',
+        '  Source: ncef.mcmc.gov.my/public/resources',
+        '──────────────────────────────────────────────────────────────────',
+        '  © Malaysian Communications and Multimedia Commission (MCMC)',
+        '  MCMC Tower 1, Jalan Impact, Cyber 6, 63000 Cyberjaya, Selangor',
+      ].join('\n');
+      const blob = new Blob([lines], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `NCEF-${d.id}-${d.title.replace(/[^a-zA-Z0-9]/g, '-').substring(0, 40)}.txt`;
+      a.click();
+      antd.message.success(`Downloaded: ${d.title}`);
+    }
+
     return (
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-          <antd.Typography.Title level={4} style={{ margin: 0 }}>Document Repository</antd.Typography.Title>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
+          <div>
+            <antd.Typography.Title level={4} style={{ margin: 0 }}>Document Repository</antd.Typography.Title>
+            <antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>Guidelines, standards, fee schedules, forms and circulars — URS §5.10b.2</antd.Typography.Text>
+          </div>
           <antd.Segmented value={docCat} onChange={setDocCat} options={cats} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -11469,7 +11626,7 @@ SCREENS['public-portal'] = function PublicPortal({ nav, lang: _lang }) {
               onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
               onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--color-border)'}>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 6, background: `${iconColor[d.type]}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: iconColor[d.type], fontSize: 18, flexShrink: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 6, background: `${iconColor[d.type] || 'var(--color-primary)'}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: iconColor[d.type] || 'var(--color-primary)', fontSize: 18, flexShrink: 0 }}>
                   <FilePdfOutlined />
                 </div>
                 <div>
@@ -11480,7 +11637,7 @@ SCREENS['public-portal'] = function PublicPortal({ nav, lang: _lang }) {
                   </div>
                 </div>
               </div>
-              <antd.Button size="small" icon={<DownloadOutlined />}>Download</antd.Button>
+              <antd.Button size="small" icon={<DownloadOutlined />} onClick={() => downloadDoc(d)}>Download</antd.Button>
             </div>
           ))}
         </div>
@@ -12120,6 +12277,7 @@ SCREENS['forgot-password'] = function ForgotPassword({ nav, onBack }) {
 };
 
 </script>
+
 <script type="text/babel">
 const { Layout, Menu, Button, Avatar, Dropdown, Badge, Space, Input, ConfigProvider, Drawer } = antd;
 const { Header, Sider, Content } = Layout;
@@ -12303,6 +12461,9 @@ function OfficerQueue({ nav, currentUser }) {
   const [showAdv,   setShowAdv]   = React.useState(false);
 
   const autoCertList = MOCK.autoCertified || [];
+  const modList = MOCK.modificationQueue || [];
+  const modCount = modList.length;
+  const [modDecisions, setModDecisions] = React.useState({});
   const baseList = React.useMemo(() => {
     if (!isLead) return resolved.filter(x => x.assignedTo === myId);
     if (filter === 'mine')       return resolved.filter(x => x.assignedTo === myId);
@@ -12362,6 +12523,7 @@ function OfficerQueue({ nav, currentUser }) {
               { label: `Team queue (${teamAssigned})`, value: 'team' },
               { label: `Unassigned (${unassignedCount})`, value: 'unassigned' },
               { label: <antd.Space size={4}><RobotOutlined />{`Auto-certified (${autoCertList.length})`}</antd.Space>, value: 'auto' },
+              { label: <antd.Space size={4}><FormOutlined />{`Modifications (${modCount})`}</antd.Space>, value: 'modification' },
             ]} />
           ) : (
             <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
@@ -12437,6 +12599,40 @@ function OfficerQueue({ nav, currentUser }) {
                 { title: 'Issued At', dataIndex: 'issuedAt',  width: 160, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</span> },
                 { title: 'Valid Until', dataIndex: 'certExpiry', width: 120, render: v => new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) },
                 { title: 'Status', width: 140, render: () => <antd.Tag color="green" icon={<RobotOutlined />}>Auto-certified</antd.Tag> },
+              ]}
+            />
+          </>
+        ) : filter === 'modification' ? (
+          <>
+            <antd.Alert type="info" showIcon icon={<FormOutlined />} style={{ marginBottom: 12 }}
+              message="Modification requests (Minor / Others)"
+              description="Suppliers have submitted modification requests to update existing certificates. Review the proposed change and issue an Accept or Not Accept decision. (URS §5.6.3)" />
+            <antd.Table rowKey="id" dataSource={modList} pagination={false} scroll={{ x: 'max-content' }}
+              columns={[
+                { title: 'Mod ID',    dataIndex: 'id',       width: 150, render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
+                { title: 'RCN',       dataIndex: 'rcn',      width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
+                { title: 'Applicant', dataIndex: 'applicant', width: 200 },
+                { title: 'Product',   dataIndex: 'product',  width: 200 },
+                { title: 'Type',      dataIndex: 'change',   width: 80,  render: v => <antd.Tag color="blue">{v}</antd.Tag> },
+                { title: 'Proposed Change', dataIndex: 'reason', width: 300, render: v => <span style={{ fontSize: 12 }}>{v}</span> },
+                { title: 'AI Score',  dataIndex: 'aiScore',  width: 90,  render: s => <antd.Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{s}</antd.Tag> },
+                { title: 'Submitted', dataIndex: 'submitted', width: 130, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span> },
+                { title: 'Decision',  width: 220, render: (_, row) => {
+                  const d = modDecisions[row.id];
+                  if (d) return <antd.Tag color={d === 'accepted' ? 'green' : 'red'} icon={d === 'accepted' ? <CheckCircleOutlined /> : <CloseCircleOutlined />} style={{ fontWeight: 600, fontSize: 12 }}>{d === 'accepted' ? 'Accepted' : 'Not Accepted'}</antd.Tag>;
+                  return (
+                    <antd.Space size={6}>
+                      <antd.Button size="small" type="primary" icon={<CheckCircleOutlined />}
+                        onClick={() => { setModDecisions(p => ({ ...p, [row.id]: 'accepted' })); antd.message.success(`Modification ${row.id} accepted — certificate updated`); }}>
+                        Accept
+                      </antd.Button>
+                      <antd.Button size="small" danger icon={<CloseCircleOutlined />}
+                        onClick={() => { setModDecisions(p => ({ ...p, [row.id]: 'rejected' })); antd.message.warning(`Modification ${row.id} returned — applicant notified`); }}>
+                        Not Accept
+                      </antd.Button>
+                    </antd.Space>
+                  );
+                }},
               ]}
             />
           </>
@@ -12560,26 +12756,45 @@ SCREENS['officer-dashboard'] = function OfficerDashboard({ nav, currentUser }) {
         {/* Left column */}
         <antd.Col xs={24} lg={isLead ? 16 : 14}>
           <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
-            {/* Next in queue spotlight */}
-            <antd.Card bordered title={<antd.Space><FlagOutlined style={{ color: 'var(--color-primary)' }} /> Next in Queue</antd.Space>}
-              extra={<antd.Button size="small" onClick={() => nav('officer-queue')}>View all</antd.Button>}>
-              {nextReview ? (
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{nextReview.product}</div>
-                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 8 }}>{nextReview.applicant} · <span style={{ fontFamily: 'var(--font-mono)' }}>{nextReview.id}</span></div>
-                    <antd.Space size={6} wrap>
-                      <antd.Tag color={nextSchemeColor[nextReview.scheme] || 'default'}>{nextReview.scheme === 'SA' ? 'Special Approval' : `Scheme ${nextReview.scheme}`}</antd.Tag>
-                      <antd.Tag color={nextReview.aiScore >= 90 ? 'green' : nextReview.aiScore >= 70 ? 'orange' : 'red'}>AI {nextReview.aiScore}</antd.Tag>
-                      <antd.Tag color={nextReview.slaHours <= 12 ? 'red' : nextReview.slaHours <= 24 ? 'orange' : 'default'}>{nextReview.slaHours}h SLA</antd.Tag>
-                    </antd.Space>
-                  </div>
-                  <antd.Button type="primary" size="large" icon={<EyeOutlined />} onClick={() => nav('officer-review')}>Open Review</antd.Button>
-                </div>
-              ) : (
-                <antd.Result status="success" title="Queue is clear" subTitle="No applications pending review. Check back later." extra={<antd.Button onClick={() => nav('officer-queue')}>Refresh Queue</antd.Button>} style={{ padding: '20px 0' }} />
-              )}
-            </antd.Card>
+            {/* My Assigned Applications — full task list */}
+            {(() => {
+              const [taskFilter, setTaskFilter] = React.useState('all');
+              const allQueue = isLead
+                ? (MOCK.officerQueue || []).filter(q => q.assignedTo === myId)
+                : (MOCK.officerQueue || []).filter(q => q.assignedTo === myId);
+              const modQueue = isLead ? (MOCK.modificationQueue || []).filter(q => q.assignedTo === myId) : [];
+              const filtered = taskFilter === 'all' ? [...allQueue, ...modQueue]
+                : taskFilter === 'urgent' ? allQueue.filter(q => q.slaHours <= 24)
+                : taskFilter === 'modification' ? modQueue
+                : allQueue;
+              const schemeColor = { A: 'red', B: 'orange', C: 'green', SA: 'purple' };
+              return (
+                <antd.Card bordered
+                  title={<antd.Space><FlagOutlined style={{ color: 'var(--color-primary)' }} /> My Assigned Applications</antd.Space>}
+                  extra={<antd.Button size="small" onClick={() => nav('officer-queue')}>Full Queue →</antd.Button>}>
+                  <antd.Segmented value={taskFilter} onChange={setTaskFilter} size="small" style={{ marginBottom: 12 }} options={[
+                    { label: `All (${allQueue.length + modQueue.length})`, value: 'all' },
+                    { label: `Urgent (${allQueue.filter(q=>q.slaHours<=24).length})`, value: 'urgent' },
+                    { label: 'SDoC / SA', value: 'sdoc' },
+                    ...(modQueue.length > 0 ? [{ label: `Modifications (${modQueue.length})`, value: 'modification' }] : []),
+                  ]} />
+                  {filtered.length === 0 ? (
+                    <antd.Result status="success" title="All clear" subTitle="No assigned applications at this time." style={{ padding: '16px 0' }} />
+                  ) : (
+                    <antd.Table rowKey="id" dataSource={filtered} pagination={{ pageSize: 5, size: 'small', showSizeChanger: false }} size="small"
+                      onRow={() => ({ onClick: () => nav('officer-review'), style: { cursor: 'pointer' } })}
+                      columns={[
+                        { title: 'ID', dataIndex: 'id', width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
+                        { title: 'Product', dataIndex: 'product', ellipsis: true, render: (v, r) => <div><div style={{ fontWeight: 600, fontSize: 12 }}>{v}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.applicant}</div></div> },
+                        { title: 'Scheme', dataIndex: 'scheme', width: 80, render: s => s ? <antd.Tag color={schemeColor[s] || 'blue'} style={{ fontSize: 10, margin: 0 }}>{s === 'SA' ? 'SA' : `Sch ${s}`}</antd.Tag> : <antd.Tag color="blue" style={{ fontSize: 10, margin: 0 }}>MOD</antd.Tag> },
+                        { title: 'SLA', dataIndex: 'slaHours', width: 70, render: h => h ? <antd.Tag color={h <= 12 ? 'red' : h <= 24 ? 'orange' : 'default'} style={{ fontSize: 10, margin: 0 }}>{h}h</antd.Tag> : <antd.Tag style={{ fontSize: 10, margin: 0 }}>—</antd.Tag> },
+                        { title: '', width: 90, render: (_, r) => <antd.Button size="small" type="primary" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('officer-review'); }}>Review</antd.Button> },
+                      ]}
+                    />
+                  )}
+                </antd.Card>
+              );
+            })()}
 
             {/* Recent decisions */}
             <antd.Card bordered title={<antd.Space><HistoryOutlined style={{ color: 'var(--color-text-muted)' }} /> My Recent Decisions</antd.Space>}>
@@ -13785,6 +14000,9 @@ function App() {
               {tweaks.role === 'supplier' && (
                 <div><antd.Checkbox checked={tweaks.graceMode} onChange={e => updateTweak('graceMode',e.target.checked)}>Supplier grace period (§5.1.10)</antd.Checkbox></div>
               )}
+              {tweaks.role === 'supplier' && (
+                <div><antd.Checkbox checked={tweaks.suspendedMode} onChange={e => updateTweak('suspendedMode',e.target.checked)}>Supplier suspended (§5.10.2)</antd.Checkbox></div>
+              )}
             </div>
           </div>
         )}
@@ -13819,8 +14037,5 @@ if (document.readyState === 'loading') {
 }
 window.addEventListener('load', () => { if (renderAttempts === 0) renderApp(); });
 </script>
-</body>
-</html>
-
 </body>
 </html>

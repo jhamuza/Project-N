@@ -149,6 +149,11 @@ window.MOCK = {
     { id: 'APP-0426-00097', scheme: 'C', applicant: 'U Mobile Sdn Bhd', product: 'Xiaomi Redmi Note 14', submitted: '2026-05-04T14:33:00', aiScore: 91, rcn: 'RCN-0526-00510', issuedAt: '2026-05-04T14:35:02', certExpiry: '2027-05-04' },
     { id: 'APP-0426-00098', scheme: 'C', applicant: 'YTL Communications Sdn Bhd', product: 'TP-Link Archer BE9300', submitted: '2026-05-03T11:00:00', aiScore: 93, rcn: 'RCN-0526-00507', issuedAt: '2026-05-03T11:02:15', certExpiry: '2028-05-03' },
   ],
+  // Modification review queue — feeds #41 Officer Queue "Modifications" tab
+  modificationQueue: [
+    { id: 'MOD-0426-00014', rcn: 'RCN-1124-00612', applicant: 'Ericsson (Malaysia) Sdn Bhd', product: 'Ericsson Router 6672', change: 'Minor', reason: 'Update marketing name from "ERC-6672" to "Router 6672 v2"; add new colour variant (Slate Grey)', submitted: '2026-05-02T10:30:00', aiScore: 88, assignedTo: 'OFF-001' },
+    { id: 'MOD-0426-00015', rcn: 'RCN-0823-00084', applicant: 'TP-Link Technologies Sdn Bhd', product: 'TP-Link Archer AX73', change: 'Minor', reason: 'Add new model variant AX5400v2 under same RCN — identical RF parameters, firmware version updated to 1.3.2', submitted: '2026-05-03T14:15:00', aiScore: 82, assignedTo: null },
+  ],
   // Supplier-facing audit trail (no AI/system internals)
   supplierAuditTrail: {
     'APP-0426-00087': [
@@ -194,18 +199,20 @@ window.MOCK = {
     { category: 'Form Completeness',               score:  5, max: 10, note: 'The "Marketing Name" field is blank and the frequency band is missing from the product label photo. Completing these will improve your score.', pass: false },
   ],
   // Document-level findings shown to suppliers during validation step.
-  // Each entry maps to one uploaded document. Findings give specific guidance, not pass/fail verdicts.
+  // Each entry maps to one uploaded document. issuedDate drives the 6-month staleness check (#43).
   documentFindings: [
     {
       docKey: 'reg',
       docLabel: 'Company Registration (SSM)',
       status: 'accepted',
+      issuedDate: '2024-02-15',
       findings: [],
     },
     {
       docKey: 'bro',
       docLabel: 'Technical Brochure / Datasheet',
       status: 'review',
+      issuedDate: '2025-10-20',
       findings: [
         { field: 'Frequency Band', note: 'Secondary sub-band range not specified. Please include the full operating range in the technical brochure (e.g. 2400-2483.5 MHz including all sub-bands).' },
       ],
@@ -214,12 +221,14 @@ window.MOCK = {
       docKey: 'test',
       docLabel: 'Test Report (accredited lab)',
       status: 'accepted',
+      issuedDate: '2026-03-12',
       findings: [],
     },
     {
       docKey: 'photo',
       docLabel: 'Product Photos (front, back, label)',
       status: 'review',
+      issuedDate: '2026-04-01',
       findings: [
         { field: 'Label Photo', note: 'Frequency band is not visible on the label photo. Please ensure the label shows the operating frequency or resubmit a clearer image.' },
       ],
@@ -228,6 +237,7 @@ window.MOCK = {
       docKey: 'decl',
       docLabel: 'Standards Declaration (MCMC MTSFB TC G015:2022)',
       status: 'review',
+      issuedDate: '2025-11-05',
       findings: [
         { field: 'Clause 5.3.2', note: 'This clause is marked as N/A without a written justification. Please add a brief explanation for why this clause does not apply to your product.' },
       ],
@@ -236,6 +246,7 @@ window.MOCK = {
       docKey: 'form',
       docLabel: 'Application Form',
       status: 'review',
+      issuedDate: '2026-04-15',
       findings: [
         { field: 'Marketing Name', note: 'Field is blank. This is not mandatory but leaving it blank may delay the product being added to the label registry after approval.' },
       ],
@@ -312,9 +323,25 @@ window.MOCK = {
   ],
   // Certificates
   certificates: [
-    { rcn: 'RCN-0326-00449', app: 'APP-0426-00085', scheme: 'C', product: 'Mi Band 9 Pro', brand: 'Xiaomi', model: 'M2320B1', issued: '2026-04-10', expires: '2029-04-09', status: 'active', labelType: 'e-label' },
-    { rcn: 'RCN-0326-00442', app: 'APP-0426-00079', scheme: 'A', product: 'OPPO Find X7 Ultra', brand: 'OPPO', model: 'CPH2583', issued: '2026-04-05', expires: '2029-04-04', status: 'active', labelType: 'physical' },
-    { rcn: 'RCN-0125-00198', app: 'APP-0125-00198', scheme: 'A', product: 'Samsung Galaxy S23', brand: 'Samsung', model: 'SM-S911B', issued: '2025-01-18', expires: '2026-06-12', status: 'expiring', labelType: 'physical' },
+    { rcn: 'RCN-0326-00449', app: 'APP-0426-00085', scheme: 'C', product: 'Mi Band 9 Pro', brand: 'Xiaomi', model: 'M2320B1', issued: '2026-04-10', expires: '2029-04-09', status: 'active', labelType: 'e-label',
+      versions: [
+        { ver: '1.0', changedAt: '2026-04-10', changedBy: 'Nurul Aisyah binti Ahmad', event: 'Initial certificate issued', changes: [] },
+      ],
+    },
+    { rcn: 'RCN-0326-00442', app: 'APP-0426-00079', scheme: 'A', product: 'OPPO Find X7 Ultra', brand: 'OPPO', model: 'CPH2583', issued: '2026-04-05', expires: '2029-04-04', status: 'active', labelType: 'physical',
+      versions: [
+        { ver: '1.0', changedAt: '2026-04-05', changedBy: 'Kamarul Ariffin bin Osman', event: 'Initial certificate issued', changes: [] },
+        { ver: '1.1', changedAt: '2026-05-02', changedBy: 'Nurul Aisyah binti Ahmad', event: 'Minor modification approved by En. Faisal Rahman (MOD-0426-00012)', changes: [
+          { field: 'Marketing Name', from: 'OPPO Find X7 Ultra', to: 'OPPO Find X7 Ultra 5G' },
+          { field: 'Model Number', from: 'CPH2583', to: 'CPH2583 / CPH2583L' },
+        ]},
+      ],
+    },
+    { rcn: 'RCN-0125-00198', app: 'APP-0125-00198', scheme: 'A', product: 'Samsung Galaxy S23', brand: 'Samsung', model: 'SM-S911B', issued: '2025-01-18', expires: '2026-06-12', status: 'expiring', labelType: 'physical',
+      versions: [
+        { ver: '1.0', changedAt: '2025-01-18', changedBy: 'Nurul Aisyah binti Ahmad', event: 'Initial certificate issued', changes: [] },
+      ],
+    },
     { rcn: 'RCN-1124-00612', app: 'APP-1124-00612', scheme: 'B', product: 'Ericsson Router 6672', brand: 'Ericsson', model: 'KRY-901-6672', issued: '2024-11-02', expires: '2026-05-28', status: 'expiring', labelType: 'physical' },
     { rcn: 'RCN-0823-00084', app: 'APP-0823-00084', scheme: 'C', product: 'TP-Link Archer AX73', brand: 'TP-Link', model: 'AX5400', issued: '2023-08-14', expires: '2026-08-13', status: 'active', labelType: 'e-label' },
     { rcn: 'RCN-0722-00021', app: 'APP-0722-00021', scheme: 'A', product: 'Huawei P50 Pocket', brand: 'Huawei', model: 'BAL-L49', issued: '2022-07-05', expires: '2025-07-04', status: 'expired', labelType: 'physical' },

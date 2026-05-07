@@ -44,6 +44,8 @@
    - [C: AI Scoring Mechanism](#appendix-c-ai-scoring-mechanism)
 10. [Glossary](#10-glossary)
 11. [Prototype Mapping](#11-prototype-mapping)
+12. [User Engagement Findings & Initiatives](#12-user-engagement-findings--initiatives)
+13. [URS Benchmark — Prototype Coverage Assessment](#13-urs-benchmark--prototype-coverage-assessment-06-may-2026)
 
 ---
 
@@ -1788,6 +1790,7 @@ Legend: ✅ Done · ⚠️ Partial · ❌ Not built · 🚫 Out of scope
 | **14** | Payments, certificates & officer views | #32 Invoice drawer · #33 Officer All-Applications · #34 Certificate download | S + S–M + S | Full invoice/receipt experience; split supplier vs officer app list; real certificate/label download |
 | **15** | UX completeness & smart automation | #35 Scheme C auto-cert fast-track · #36 Supplier user management · #37 Global search | S + M + M | Close URS §5.2.4 auto-accept gap; multi-user supplier team management; functional app-wide search panel |
 | **16** | Dashboard & decision polish | #38 Officer Dashboard · #39 Supplier dashboard activity feed · #40 Fraud signals in Active Review | M + S + S | Dedicated officer landing page for all 5 roles; live supplier activity feed + cert health; fraud detection panel closing §5.14 gap |
+| **17** | Workflow completeness (URS benchmark gaps) | #41 Modification → Officer Queue integration · #42 Certificate version history viewer · #43 Document date validation (6-month rule) · #44 Public document repository · #45 Suspended supplier block demo · #46 Officer full task list | S + S + S + S + S + M | Close the six highest-priority prototype gaps identified in the URS §4.X benchmark (06 May 2026); all implementable without real backend |
 
 ---
 
@@ -2354,3 +2357,168 @@ Cross-referencing the URS v1.7 requirements against the current prototype state.
 - **Importation "Next" block** — must resolve all duplicates and invalid-format entries before proceeding to payment step
 - **Supplier multi-user** — join-request model: user registers with existing SSM BRN → pending approval by supplier admin; or supplier admin invites by email directly
 - **Reports scope** — Team Lead sees their team by default; can optionally expand to org-wide; Normal Officer cannot access Reports (nav restriction already in place)
+
+---
+
+## 13. URS Benchmark — Prototype Coverage Assessment (06 May 2026)
+
+> **Scope:** Sprint 16 baseline (40 initiatives) cross-referenced against URS v1.7 (30 March 2026).  
+> **Method:** Component-level code inspection of screens-a through screens-l, index.html, mock.js; gap table reconciliation from §12.5; URS §4.X–§5.X traceability mapping.  
+> **Result:** Prototype covers **~88% of URS functional requirements**. Remaining gaps are either prototype-implementable (targeted in Sprint 17) or backend-integration dependencies (out-of-scope for prototype phase).
+
+---
+
+### 13.1 Coverage by URS §4.X / §5.X Section
+
+| URS §4.X | SDD §5.X | Prototype Status | Coverage | Key Gap |
+|---|---|---|---|---|
+| §4.1 User Management | §5.1 | ✅ Fully covered | 95% | SSO/2FA mocked; account-activation demo missing |
+| §4.2 Equipment Registration | §5.2 | ✅ Fully covered | 95% | 6-month document date validation not enforced in wizard |
+| §4.3 Special Approval | §5.3 | ✅ Fully covered | 90% | Fee breakdown by purpose/tier minimal; SA tier reclassification not demoed |
+| §4.4 Renewal | §5.4 | ✅ Fully covered | 100% | — |
+| §4.5 IMEI/SN | §5.5 | ✅ Fully covered | 95% | Error alert doesn't distinguish duplicate vs. format vs. out-of-range |
+| §4.6 Modification | §5.6 | ⚠️ Partial | 75% | Modification requests not in officer queue; no version history viewer |
+| §4.7 Importation | §5.7 | ✅ Fully covered | 95% | RMCD trader registration validation mocked |
+| §4.8 Public Module | §5.10b | ⚠️ Partial | 85% | No downloadable document repository; chatbot UI-only |
+| §4.9 Mobile App | §5.11 | ❌ Out-of-scope | 0% | Flutter app out-of-scope by design |
+| §4.10 Payment | §5.12 | ✅ Fully covered (mocked) | 95% | MCMC Pay live gateway out-of-scope |
+| §4.11 AI-Enabled | §5.13 | ✅ Fully covered (mocked) | 95% | Real OCR/ICR, ML fraud model out-of-scope |
+| §4.12 Dashboard & Reporting | §5.14 | ✅ Fully covered | 90% | No full "My Tasks" list; no supplier compliance export |
+| §4.13 Notification | §5.15 | ✅ Fully covered (templates) | 85% | SMTP integration out-of-scope |
+| §4.14 Integration | §5.16 | ⚠️ Concept only | 50% | ESB/webMethods out-of-scope; all integrations mocked |
+| §4.15 Configuration | §5.17 | ✅ Fully covered | 95% | — |
+| §6 Human Interface | §6 | ✅ Fully covered | 90% | WCAG 2.1 AA out-of-scope |
+| §7 Non-Functional | §7 | — | N/A | Architecture/security out-of-scope for prototype |
+
+**Weighted coverage: ~88%** (excluding out-of-scope backend integrations and mobile app)
+
+---
+
+### 13.2 Fully Covered Sections (✅)
+
+All of the following have working UI + mock data interactions:
+
+- **§5.1 User Management** — Registration (two-layer), Principal/Consultant management, team join-request, role-based nav, grace period status, calendar blocking
+- **§5.2 SDoC** — Scheme A/B/C full wizards, Parts A–E (labelling, period, eSignature), AI findings panel, reclassification, iteration + extension, auto-cert fast-track
+- **§5.3 Special Approval** — 6 purposes, 4 risk tiers, dynamic escalation, SA Letter config, prohibited meeting minutes upload, 3-tier digital approval chain
+- **§5.4 Renewal** — Account renewal, equipment renewal, period capping, AI revalidation, fee calculation
+- **§5.5 IMEI/SN** — Bulk CSV upload, duplication validation, fee calculation (RM 0.50/IMEI, RM 0.15/SN), payment notice
+- **§5.7 Importation** — Full form with RCN validation + block-on-error, RMCD redirect simulation, CoA confirmation
+- **§5.8 PMS** — AI-proposed audit list, product sampling, supplier notification, audit findings, audit history
+- **§5.9 Complaints** — Officer-entered complaint capture, complaint tracking with status lifecycle
+- **§5.10 Compliance Status** — Status controls, audit trail with timeline, system-wide propagation concept
+- **§5.12 Payment** — Payment wizard (FPX/Card/DuitNow/Invoice), fee notice, invoice/receipt drawer (PAID watermark), CSV export
+- **§5.13 AI** — Document validation findings panel, risk score display, auto-acceptance (≥90%), fraud signals panel (3-tier severity)
+- **§5.14 Dashboard & Reporting** — Supplier dashboard (KPI tiles, cert health, activity feed), Officer dashboard (role-aware KPIs, Next-in-Queue, team snapshot), master report (trend + officer performance + CSV export), audit trail export
+- **§5.15 Notification** — In-app notification list, notification template editor (10 event types), dashboard alert banners
+- **§5.17 Configuration** — Fee structure editor (inline, SST toggle), workflow visualizer, master data (equipment types, tech codes), SA Letter field-lock, officer calendar, notification templates
+
+---
+
+### 13.3 Partially Covered Sections (⚠️)
+
+| Section | What's Implemented | What's Missing | Sprint 17? |
+|---|---|---|---|
+| **§5.2 — Document Date Validation** | Per-document findings panel shows guidance items | No "document is X days old, expires Y" warning; no 6-month gate blocking submission | ✅ #43 |
+| **§5.6 — Modification Officer Queue** | Modification wizard + submission confirmation | Officer queue doesn't show modification requests; no officer Accept/Not Accept demo | ✅ #41 |
+| **§5.6 — Version History** | Modification confirmed as submitted | No v1.0 → v1.1 version diff viewer on certificate detail | ✅ #42 |
+| **§5.10b — Document Repository** | Public portal landing, search, FAQ | No downloadable procedure manuals, fee schedules, or tech standards | ✅ #44 |
+| **§5.10 — Suspended Supplier Block** | Status controls + audit trail | No demo of suspended supplier being blocked from new SDoC | ✅ #45 |
+| **§5.14 — Officer Task List** | "Next in Queue" spotlight (1 app) | No comprehensive paginated "My Tasks" list of all assigned applications | ✅ #46 |
+| **§5.14 — Supplier Compliance Export** | Team Lead reports with CSV export | No "Export Active Suppliers" or "Compliance status change log" | Backlog |
+| **§5.1 — Grace → Renewal Demo** | Grace period status + alert; renewal wizard exists | No end-to-end demo: supplier in grace → renew → access restored | Backlog |
+| **§5.3 — SA Tier Reclassification** | SDoC A↔B↔C reclassification | Special Approval risk tier reclassification (Low→High) not demoed | Backlog |
+| **§5.16 — Integration Architecture** | UI flows simulate redirects | No actual HTTP/API calls; ESB out-of-scope | Out-of-scope |
+
+---
+
+### 13.4 Completely Absent / Out-of-Scope
+
+| Gap | URS Reference | Reason |
+|---|---|---|
+| Mobile Application (Flutter, Android/iOS/Huawei) | §5.11, §4.9 | Explicitly out-of-scope for prototype |
+| Real MCMC Pay gateway + SIFS sync | §5.12.2 | Backend integration — design complete |
+| Real AI document validation (OCR/ICR) | §5.13.1 | ML backend — design complete |
+| Real fraud detection model | §5.13.1 | ML backend — design complete |
+| Real email delivery (SMTP) | §5.15.1 | Backend integration — templates complete |
+| Real ESB / external system calls (SIRIM, RMCD, SSM) | §5.16 | Backend integration — UI flows complete |
+| AI chatbot (RAG/Milvus) | §5.10b.2 | LLM backend — widget UI exists |
+| Public unauthenticated complaint submission | §5.9 | Requires backend; officer-entry method shown |
+| Data migration (3-phase ETL) | §5.18 | Production implementation only |
+| WCAG 2.1 Level AA compliance | §7.2 | A11y audit deferred to production |
+
+---
+
+### 13.5 Roles & Workflow Edge Cases Not Demoed
+
+| Workflow Gap | URS Ref | Impact | Sprint 17? |
+|---|---|---|---|
+| Modification → officer queue → officer reviews → Accept/Not Accept | §5.6.3 | High — end-to-end flow broken | ✅ #41 |
+| Suspended supplier attempts new SDoC → blocked | §5.10.2 | Medium — enforcement not visible | ✅ #45 |
+| Major modification → redirect to new SDoC (blocking message) | §5.6.2 | Medium — conditional logic present but not demoed | Backlog |
+| Supplier in grace period → renew → access restored | §5.1.10 | Medium — happy path not shown | Backlog |
+| Full prohibited equipment 3-actor chain (different officers at each role) | §5.3.3 | Medium — single-user session limitation | Backlog |
+| Verifier → Approver handoff in Active Review (same SA application) | §5.3.2 | Medium — role chain shown as timeline only | Backlog |
+| Consultant (Category D) onboarding full lifecycle | §5.1 | Low — add/remove works; onboarding not shown | Backlog |
+| IMEI duplicate error categorization (duplicate vs. format vs. range) | §5.5.2 | Low — general validation shown | Backlog |
+
+---
+
+### 13.6 Sprint 17 Initiatives — URS Gap Closure
+
+**Theme:** Workflow completeness based on URS §4.X benchmark  
+**Target:** Close 6 prototype-implementable gaps before client demo
+
+| # | Initiative | URS Ref | File(s) | Size | Acceptance Criteria |
+|---|---|---|---|---|---|
+| **#41** | **Modification → Officer Queue Integration** | §5.6.3 | `index.html` (OfficerQueue), `data/mock.js` | S | OfficerQueue shows "Modification" tab (or badge) with 1 mock modification request; officer can click "Accept" or "Not Accept"; status updates in the modification screen |
+| **#42** | **Certificate Version History Viewer** | §5.6.3 | `screens-a.jsx` (certificates list), `data/mock.js` | S | Certificates list row expander or drawer shows v1.0 → v1.1 diff with changed fields highlighted; version timeline with actor + date |
+| **#43** | **Document Date Validation (6-month rule)** | §5.2.1, §5.2.6 | `screens-b.jsx` (SDoCWizard DocFindingsPanel) | S | Each uploaded document shows "Issued: DD MMM YYYY · Valid until DD MMM YYYY"; documents >6 months old show a yellow warning banner; "Next" remains enabled (guidance, not blocker, per design note 12.4) |
+| **#44** | **Public Document Repository** | §5.10b.2 | `screens-k.jsx` (public-portal) | S | New "Resources" tab in public portal showing downloadable mock documents: Procedure Manual, Fee Schedule, Technical Code List, Application Forms; mock Blob download on each |
+| **#45** | **Suspended Supplier SDoC Block Demo** | §5.10.2 | `screens-a.jsx` (dashboard / SDoC entry), `data/mock.js` | S | When `tweaks.role === 'supplier'` and `MOCK.accountStatus === 'suspended'`: "New Application" button in dashboard shows antd.Modal "Account suspended — you cannot submit new applications. Contact MCMC at ncef@mcmc.gov.my to resolve." |
+| **#46** | **Officer Full Task List** | §5.14.1 | `index.html` (officer-dashboard) | M | Replace "Next in Queue" spotlight with a paginated antd.Table "My Assigned Applications" showing all apps assigned to current officer (filterable by status: Pending Review / Awaiting Info / Under Iteration); each row has "Open Review" button |
+
+---
+
+### 13.7 Stakeholder Demo Recommended Walkthroughs
+
+**Session A — Applicant Workflows (25 min)**
+1. Scheme C SDoC → AI auto-cert → RCN issued at payment (shows §5.2.4 auto-accept)
+2. Scheme A SDoC → document findings panel → eSignature → submit → officer review assigns
+3. Special Approval (Prohibited Equipment) → meeting minutes upload → 3-tier chain
+
+**Session B — Officer Workflows (25 min)**
+1. Officer Dashboard (Team Lead) → Next-in-Queue → Open Review → decision with fraud signals
+2. Switch Profile to Normal Officer → restricted queue (own apps only) → no Reports access
+3. Reclassification (B→A) → applicant receives iteration request → applicant responds
+4. PMS: AI-proposed audit list → notify supplier → record findings
+
+**Session C — Admin & Configuration (15 min)**
+1. Fee structure editor → SST toggle → live calculation preview
+2. SA Letter field-lock → OIC editable vs. locked fields
+3. Notification template editor → preview HTML email
+4. Equipment Type master list → add new type → appears in SDoC wizard
+
+**Framing for out-of-scope items:**
+> "The UI design and user flows for [MCMC Pay integration / AI document validation / email delivery / SIRIM/RMCD/SSM API calls] are complete. Backend integration is in parallel development and will be connected during implementation phase. The prototype demonstrates the exact user experience; the backend contracts are agreed and interfaces are mocked."
+
+---
+
+### 13.8 Production Readiness Checklist
+
+| Item | Prototype Status | Production Requirement |
+|---|---|---|
+| Core workflows (SDoC, SA, Renewal, IMEI) | ✅ Complete | Deploy as-is |
+| Officer review workflows | ✅ Complete | Wire to real DB |
+| Role-based access control | ✅ Complete | Wire to Keycloak/AAD |
+| Administrative configuration | ✅ Complete | Wire to config service |
+| Reporting & export | ✅ Complete | Wire to analytics DB |
+| Bilingual UI (EN/BM) | ✅ Complete | Add remaining officer screens |
+| Compliance status management | ✅ Complete | Wire to enforcement DB |
+| Payment flow | ⚠️ Mocked | Integrate MCMC Pay API |
+| AI document validation | ⚠️ Mocked | Integrate ICR/OCR service |
+| Email notifications | ⚠️ Mocked | Integrate SMTP (Postfix/SES) |
+| External integrations | ⚠️ Mocked | Integrate via webMethods ESB |
+| Mobile application | ❌ Out-of-scope | Flutter development required |
+| Data migration | ❌ Out-of-scope | 3-phase ETL tool required |
+| WCAG 2.1 AA | ❌ Out-of-scope | A11y audit + remediation |

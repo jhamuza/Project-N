@@ -231,12 +231,15 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
   };
 
   const DocFindingsPanel = () => {
+    const TODAY = new Date('2026-05-07');
+    const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
     const findings = MOCK.documentFindings || [];
     const reviewCount = findings.filter(d => d.status === 'review').length;
     const acceptedCount = findings.filter(d => d.status === 'accepted').length;
+    const staleCount = findings.filter(d => d.issuedDate && (TODAY - new Date(d.issuedDate)) > SIX_MONTHS_MS).length;
     return (
       <div>
-        <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
           <div style={{ padding: '10px 20px', background: 'var(--color-success-bg)', borderRadius: 8, textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-success)' }}>{acceptedCount}</div>
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Accepted</div>
@@ -247,36 +250,67 @@ SCREENS['sdoc-wizard'] = function SDoCWizard({ nav, tweaks }) {
               <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Items to review</div>
             </div>
           )}
-        </div>
-        <div style={{ display: 'grid', gap: 10 }}>
-          {findings.map((doc, i) => (
-            <div key={i} style={{ padding: '12px 16px', border: `1px solid ${doc.findings.length > 0 ? 'var(--color-warning)' : 'var(--color-border)'}`, borderRadius: 10, background: doc.findings.length > 0 ? 'var(--color-warning-bg)' : 'var(--color-bg-subtle)' }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <span style={{ fontSize: 16 }}>{doc.status === 'accepted' ? '✅' : '📋'}</span>
-                <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>{doc.docLabel}</span>
-                <Tag color={doc.status === 'accepted' ? 'green' : 'orange'} style={{ margin: 0 }}>
-                  {doc.status === 'accepted' ? 'Accepted' : 'Please review'}
-                </Tag>
-              </div>
-              {doc.findings.length > 0 && (
-                <div style={{ marginTop: 10, paddingLeft: 26, display: 'grid', gap: 6 }}>
-                  {doc.findings.map((f, j) => (
-                    <div key={j} style={{ fontSize: 12 }}>
-                      <span style={{ fontWeight: 600, color: 'var(--color-warning)' }}>{f.field}:</span>{' '}
-                      <span style={{ color: 'var(--color-text-secondary)' }}>{f.note}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+          {staleCount > 0 && (
+            <div style={{ padding: '10px 20px', background: '#FFF3E0', borderRadius: 8, textAlign: 'center' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#E65100' }}>{staleCount}</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Stale (&gt;6 months)</div>
             </div>
-          ))}
+          )}
         </div>
-        {reviewCount > 0 && (
+        {staleCount > 0 && (
+          <Alert type="warning" showIcon style={{ marginBottom: 12 }}
+            message={`${staleCount} document${staleCount > 1 ? 's are' : ' is'} older than 6 months`}
+            description="URS §5.2.1 requires all supporting documents to be dated within the last 6 months of submission. Please resubmit updated versions to avoid delays." />
+        )}
+        <div style={{ display: 'grid', gap: 10 }}>
+          {findings.map((doc, i) => {
+            const issuedMs = doc.issuedDate ? TODAY - new Date(doc.issuedDate) : 0;
+            const isStale  = doc.issuedDate && issuedMs > SIX_MONTHS_MS;
+            const daysOld  = doc.issuedDate ? Math.floor(issuedMs / 864e5) : null;
+            const validUntil = doc.issuedDate ? new Date(new Date(doc.issuedDate).getTime() + SIX_MONTHS_MS) : null;
+            const borderColor = isStale ? '#E65100' : doc.findings.length > 0 ? 'var(--color-warning)' : 'var(--color-border)';
+            const bg = isStale ? '#FFF3E0' : doc.findings.length > 0 ? 'var(--color-warning-bg)' : 'var(--color-bg-subtle)';
+            return (
+              <div key={i} style={{ padding: '12px 16px', border: `1px solid ${borderColor}`, borderRadius: 10, background: bg }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <span style={{ fontSize: 16 }}>{isStale ? '⚠️' : doc.status === 'accepted' ? '✅' : '📋'}</span>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontWeight: 600, fontSize: 13 }}>{doc.docLabel}</span>
+                    {doc.issuedDate && (
+                      <div style={{ fontSize: 11, color: isStale ? '#E65100' : 'var(--color-text-muted)', marginTop: 2 }}>
+                        Issued: {new Date(doc.issuedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {' · '}
+                        {isStale
+                          ? `⚠ ${daysOld} days old — exceeds 6-month limit`
+                          : `Valid until ${validUntil.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                        }
+                      </div>
+                    )}
+                  </div>
+                  <Tag color={isStale ? 'warning' : doc.status === 'accepted' ? 'green' : 'orange'} style={{ margin: 0 }}>
+                    {isStale ? 'Stale' : doc.status === 'accepted' ? 'Accepted' : 'Please review'}
+                  </Tag>
+                </div>
+                {doc.findings.length > 0 && (
+                  <div style={{ marginTop: 10, paddingLeft: 26, display: 'grid', gap: 6 }}>
+                    {doc.findings.map((f, j) => (
+                      <div key={j} style={{ fontSize: 12 }}>
+                        <span style={{ fontWeight: 600, color: 'var(--color-warning)' }}>{f.field}:</span>{' '}
+                        <span style={{ color: 'var(--color-text-secondary)' }}>{f.note}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {(reviewCount > 0 || staleCount > 0) && (
           <Alert type="info" showIcon style={{ marginTop: 16 }}
             message="Items above are guidance, not blockers"
             description="You can proceed to submit. Addressing these items before submission will reduce the chance of an officer requesting changes later." />
         )}
-        {reviewCount === 0 && (
+        {reviewCount === 0 && staleCount === 0 && (
           <Alert type="success" showIcon style={{ marginTop: 16 }}
             message="All documents look good"
             description="No issues were identified. You can proceed to the review step." />

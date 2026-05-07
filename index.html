@@ -238,6 +238,9 @@ function OfficerQueue({ nav, currentUser }) {
   const [showAdv,   setShowAdv]   = React.useState(false);
 
   const autoCertList = MOCK.autoCertified || [];
+  const modList = MOCK.modificationQueue || [];
+  const modCount = modList.length;
+  const [modDecisions, setModDecisions] = React.useState({});
   const baseList = React.useMemo(() => {
     if (!isLead) return resolved.filter(x => x.assignedTo === myId);
     if (filter === 'mine')       return resolved.filter(x => x.assignedTo === myId);
@@ -297,6 +300,7 @@ function OfficerQueue({ nav, currentUser }) {
               { label: `Team queue (${teamAssigned})`, value: 'team' },
               { label: `Unassigned (${unassignedCount})`, value: 'unassigned' },
               { label: <antd.Space size={4}><RobotOutlined />{`Auto-certified (${autoCertList.length})`}</antd.Space>, value: 'auto' },
+              { label: <antd.Space size={4}><FormOutlined />{`Modifications (${modCount})`}</antd.Space>, value: 'modification' },
             ]} />
           ) : (
             <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
@@ -372,6 +376,40 @@ function OfficerQueue({ nav, currentUser }) {
                 { title: 'Issued At', dataIndex: 'issuedAt',  width: 160, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</span> },
                 { title: 'Valid Until', dataIndex: 'certExpiry', width: 120, render: v => new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) },
                 { title: 'Status', width: 140, render: () => <antd.Tag color="green" icon={<RobotOutlined />}>Auto-certified</antd.Tag> },
+              ]}
+            />
+          </>
+        ) : filter === 'modification' ? (
+          <>
+            <antd.Alert type="info" showIcon icon={<FormOutlined />} style={{ marginBottom: 12 }}
+              message="Modification requests (Minor / Others)"
+              description="Suppliers have submitted modification requests to update existing certificates. Review the proposed change and issue an Accept or Not Accept decision. (URS §5.6.3)" />
+            <antd.Table rowKey="id" dataSource={modList} pagination={false} scroll={{ x: 'max-content' }}
+              columns={[
+                { title: 'Mod ID',    dataIndex: 'id',       width: 150, render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
+                { title: 'RCN',       dataIndex: 'rcn',      width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 12 }}>{v}</antd.Typography.Text> },
+                { title: 'Applicant', dataIndex: 'applicant', width: 200 },
+                { title: 'Product',   dataIndex: 'product',  width: 200 },
+                { title: 'Type',      dataIndex: 'change',   width: 80,  render: v => <antd.Tag color="blue">{v}</antd.Tag> },
+                { title: 'Proposed Change', dataIndex: 'reason', width: 300, render: v => <span style={{ fontSize: 12 }}>{v}</span> },
+                { title: 'AI Score',  dataIndex: 'aiScore',  width: 90,  render: s => <antd.Tag color={s >= 90 ? 'green' : s >= 70 ? 'orange' : 'red'} style={{ fontWeight: 600 }}>{s}</antd.Tag> },
+                { title: 'Submitted', dataIndex: 'submitted', width: 130, render: v => <span style={{ whiteSpace: 'nowrap' }}>{new Date(v).toLocaleDateString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span> },
+                { title: 'Decision',  width: 220, render: (_, row) => {
+                  const d = modDecisions[row.id];
+                  if (d) return <antd.Tag color={d === 'accepted' ? 'green' : 'red'} icon={d === 'accepted' ? <CheckCircleOutlined /> : <CloseCircleOutlined />} style={{ fontWeight: 600, fontSize: 12 }}>{d === 'accepted' ? 'Accepted' : 'Not Accepted'}</antd.Tag>;
+                  return (
+                    <antd.Space size={6}>
+                      <antd.Button size="small" type="primary" icon={<CheckCircleOutlined />}
+                        onClick={() => { setModDecisions(p => ({ ...p, [row.id]: 'accepted' })); antd.message.success(`Modification ${row.id} accepted — certificate updated`); }}>
+                        Accept
+                      </antd.Button>
+                      <antd.Button size="small" danger icon={<CloseCircleOutlined />}
+                        onClick={() => { setModDecisions(p => ({ ...p, [row.id]: 'rejected' })); antd.message.warning(`Modification ${row.id} returned — applicant notified`); }}>
+                        Not Accept
+                      </antd.Button>
+                    </antd.Space>
+                  );
+                }},
               ]}
             />
           </>
@@ -495,26 +533,45 @@ SCREENS['officer-dashboard'] = function OfficerDashboard({ nav, currentUser }) {
         {/* Left column */}
         <antd.Col xs={24} lg={isLead ? 16 : 14}>
           <antd.Space direction="vertical" size={16} style={{ width: '100%' }}>
-            {/* Next in queue spotlight */}
-            <antd.Card bordered title={<antd.Space><FlagOutlined style={{ color: 'var(--color-primary)' }} /> Next in Queue</antd.Space>}
-              extra={<antd.Button size="small" onClick={() => nav('officer-queue')}>View all</antd.Button>}>
-              {nextReview ? (
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{nextReview.product}</div>
-                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 8 }}>{nextReview.applicant} · <span style={{ fontFamily: 'var(--font-mono)' }}>{nextReview.id}</span></div>
-                    <antd.Space size={6} wrap>
-                      <antd.Tag color={nextSchemeColor[nextReview.scheme] || 'default'}>{nextReview.scheme === 'SA' ? 'Special Approval' : `Scheme ${nextReview.scheme}`}</antd.Tag>
-                      <antd.Tag color={nextReview.aiScore >= 90 ? 'green' : nextReview.aiScore >= 70 ? 'orange' : 'red'}>AI {nextReview.aiScore}</antd.Tag>
-                      <antd.Tag color={nextReview.slaHours <= 12 ? 'red' : nextReview.slaHours <= 24 ? 'orange' : 'default'}>{nextReview.slaHours}h SLA</antd.Tag>
-                    </antd.Space>
-                  </div>
-                  <antd.Button type="primary" size="large" icon={<EyeOutlined />} onClick={() => nav('officer-review')}>Open Review</antd.Button>
-                </div>
-              ) : (
-                <antd.Result status="success" title="Queue is clear" subTitle="No applications pending review. Check back later." extra={<antd.Button onClick={() => nav('officer-queue')}>Refresh Queue</antd.Button>} style={{ padding: '20px 0' }} />
-              )}
-            </antd.Card>
+            {/* My Assigned Applications — full task list */}
+            {(() => {
+              const [taskFilter, setTaskFilter] = React.useState('all');
+              const allQueue = isLead
+                ? (MOCK.officerQueue || []).filter(q => q.assignedTo === myId)
+                : (MOCK.officerQueue || []).filter(q => q.assignedTo === myId);
+              const modQueue = isLead ? (MOCK.modificationQueue || []).filter(q => q.assignedTo === myId) : [];
+              const filtered = taskFilter === 'all' ? [...allQueue, ...modQueue]
+                : taskFilter === 'urgent' ? allQueue.filter(q => q.slaHours <= 24)
+                : taskFilter === 'modification' ? modQueue
+                : allQueue;
+              const schemeColor = { A: 'red', B: 'orange', C: 'green', SA: 'purple' };
+              return (
+                <antd.Card bordered
+                  title={<antd.Space><FlagOutlined style={{ color: 'var(--color-primary)' }} /> My Assigned Applications</antd.Space>}
+                  extra={<antd.Button size="small" onClick={() => nav('officer-queue')}>Full Queue →</antd.Button>}>
+                  <antd.Segmented value={taskFilter} onChange={setTaskFilter} size="small" style={{ marginBottom: 12 }} options={[
+                    { label: `All (${allQueue.length + modQueue.length})`, value: 'all' },
+                    { label: `Urgent (${allQueue.filter(q=>q.slaHours<=24).length})`, value: 'urgent' },
+                    { label: 'SDoC / SA', value: 'sdoc' },
+                    ...(modQueue.length > 0 ? [{ label: `Modifications (${modQueue.length})`, value: 'modification' }] : []),
+                  ]} />
+                  {filtered.length === 0 ? (
+                    <antd.Result status="success" title="All clear" subTitle="No assigned applications at this time." style={{ padding: '16px 0' }} />
+                  ) : (
+                    <antd.Table rowKey="id" dataSource={filtered} pagination={{ pageSize: 5, size: 'small', showSizeChanger: false }} size="small"
+                      onRow={() => ({ onClick: () => nav('officer-review'), style: { cursor: 'pointer' } })}
+                      columns={[
+                        { title: 'ID', dataIndex: 'id', width: 140, render: v => <antd.Typography.Text code style={{ fontSize: 11 }}>{v}</antd.Typography.Text> },
+                        { title: 'Product', dataIndex: 'product', ellipsis: true, render: (v, r) => <div><div style={{ fontWeight: 600, fontSize: 12 }}>{v}</div><div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{r.applicant}</div></div> },
+                        { title: 'Scheme', dataIndex: 'scheme', width: 80, render: s => s ? <antd.Tag color={schemeColor[s] || 'blue'} style={{ fontSize: 10, margin: 0 }}>{s === 'SA' ? 'SA' : `Sch ${s}`}</antd.Tag> : <antd.Tag color="blue" style={{ fontSize: 10, margin: 0 }}>MOD</antd.Tag> },
+                        { title: 'SLA', dataIndex: 'slaHours', width: 70, render: h => h ? <antd.Tag color={h <= 12 ? 'red' : h <= 24 ? 'orange' : 'default'} style={{ fontSize: 10, margin: 0 }}>{h}h</antd.Tag> : <antd.Tag style={{ fontSize: 10, margin: 0 }}>—</antd.Tag> },
+                        { title: '', width: 90, render: (_, r) => <antd.Button size="small" type="primary" icon={<EyeOutlined />} onClick={e => { e.stopPropagation(); nav('officer-review'); }}>Review</antd.Button> },
+                      ]}
+                    />
+                  )}
+                </antd.Card>
+              );
+            })()}
 
             {/* Recent decisions */}
             <antd.Card bordered title={<antd.Space><HistoryOutlined style={{ color: 'var(--color-text-muted)' }} /> My Recent Decisions</antd.Space>}>
@@ -1719,6 +1776,9 @@ function App() {
               <div><antd.Checkbox checked={tweaks.denseTables} onChange={e => updateTweak('denseTables',e.target.checked)}>Compact density</antd.Checkbox></div>
               {tweaks.role === 'supplier' && (
                 <div><antd.Checkbox checked={tweaks.graceMode} onChange={e => updateTweak('graceMode',e.target.checked)}>Supplier grace period (§5.1.10)</antd.Checkbox></div>
+              )}
+              {tweaks.role === 'supplier' && (
+                <div><antd.Checkbox checked={tweaks.suspendedMode} onChange={e => updateTweak('suspendedMode',e.target.checked)}>Supplier suspended (§5.10.2)</antd.Checkbox></div>
               )}
             </div>
           </div>

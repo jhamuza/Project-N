@@ -237,6 +237,41 @@ function CertificateDetail({ cert, nav }) {
           </div>
         </>
       )}
+
+      {/* Version History — shown when cert has versions array */}
+      {cert.versions && cert.versions.length > 0 && (
+        <>
+          <antd.Divider orientation="left" orientationMargin={0} style={{ fontSize: 13 }}>Version History</antd.Divider>
+          <antd.Timeline
+            items={[...cert.versions].reverse().map((v, i) => ({
+              color: i === 0 ? 'green' : 'blue',
+              dot: i === 0 ? <SafetyCertificateOutlined style={{ fontSize: 14 }} /> : <HistoryOutlined style={{ fontSize: 12 }} />,
+              children: (
+                <div style={{ paddingBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <antd.Tag color={i === 0 ? 'green' : 'blue'} style={{ fontSize: 11, fontWeight: 700, margin: 0 }}>v{v.ver}</antd.Tag>
+                    <span style={{ fontSize: 12, fontWeight: 600 }}>{v.event}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>
+                    {new Date(v.changedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} · {v.changedBy}
+                  </div>
+                  {v.changes && v.changes.length > 0 && (
+                    <div style={{ background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '8px 10px' }}>
+                      {v.changes.map((c, j) => (
+                        <div key={j} style={{ fontSize: 12, marginBottom: j < v.changes.length - 1 ? 6 : 0 }}>
+                          <span style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>{c.field}: </span>
+                          <span style={{ color: 'var(--color-danger)', textDecoration: 'line-through', marginRight: 6 }}>{c.from}</span>
+                          <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>→ {c.to}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ),
+            }))}
+          />
+        </>
+      )}
     </div>
   );
 }

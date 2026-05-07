@@ -170,6 +170,8 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks, lang: _lang }) {
   const lang = _lang || 'en';
   const T = (k) => window.t(lang, k);
   const graceMode = tweaks?.graceMode;
+  const suspendedMode = tweaks?.suspendedMode;
+  const [suspendedModal, setSuspendedModal] = React.useState(false);
   const GRACE_EXPIRY = new Date('2026-07-05');
   const k = MOCK.kpi.supplier;
   const recent = MOCK.assessments.slice(0, 5);
@@ -186,7 +188,19 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks, lang: _lang }) {
 
   return (
     <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
-      {graceMode && (
+      {suspendedMode && (
+        <antd.Alert
+          type="error"
+          showIcon
+          style={{ marginBottom: 20 }}
+          message={<strong>{lang === 'bm' ? 'Akaun digantung' : 'Account Suspended'}</strong>}
+          description={lang === 'bm'
+            ? 'Akaun anda telah digantung oleh MCMC. Permohonan baharu, pembaharuan, dan pendaftaran IMEI disekat. Hubungi MCMC untuk maklumat lanjut.'
+            : 'Your account has been suspended by MCMC. New applications, renewals, and IMEI registrations are blocked. Contact MCMC to resolve this issue.'}
+          action={<antd.Button size="small" danger href="mailto:cppg@mcmc.gov.my">Contact MCMC</antd.Button>}
+        />
+      )}
+      {!suspendedMode && graceMode && (
         <antd.Alert
           type="error"
           showIcon
@@ -260,17 +274,31 @@ SCREENS.dashboard = function Dashboard({ nav, tweaks, lang: _lang }) {
         <Col xs={24} lg={8}>
           <Card title={T('dash_quick_actions')} bordered style={{ marginBottom: 16 }}>
             <Space direction="vertical" style={{ width: '100%' }} size={8}>
-              <antd.Tooltip title={graceMode ? (lang === 'bm' ? 'Pembaharuan akaun diperlukan' : 'Account renewal required') : ''}>
-                <Button block type="primary" size="large" disabled={!!graceMode} onClick={() => nav('sdoc-wizard')}>{T('dash_new_sdoc')}</Button>
+              <antd.Tooltip title={suspendedMode ? 'Account suspended — contact MCMC' : graceMode ? (lang === 'bm' ? 'Pembaharuan akaun diperlukan' : 'Account renewal required') : ''}>
+                <Button block type="primary" size="large" disabled={!!graceMode || !!suspendedMode}
+                  onClick={() => suspendedMode ? setSuspendedModal(true) : nav('sdoc-wizard')}>{T('dash_new_sdoc')}</Button>
               </antd.Tooltip>
-              <antd.Tooltip title={graceMode ? (lang === 'bm' ? 'Pembaharuan akaun diperlukan' : 'Account renewal required') : ''}>
-                <Button block size="large" disabled={!!graceMode} onClick={() => nav('special-approval')}>{T('dash_new_sa')}</Button>
+              <antd.Tooltip title={suspendedMode ? 'Account suspended — contact MCMC' : graceMode ? (lang === 'bm' ? 'Pembaharuan akaun diperlukan' : 'Account renewal required') : ''}>
+                <Button block size="large" disabled={!!graceMode || !!suspendedMode}
+                  onClick={() => suspendedMode ? setSuspendedModal(true) : nav('special-approval')}>{T('dash_new_sa')}</Button>
               </antd.Tooltip>
-              <Button block size="large" onClick={() => nav('imei-register')}>{lang === 'bm' ? '+ Daftar IMEI / S/N' : '+ Register IMEI / SN'}</Button>
+              <antd.Tooltip title={suspendedMode ? 'Account suspended — contact MCMC' : ''}>
+                <Button block size="large" disabled={!!suspendedMode}
+                  onClick={() => suspendedMode ? setSuspendedModal(true) : nav('imei-register')}>{lang === 'bm' ? '+ Daftar IMEI / S/N' : '+ Register IMEI / SN'}</Button>
+              </antd.Tooltip>
               <Button block size="large" onClick={() => nav('cert-renewal')}>{T('dash_new_renewal')}</Button>
               <Button block size="large" onClick={() => nav('account-renewal')}>{T('dash_new_account_renewal')}</Button>
             </Space>
           </Card>
+          <antd.Modal open={suspendedModal} onCancel={() => setSuspendedModal(false)} footer={[
+            <antd.Button key="contact" type="primary" danger href="mailto:cppg@mcmc.gov.my">Contact MCMC (cppg@mcmc.gov.my)</antd.Button>,
+            <antd.Button key="ok" onClick={() => setSuspendedModal(false)}>Close</antd.Button>,
+          ]} title={<antd.Space><antd.Tag color="red">Account Suspended</antd.Tag></antd.Space>}>
+            <antd.Result status="error" style={{ padding: '12px 0' }}
+              title="New applications are blocked"
+              subTitle={<span>Your account has been <strong>suspended by MCMC</strong> under §5.10.2 of the NCEF framework. You cannot submit new SDoC applications, Special Approvals, or register IMEI / Serial Numbers until the suspension is lifted.<br /><br />Certificate renewals and account information remain accessible.<br /><br />Reference your <strong>Account ID: {MOCK.currentUser?.supplierId || 'SUP-0426-00142'}</strong> when contacting MCMC.</span>}
+            />
+          </antd.Modal>
           {/* Certificate Health widget */}
           <Card bordered bodyStyle={{ padding: '14px 16px' }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 12 }}>{lang === 'bm' ? 'Kesihatan Sijil' : 'Certificate Health'}</div>

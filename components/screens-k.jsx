@@ -343,10 +343,43 @@ SCREENS['public-portal'] = function PublicPortal({ nav, lang: _lang }) {
     const cats = ['All', ...new Set(MOCK.publicDocs.map(d => d.cat))];
     const docs = MOCK.publicDocs.filter(d => docCat === 'All' || d.cat === docCat);
     const iconColor = { pdf: 'var(--color-danger)', docx: 'var(--color-info)' };
+
+    function downloadDoc(d) {
+      const lines = [
+        '══════════════════════════════════════════════════════════════════',
+        `  MCMC / NCEF — ${d.cat.toUpperCase()}`,
+        '══════════════════════════════════════════════════════════════════',
+        '',
+        `  Title    : ${d.title}`,
+        `  Category : ${d.cat}`,
+        `  Language : ${d.lang}`,
+        `  Updated  : ${d.date}`,
+        `  Size     : ${d.size}`,
+        '',
+        '  [This is a placeholder document for prototype demonstration.]',
+        '  In the production system, this button downloads the actual',
+        `  ${d.type.toUpperCase()} file from the MCMC document repository.`,
+        '',
+        '  Source: ncef.mcmc.gov.my/public/resources',
+        '──────────────────────────────────────────────────────────────────',
+        '  © Malaysian Communications and Multimedia Commission (MCMC)',
+        '  MCMC Tower 1, Jalan Impact, Cyber 6, 63000 Cyberjaya, Selangor',
+      ].join('\n');
+      const blob = new Blob([lines], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `NCEF-${d.id}-${d.title.replace(/[^a-zA-Z0-9]/g, '-').substring(0, 40)}.txt`;
+      a.click();
+      antd.message.success(`Downloaded: ${d.title}`);
+    }
+
     return (
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-          <antd.Typography.Title level={4} style={{ margin: 0 }}>Document Repository</antd.Typography.Title>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
+          <div>
+            <antd.Typography.Title level={4} style={{ margin: 0 }}>Document Repository</antd.Typography.Title>
+            <antd.Typography.Text type="secondary" style={{ fontSize: 12 }}>Guidelines, standards, fee schedules, forms and circulars — URS §5.10b.2</antd.Typography.Text>
+          </div>
           <antd.Segmented value={docCat} onChange={setDocCat} options={cats} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -355,7 +388,7 @@ SCREENS['public-portal'] = function PublicPortal({ nav, lang: _lang }) {
               onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
               onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--color-border)'}>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 6, background: `${iconColor[d.type]}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: iconColor[d.type], fontSize: 18, flexShrink: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 6, background: `${iconColor[d.type] || 'var(--color-primary)'}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: iconColor[d.type] || 'var(--color-primary)', fontSize: 18, flexShrink: 0 }}>
                   <FilePdfOutlined />
                 </div>
                 <div>
@@ -366,7 +399,7 @@ SCREENS['public-portal'] = function PublicPortal({ nav, lang: _lang }) {
                   </div>
                 </div>
               </div>
-              <antd.Button size="small" icon={<DownloadOutlined />}>Download</antd.Button>
+              <antd.Button size="small" icon={<DownloadOutlined />} onClick={() => downloadDoc(d)}>Download</antd.Button>
             </div>
           ))}
         </div>
