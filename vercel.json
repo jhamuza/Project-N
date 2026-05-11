@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/NCEF-Portal-Bundle.html" },
+    { "source": "/(.*)", "destination": "/NCEF-Portal-Bundle.html" }
+  ]
+}
