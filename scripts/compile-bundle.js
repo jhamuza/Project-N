@@ -52,16 +52,18 @@ const sharedSrc = fs.readFileSync(sharedPath, 'utf8');
 const sharedCompiled = compileJSX(sharedSrc, 'shared.jsx');
 html = html.replace(
   '<script type="text/babel" src="components/shared.jsx"></script>',
-  `<script>\n${sharedCompiled}\n</script>`
+  `<script>\n(function(){\n${sharedCompiled}\n})();\n</script>`
 );
 console.log('✓ Inlined + compiled components/shared.jsx');
 
 // 5. Compile all remaining inline <script type="text/babel"> blocks
+// Wrap each in an IIFE so const/let declarations don't leak into global scope
+// and conflict with identical names in other blocks (e.g. const SearchOutlined = ...)
 let blockCount = 0;
 html = html.replace(/<script type="text\/babel">([\s\S]*?)<\/script>/g, (_, code) => {
   blockCount++;
   const compiled = compileJSX(code, `inline-block-${blockCount}`);
-  return `<script>\n${compiled}\n</script>`;
+  return `<script>\n(function(){\n${compiled}\n})();\n</script>`;
 });
 console.log(`✓ Compiled ${blockCount} inline JSX blocks`);
 
