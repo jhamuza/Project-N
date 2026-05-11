@@ -1481,11 +1481,29 @@ function OfficerReviewPanel({ nav, tweaks, currentUser, rowId, onDecision }) {
           )}
 
           <div style={{ marginTop: 24 }}>
-            <Button type="primary" size="large" block
-              disabled={!decision || reclassDone}
-              onClick={() => { antd.message.success('Decision recorded'); setSubmitted(true); }}>
-              Submit Decision
-            </Button>
+            {(() => {
+              const hint = !decision ? 'Select a decision option above to continue'
+                : reclassDone ? '' : '';
+              const isDisabled = !decision || reclassDone;
+              return (
+                <>
+                  <antd.Tooltip title={hint} placement="top">
+                    <span style={{ display: 'block' }}>
+                      <Button type="primary" size="large" block
+                        disabled={isDisabled}
+                        onClick={() => { antd.message.success('Decision recorded'); setSubmitted(true); }}>
+                        Submit Decision
+                      </Button>
+                    </span>
+                  </antd.Tooltip>
+                  {hint && (
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 6, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                      <ExclamationCircleOutlined /> {hint}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           <Divider />
@@ -1901,15 +1919,29 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
                   onChange={e => setReclassReason(e.target.value)}
                 />
               </div>
-              <antd.Button
-                type="primary"
-                block
-                disabled={!reclassScheme || reclassReason.trim().length < 10}
-                style={{ background: '#7B3FA0', borderColor: '#7B3FA0' }}
-                onClick={() => setReclassConfirmOpen(true)}
-              >
-                Confirm Reclassification
-              </antd.Button>
+              {(() => {
+                const hint = !reclassScheme ? 'Select a target scheme above'
+                  : reclassReason.trim().length < 10 ? 'Add a reason for reclassification (min 10 characters)' : '';
+                return (
+                  <>
+                    <antd.Tooltip title={hint} placement="top">
+                      <span style={{ display: 'block' }}>
+                        <antd.Button type="primary" block
+                          disabled={!!hint}
+                          style={{ background: hint ? undefined : '#7B3FA0', borderColor: hint ? undefined : '#7B3FA0' }}
+                          onClick={() => setReclassConfirmOpen(true)}>
+                          Confirm Reclassification
+                        </antd.Button>
+                      </span>
+                    </antd.Tooltip>
+                    {hint && (
+                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 6, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                        <ExclamationCircleOutlined /> {hint}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
 
@@ -1971,12 +2003,26 @@ SCREENS['officer-review'] = function OfficerReview({ nav, tweaks, currentUser })
                 : role === 'approver' ? 'Submit Final Decision'
                 : 'Submit Decision';
               const isReclassifyFinal = decision === 'reclassify' && role !== 'team-lead' && role !== 'approver';
+              const isDisabled = !decision || isReclassifyFinal || reclassDone;
+              const hint = !decision ? 'Select a decision option above'
+                : isReclassifyFinal ? 'Complete the reclassification form above' : '';
               return (
-                <Button type="primary" size="large" block
-                  disabled={!decision || isReclassifyFinal || reclassDone}
-                  onClick={() => { antd.message.success(`${submitLabel} recorded`); }}>
-                  {submitLabel}
-                </Button>
+                <>
+                  <antd.Tooltip title={hint} placement="top">
+                    <span style={{ display: 'block' }}>
+                      <Button type="primary" size="large" block
+                        disabled={isDisabled}
+                        onClick={() => { antd.message.success(`${submitLabel} recorded`); }}>
+                        {submitLabel}
+                      </Button>
+                    </span>
+                  </antd.Tooltip>
+                  {hint && (
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                      <ExclamationCircleOutlined /> {hint}
+                    </div>
+                  )}
+                </>
               );
             })()}
             <Button block>Save draft</Button>

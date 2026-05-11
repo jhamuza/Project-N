@@ -161,12 +161,23 @@ function AssignOfficerModal({ open, onClose, onAssign, applicationId, currentAss
   const officers = MOCK.officerPerformance || [];
   const [pick, setPick] = React.useState(currentAssigneeId || null);
   React.useEffect(() => { if (open) setPick(currentAssigneeId || null); }, [open, currentAssigneeId]);
+  const assignHint = !pick ? 'Select an officer to assign'
+    : pick === currentAssigneeId ? 'Application is already assigned to this officer' : '';
   return (
     <antd.Modal open={open} onCancel={onClose}
       title={currentAssigneeId ? 'Reassign application' : 'Assign application'}
-      width={520} okText={currentAssigneeId ? 'Reassign' : 'Assign'}
-      okButtonProps={{ disabled: !pick || pick === currentAssigneeId }}
-      onOk={() => { onAssign(pick); onClose(); }}>
+      width={520}
+      footer={[
+        <antd.Button key="cancel" onClick={onClose}>Cancel</antd.Button>,
+        <antd.Tooltip key="ok" title={assignHint} placement="top">
+          <span>
+            <antd.Button type="primary" disabled={!!assignHint}
+              onClick={() => { onAssign(pick); onClose(); }}>
+              {currentAssigneeId ? 'Reassign' : 'Assign'}
+            </antd.Button>
+          </span>
+        </antd.Tooltip>,
+      ]}>
       <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--color-text-secondary)' }}>
         Application <antd.Typography.Text code>{applicationId}</antd.Typography.Text>
         {' '}— select a CPPG officer from team <antd.Tag>CPPG-TL-01</antd.Tag>

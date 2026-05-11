@@ -310,12 +310,26 @@ SCREENS['rec-review'] = function RecReview({ nav, currentUser }) {
               <div style={{ fontSize:12, fontWeight:600, marginBottom:6 }}>Recommender Notes <span style={{ color:'var(--color-danger)' }}>*</span></div>
               <antd.Input.TextArea rows={4} placeholder="Summarise your technical review findings. This will be visible to the Verifier and in the audit trail." value={notes} onChange={e => setNotes(e.target.value)} />
             </div>
-            <antd.Button type="primary" block icon={<SendOutlined />}
-              disabled={!decision || !notes.trim() || (app.needsMosti && !mostiOk)}
-              onClick={() => { antd.message.success(`Recommendation "${decision}" submitted for ${app.id}`); setSubmitted(true); }}>
-              Submit Recommendation
-            </antd.Button>
-            <div style={{ fontSize:11, color:'var(--color-text-muted)', marginTop:8, textAlign:'center' }}>Your finding will be forwarded to the Verifier (P7) immediately.</div>
+            {(() => {
+              const hint = !decision ? 'Select a decision option above'
+                : !notes.trim() ? 'Add your recommendation notes'
+                : (app.needsMosti && !mostiOk) ? 'Confirm MOSTI letter receipt above first' : '';
+              return (
+                <>
+                  <antd.Tooltip title={hint} placement="top">
+                    <span style={{ display: 'block' }}>
+                      <antd.Button type="primary" block icon={<SendOutlined />} disabled={!!hint}
+                        onClick={() => { antd.message.success(`Recommendation "${decision}" submitted for ${app.id}`); setSubmitted(true); }}>
+                        Submit Recommendation
+                      </antd.Button>
+                    </span>
+                  </antd.Tooltip>
+                  <div style={{ fontSize:11, marginTop:6, textAlign:'center', display:'flex', alignItems:'center', justifyContent:'center', gap:4, color: hint ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>
+                    {hint ? <><ExclamationCircleOutlined /> {hint}</> : 'Your finding will be forwarded to the Verifier (P7) immediately.'}
+                  </div>
+                </>
+              );
+            })()}
           </antd.Card>
         </antd.Col>
       </antd.Row>
@@ -538,12 +552,25 @@ SCREENS['ver-review'] = function VerReview({ nav, currentUser }) {
               <div style={{ fontSize:12, fontWeight:600, marginBottom:6 }}>Verifier Notes <span style={{ color:'var(--color-danger)' }}>*</span></div>
               <antd.Input.TextArea rows={4} placeholder="Document your verification assessment. This is visible to the Approver." value={notes} onChange={e => setNotes(e.target.value)} />
             </div>
-            <antd.Button type="primary" block icon={<SendOutlined />}
-              disabled={!decision || !notes.trim()}
-              onClick={() => { antd.message.success(`Verification "${decision}" submitted for ${app.id}`); setSubmitted(true); }}>
-              Submit Verification
-            </antd.Button>
-            <div style={{ fontSize:11, color:'var(--color-text-muted)', marginTop:8, textAlign:'center' }}>If verified, this will go to the Approver (P8) immediately.</div>
+            {(() => {
+              const hint = !decision ? 'Select a decision option above'
+                : !notes.trim() ? 'Add your verifier notes' : '';
+              return (
+                <>
+                  <antd.Tooltip title={hint} placement="top">
+                    <span style={{ display: 'block' }}>
+                      <antd.Button type="primary" block icon={<SendOutlined />} disabled={!!hint}
+                        onClick={() => { antd.message.success(`Verification "${decision}" submitted for ${app.id}`); setSubmitted(true); }}>
+                        Submit Verification
+                      </antd.Button>
+                    </span>
+                  </antd.Tooltip>
+                  <div style={{ fontSize:11, marginTop:6, textAlign:'center', display:'flex', alignItems:'center', justifyContent:'center', gap:4, color: hint ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>
+                    {hint ? <><ExclamationCircleOutlined /> {hint}</> : 'If verified, this will go to the Approver (P8) immediately.'}
+                  </div>
+                </>
+              );
+            })()}
           </antd.Card>
         </antd.Col>
       </antd.Row>
@@ -814,12 +841,25 @@ SCREENS['app-review'] = function AppReview({ nav, currentUser }) {
                 Flag for DG MCMC notification (prohibited / high-profile equipment)
               </antd.Checkbox>
             )}
-            <antd.Button type="primary" danger={decision === 'reject'} block icon={<SendOutlined />}
-              disabled={!decision || !notes.trim()}
-              onClick={() => { antd.message.success(`Decision "${decision}" recorded for ${app.id}`); setSubmitted(true); }}>
-              Confirm Decision
-            </antd.Button>
-            <div style={{ fontSize:11, color:'var(--color-text-muted)', marginTop:8, textAlign:'center' }}>This decision is final and will be recorded in the audit log.</div>
+            {(() => {
+              const hint = !decision ? 'Select a decision option above'
+                : !notes.trim() ? 'Add your approval notes' : '';
+              return (
+                <>
+                  <antd.Tooltip title={hint} placement="top">
+                    <span style={{ display: 'block' }}>
+                      <antd.Button type="primary" danger={decision === 'reject'} block icon={<SendOutlined />} disabled={!!hint}
+                        onClick={() => { antd.message.success(`Decision "${decision}" recorded for ${app.id}`); setSubmitted(true); }}>
+                        Confirm Decision
+                      </antd.Button>
+                    </span>
+                  </antd.Tooltip>
+                  <div style={{ fontSize:11, marginTop:6, textAlign:'center', display:'flex', alignItems:'center', justifyContent:'center', gap:4, color: hint ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>
+                    {hint ? <><ExclamationCircleOutlined /> {hint}</> : 'This decision is final and will be recorded in the audit log.'}
+                  </div>
+                </>
+              );
+            })()}
           </antd.Card>
         </antd.Col>
       </antd.Row>
@@ -930,11 +970,24 @@ function RecReviewPanel({ app, nav, currentUser, onDecision }) {
             {app.needsMosti && !mostiOk && decision === 'recommend' && (
               <antd.Alert type="warning" showIcon style={{ marginBottom:12, fontSize:12 }} message="MOSTI letter not yet confirmed" description="Tick the MOSTI checkbox above before recommending." />
             )}
-            <antd.Button type="primary" block icon={<SendOutlined />}
-              disabled={!decision || !notes.trim() || (app.needsMosti && decision === 'recommend' && !mostiOk)}
-              onClick={() => { antd.message.success(`Recommendation submitted for ${app.id}`); setSubmitted(true); }}>
-              Submit Recommendation
-            </antd.Button>
+            {(() => {
+              const hint = !decision ? 'Select a decision option above'
+                : !notes.trim() ? 'Add your recommendation notes'
+                : (app.needsMosti && decision === 'recommend' && !mostiOk) ? 'Confirm MOSTI letter receipt first' : '';
+              return (
+                <>
+                  <antd.Tooltip title={hint} placement="top">
+                    <span style={{ display: 'block' }}>
+                      <antd.Button type="primary" block icon={<SendOutlined />} disabled={!!hint}
+                        onClick={() => { antd.message.success(`Recommendation submitted for ${app.id}`); setSubmitted(true); }}>
+                        Submit Recommendation
+                      </antd.Button>
+                    </span>
+                  </antd.Tooltip>
+                  {hint && <div style={{ fontSize:11, color:'var(--color-warning)', marginTop:6, textAlign:'center', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}><ExclamationCircleOutlined /> {hint}</div>}
+                </>
+              );
+            })()}
           </antd.Card>
         </antd.Col>
       </antd.Row>
@@ -1004,11 +1057,23 @@ function VerReviewPanel({ app, nav, currentUser, onDecision }) {
               <div style={{ fontSize:12, fontWeight:600, marginBottom:6 }}>Verifier Notes <span style={{ color:'var(--color-danger)' }}>*</span></div>
               <antd.Input.TextArea rows={4} placeholder="Document your verification assessment. Visible to the Approver." value={notes} onChange={e => setNotes(e.target.value)} />
             </div>
-            <antd.Button type="primary" block icon={<SendOutlined />}
-              disabled={!decision || !notes.trim()}
-              onClick={() => { antd.message.success(`Verification submitted for ${app.id}`); setSubmitted(true); }}>
-              Submit Verification
-            </antd.Button>
+            {(() => {
+              const hint = !decision ? 'Select a decision option above'
+                : !notes.trim() ? 'Add your verifier notes' : '';
+              return (
+                <>
+                  <antd.Tooltip title={hint} placement="top">
+                    <span style={{ display: 'block' }}>
+                      <antd.Button type="primary" block icon={<SendOutlined />} disabled={!!hint}
+                        onClick={() => { antd.message.success(`Verification submitted for ${app.id}`); setSubmitted(true); }}>
+                        Submit Verification
+                      </antd.Button>
+                    </span>
+                  </antd.Tooltip>
+                  {hint && <div style={{ fontSize:11, color:'var(--color-warning)', marginTop:6, textAlign:'center', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}><ExclamationCircleOutlined /> {hint}</div>}
+                </>
+              );
+            })()}
           </antd.Card>
         </antd.Col>
       </antd.Row>
@@ -1091,12 +1156,25 @@ function AppReviewPanel({ app, nav, currentUser, onDecision }) {
                 Flag for DG MCMC notification (prohibited / high-profile equipment)
               </antd.Checkbox>
             )}
-            <antd.Button type="primary" danger={decision === 'reject'} block icon={<SendOutlined />}
-              disabled={!decision || !notes.trim()}
-              onClick={() => { antd.message.success(`Decision "${decision}" recorded for ${app.id}`); setSubmitted(true); }}>
-              Confirm Decision
-            </antd.Button>
-            <div style={{ fontSize:11, color:'var(--color-text-muted)', marginTop:8, textAlign:'center' }}>This decision is final and will be recorded in the audit log.</div>
+            {(() => {
+              const hint = !decision ? 'Select a decision option above'
+                : !notes.trim() ? 'Add your approval notes' : '';
+              return (
+                <>
+                  <antd.Tooltip title={hint} placement="top">
+                    <span style={{ display: 'block' }}>
+                      <antd.Button type="primary" danger={decision === 'reject'} block icon={<SendOutlined />} disabled={!!hint}
+                        onClick={() => { antd.message.success(`Decision "${decision}" recorded for ${app.id}`); setSubmitted(true); }}>
+                        Confirm Decision
+                      </antd.Button>
+                    </span>
+                  </antd.Tooltip>
+                  <div style={{ fontSize:11, marginTop:6, textAlign:'center', display:'flex', alignItems:'center', justifyContent:'center', gap:4, color: hint ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>
+                    {hint ? <><ExclamationCircleOutlined /> {hint}</> : 'This decision is final and will be recorded in the audit log.'}
+                  </div>
+                </>
+              );
+            })()}
           </antd.Card>
         </antd.Col>
       </antd.Row>

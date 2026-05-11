@@ -2753,3 +2753,151 @@ DEFAULT_SCREEN_BY_ROLE = {
 - Removed `{(isLead || isApprover) && Reports button}` from Quick Actions
 - Task list: simple 2-filter segmented (All / Urgent) — no Modifications tab
 - Greeting changed to Malay (Selamat pagi/tengah hari/petang)
+
+---
+
+## Sprint 19 — Review List Consolidation (07 May 2026)
+
+**Goal:** Replace the separate "Queue" + "Active Review" nav items (two steps) with a single **"Review List"** split-pane inbox screen per MCMC officer role, eliminating unnecessary navigation.
+
+### Problem Solved
+
+Every MCMC officer role previously required two nav items for one workflow (Queue → click row → Active Review → Back → Queue). Sprint 19 merges these into a single split-pane screen with a queue list on the left and an inline review panel on the right.
+
+### New Screens Added
+
+| Role | Old nav items (removed from nav) | New nav item | Screen key |
+|---|---|---|---|
+| Officer | `officer-queue`, `officer-review` | Review List | `officer-review-list` |
+| Team Lead | `tl-queue`, `officer-review` | Review List | `tl-review-list` |
+| Recommender | `rec-queue`, `rec-review` | Review List | `rec-review-list` |
+| Verifier | `ver-queue`, `ver-review` | Review List | `ver-review-list` |
+| Approver | `app-queue`, `app-review` | Review List | `app-review-list` |
+
+Old screen keys are kept registered in `window.SCREENS` for back-compat but removed from nav sidebars.
+
+### Layout
+
+Split-pane inbox pattern (email/PR-review style):
+- **Left pane** (~360–380px fixed width): compact queue list with filters, scheme/SLA/AI/decided tags
+- **Right pane** (flex, remaining width): renders role-appropriate review panel for the selected row; empty state ("Select an application from the list to begin review") when nothing is selected
+
+Row selection highlights the row and loads the panel inline — no page navigation. `key={selectedId}` remounts the panel on row change, resetting all local decision state.
+
+### Submission / Auto-Advance Flow
+
+1. Officer submits a decision → success `antd.message` fires
+2. Left-pane row gets a "Decided" tag (green/orange/red)
+3. Right pane auto-advances to the next undecided row (or empty state if none remain)
+4. No full-page navigation required
+
+### Technical Implementation
+
+**`window.OfficerReviewPanel` exposure pattern:**
+`OfficerReviewPanel` is defined in `screens-b.jsx` (loaded first as a Babel script) and exposed on `window` so both `screens-m.jsx` and the `index.html` inline script can reference it at render time without import cycles.
+
+**`buildSAReviewList(roleName, rowFilter, PanelComponent)` factory** (`screens-n.jsx`):
+Single factory function generates all three SA Review List screens. Each call supplies:
+- `roleName` — string used for screen key and `currentUser` field matching
+- `rowFilter` — predicate on `MOCK.saQueue` rows for that role's stage
+- `PanelComponent` — `RecReviewPanel`, `VerReviewPanel`, or `AppReviewPanel`
+
+**Panel components extracted** (reusable, embeddable):
+- `OfficerReviewPanel` — in `screens-b.jsx`; Officer + TL right pane
+- `RecReviewPanel`, `VerReviewPanel`, `AppReviewPanel` — in `screens-n.jsx`; SA role right panes
+
+**Team Lead left pane** — retains 4-tab Segmented (Mine / Team / Unassigned / Modifications):
+- Unassigned tab rows show inline "Assign…" button → opens `AssignOfficerModal`
+- Mods tab shows inline Accept / Not Accept decision (no right panel for modifications)
+
+### Updated NAV Arrays
+
+```js
+NAV_OFFICER:     [officer-dashboard, officer-review-list, suppliers-mgmt, pms, post-monitoring, compliance-status, integrations, profile]
+NAV_TEAM_LEAD:   [tl-dashboard, tl-review-list, applications, suppliers-mgmt, pms, post-monitoring, compliance-status, sa-letter, integrations, admin-config, reports, audit, profile]
+NAV_RECOMMENDER: [rec-dashboard, rec-review-list, sa-letter, profile]
+NAV_VERIFIER:    [ver-dashboard, ver-review-list, sa-letter, profile]
+NAV_APPROVER:    [app-dashboard, app-review-list, sa-letter, reports, profile]
+```
+
+Nav icon for all Review List items: `<UnorderedListOutlined />`
+
+### Files Modified
+
+| File | Changes |
+|---|---|
+| `components/screens-b.jsx` | Extracted `OfficerReviewPanel` function; exposed on `window`; updated breadcrumb in `officer-review` to point to `officer-review-list` |
+| `index.html` | Added `SCREENS['officer-review-list']`; updated all 5 NAV arrays; updated all officer dashboard CTAs to `*-review-list` keys |
+| `components/screens-m.jsx` | Added `SCREENS['tl-review-list']` with 4-tab left pane + OfficerReviewPanel right pane; replaced all `nav('tl-queue')` / `nav('officer-review')` with `nav('tl-review-list')` |
+| `components/screens-n.jsx` | Added `RecReviewPanel`, `VerReviewPanel`, `AppReviewPanel` helpers; added `buildSAReviewList` factory; added all three SA Review List screens; replaced all SA queue/review nav calls |
+
+---
+
+## Sprint 19.1 — Disabled Button UX (07 May 2026)
+
+**Goal:** Disabled buttons should be visually greyed out when requirements are unmet, show a clear inline hint explaining what is needed, and turn active (colored) once all requirements are fulfilled.
+
+### Pattern Applied
+
+Every decision submit button (and reclassification confirm button) now follows a two-part pattern:
+
+1. **`antd.Tooltip`** on a `<span style={{ display: 'block' }}>` wrapper — because disabled HTML elements block mouse events, the tooltip attaches to the span instead of the button directly. Shows the same hint text on hover.
+
+2. **Inline warning hint** below the button — a small `<div>` with `<ExclamationCircleOutlined />` and the hint text. Uses `var(--color-warning)` or `var(--color-text-muted)` color. Only rendered when hint is non-empty.
+
+Disabled state is driven by a `hint` string: `disabled={!!hint}` — empty string = enabled, any text = disabled. No separate `isDisabled` variable needed.
+
+```jsx
+{(() => {
+  const hint = !decision ? 'Select a decision option above to continue' : '';
+  return (
+    <>
+      <antd.Tooltip title={hint} placement="top">
+        <span style={{ display: 'block' }}>
+          <antd.Button type="primary" block disabled={!!hint} onClick={handleSubmit}>
+            Submit Decision
+          </antd.Button>
+        </span>
+      </antd.Tooltip>
+      {hint && (
+        <div style={{ fontSize: 11, color: 'var(--color-warning)', marginTop: 6,
+          textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+          <ExclamationCircleOutlined /> {hint}
+        </div>
+      )}
+    </>
+  );
+})()}
+```
+
+### Buttons Updated
+
+| Screen / Component | Button | Hint conditions |
+|---|---|---|
+| `OfficerReviewPanel` (screens-b.jsx) | Submit Decision | No decision selected |
+| `OfficerReview` main submit (screens-b.jsx) | Submit / Submit Reclassification | No decision; or reclassify form incomplete |
+| Reclassify confirm (screens-b.jsx) | Confirm Reclassification | No scheme selected; or reason < 10 chars |
+| `RecReviewPanel` (screens-n.jsx) | Submit Recommendation | No decision; or MOSTI checkbox required but not checked |
+| `VerReviewPanel` (screens-n.jsx) | Submit Verification | No decision; or no verifier notes |
+| `AppReviewPanel` (screens-n.jsx) | Submit Decision | No decision; or DG notification checkbox required but not checked |
+| `AssignOfficerModal` (index.html) | Assign / Reassign | No officer selected; or selected officer is already the assignee |
+
+### `AssignOfficerModal` — Custom Footer
+
+The modal `okButtonProps` approach does not support tooltips (disabled HTML elements block pointer events). Replaced with a custom `footer` prop:
+
+```jsx
+footer={[
+  <antd.Button key="cancel" onClick={onClose}>Cancel</antd.Button>,
+  <antd.Tooltip key="ok" title={assignHint} placement="top">
+    <span>
+      <antd.Button type="primary" disabled={!!assignHint}
+        onClick={() => { onAssign(pick); onClose(); }}>
+        {currentAssigneeId ? 'Reassign' : 'Assign'}
+      </antd.Button>
+    </span>
+  </antd.Tooltip>,
+]}
+```
+
+Hint strings: `'Select an officer to assign'` (no pick) | `'Application is already assigned to this officer'` (same officer re-selected).
