@@ -622,7 +622,7 @@ SCREENS.applications = function Applications({ nav, lang: _lang, currentUser }) 
     { title: '', width: 180, render: (_, r) => (
       <antd.Space size={4} wrap>
         {r.status === 'iteration_required' && (
-          <Button size="small" type="primary" icon={<ReloadOutlined />} onClick={() => nav('iteration-reply')}
+          <Button size="small" type="primary" icon={<ReloadOutlined />} onClick={() => nav(appType(r) === 'sa' ? 'sa-iteration-reply' : 'iteration-reply')}
             style={{ background: 'var(--color-warning)', borderColor: 'var(--color-warning)' }}>
             Respond
           </Button>
@@ -826,7 +826,7 @@ SCREENS['application-detail'] = function ApplicationDetail({ nav, lang: _lang })
           </Text>
         </div>
         {a.status === 'iteration_required' && (
-          <Button type="primary" icon={<ReloadOutlined />} onClick={() => nav('iteration-reply')}
+          <Button type="primary" icon={<ReloadOutlined />} onClick={() => nav(a.scheme === 'SA' ? 'sa-iteration-reply' : 'iteration-reply')}
             style={{ background: 'var(--color-warning)', borderColor: 'var(--color-warning)' }}>
             Respond to Iteration
           </Button>
@@ -11351,6 +11351,7 @@ Object.assign(window.MOCK, {
     { id: 'N006', cat: 'system',       read: true,  ts: '2026-04-01T08:00:00', appId: null,             title: 'Scheduled Maintenance — 5 Apr 2026 02:00–04:00 MYT', body: 'NCEF portal will be unavailable for 2 hours on 5 Apr 2026 for scheduled infrastructure maintenance. Draft applications are auto-saved.' },
     { id: 'N007', cat: 'rejected',     read: true,  ts: '2026-04-08T09:05:00', appId: 'APP-0426-00082', title: 'Application Rejected — Jammer Device (R&D)', body: 'Pn. Rosnah Idris: Prohibited equipment — jammer classification confirmed. Import not permitted for the stated purpose under CMA 1998.' },
     { id: 'N008', cat: 'system',       read: true,  ts: '2026-03-20T09:00:00', appId: null,             title: 'New Fee Schedule Effective 1 Jan 2026', body: 'Updated NCEF Fee Schedule 2026 is now in effect. Scheme A: RM 1,200/yr. Scheme B: RM 2,500/yr. Scheme C: RM 600/yr. Download from Documents.' },
+    { id: 'N009', cat: 'iteration',    read: false, ts: '2026-04-10T14:30:00', appId: 'APP-0426-00084', title: 'Iteration Required — 5G mmWave R&D Test Unit (SA-0426-00021)', body: 'Recommender Pn. Rosnah has requested changes: purpose statement detail insufficient; MOSTI endorsement letter needs updating for outdoor field tests. Deadline: 6 Jun 2026.' },
   ],
 
   iterationApp: {
@@ -11371,6 +11372,26 @@ Object.assign(window.MOCK, {
       { name: 'Technical_Brochure_A3145.pdf',    type: 'Technical Brochure',   size: '3.4 MB', ocrStatus: 'verified' },
       { name: 'Test_Report_SIRIM_AppleWatch.pdf',type: 'Test Report',          size: '2.2 MB', ocrStatus: 'flagged'  },
       { name: 'Product_Photo_Front.jpg',         type: 'Product Photo',        size: '0.8 MB', ocrStatus: 'verified' },
+    ],
+  },
+
+  saIterationApp: {
+    id: 'APP-0426-00084', saRef: 'SA-0426-00021', product: '5G mmWave R&D Test Unit (Nokia AirScale)',
+    purpose: 'R&D testing — mmWave 26 GHz band', iterationDue: '2026-06-06',
+    iterationRequest: {
+      by: 'Pn. Rosnah Idris (Recommender)', date: '2026-04-10T14:30:00',
+      issues: [
+        { id: 1, severity: 'error',   text: 'Purpose statement is insufficiently specific. Provide a detailed R&D plan including test methodology, site location (GPS coordinates), and expected duration.' },
+        { id: 2, severity: 'error',   text: 'MOSTI endorsement letter (MOSTI-2026-0414-001) covers only indoor lab use. Stated purpose includes outdoor field tests — obtain an updated MOSTI letter explicitly authorising outdoor field testing at the Bukit Jalil site.' },
+        { id: 3, severity: 'warning', text: 'Re-export bond submitted but disposal clause is ambiguous. Clarify whether equipment will be re-exported or destroyed at end of trial period.' },
+      ],
+      message: 'Please address the above issues and resubmit by the deadline. For MOSTI endorsement queries, contact MCMC at cppg@mcmc.gov.my.',
+    },
+    documents: [
+      { name: 'Purpose_Statement_v1.pdf',        type: 'Purpose Statement',   size: '0.8 MB', ocrStatus: 'flagged'  },
+      { name: 'MOSTI_Endorsement_0414.pdf',      type: 'MOSTI Endorsement',   size: '1.2 MB', ocrStatus: 'flagged'  },
+      { name: 'Equipment_Safety_Cert_Nokia.pdf', type: 'Safety Certificate',  size: '2.1 MB', ocrStatus: 'verified' },
+      { name: 'ReExport_Bond_v1.pdf',            type: 'Re-export Bond',      size: '0.5 MB', ocrStatus: 'flagged'  },
     ],
   },
 });
@@ -11674,6 +11695,184 @@ SCREENS['iteration-reply'] = function IterationReply({ nav }) {
               loading={submitting}
               onClick={() => { setSubmitting(true); setTimeout(() => { setSubmitting(false); setSubmitted(true); }, 1600); }}
             >
+              Submit Revision
+            </antd.Button>
+          )}
+        </div>
+      </antd.Card>
+    </div>
+  );
+};
+
+// ─── Special Approval Iteration Reply ────────────────────────────────────────
+SCREENS['sa-iteration-reply'] = function SAIterationReply({ nav }) {
+  const app = window.MOCK.saIterationApp;
+  const req = app.iterationRequest;
+  const [step, setStep] = React.useState(0);
+  const [reply, setReply] = React.useState('');
+  const [uploading, setUploading] = React.useState({});
+  const [revised, setRevised] = React.useState({});
+  const [submitting, setSubmitting] = React.useState(false);
+  const [submitted, setSubmitted] = React.useState(false);
+
+  const steps = ['Review Feedback', 'Upload Revisions', 'Confirm & Resubmit'];
+  const daysLeft = Math.ceil((new Date(app.iterationDue) - new Date('2026-04-27')) / 86400000);
+
+  const simulateUpload = (docKey) => {
+    setUploading(u => ({ ...u, [docKey]: true }));
+    setTimeout(() => {
+      setUploading(u => ({ ...u, [docKey]: false }));
+      setRevised(r => ({ ...r, [docKey]: true }));
+    }, 1200);
+  };
+
+  if (submitted) {
+    return (
+      <div style={{ padding: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--color-primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, color: 'var(--color-primary)', marginBottom: 24 }}>✓</div>
+        <antd.Typography.Title level={3}>Revision Submitted</antd.Typography.Title>
+        <antd.Typography.Text type="secondary" style={{ fontSize: 15, maxWidth: 480, lineHeight: 1.6 }}>
+          Your revised Special Approval application <antd.Typography.Text code>{app.saRef}</antd.Typography.Text> has been resubmitted and will re-enter the recommendation queue.
+        </antd.Typography.Text>
+        <div style={{ marginTop: 24, padding: 20, background: 'var(--color-primary-soft)', borderRadius: 12 }}>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: .4, fontWeight: 600 }}>SA Reference</div>
+          <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', marginTop: 4 }}>{app.saRef}</div>
+          <antd.Tag color="blue" style={{ marginTop: 8 }}>Under Recommendation Review</antd.Tag>
+        </div>
+        <antd.Button type="primary" size="large" style={{ marginTop: 32 }} onClick={() => nav('applications')}>Back to My Applications</antd.Button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: 32, maxWidth: 900, margin: '0 auto' }}>
+      <antd.Breadcrumb style={{ marginBottom: 8 }} items={[
+        { title: <a onClick={() => nav('applications')}>My Applications</a> },
+        { title: <antd.Typography.Text code style={{ fontSize: 12 }}>{app.saRef}</antd.Typography.Text> },
+        { title: 'Respond to Iteration' },
+      ]} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', margin: '8px 0 24px' }}>
+        <div>
+          <antd.Typography.Title level={3} style={{ margin: 0 }}>Respond to Iteration Request</antd.Typography.Title>
+          <antd.Typography.Text type="secondary">{app.product} · Special Approval · {app.purpose}</antd.Typography.Text>
+        </div>
+        <antd.Tag color={daysLeft < 14 ? 'red' : 'orange'} style={{ fontSize: 13, padding: '4px 10px', fontWeight: 600 }}>
+          <ClockCircleOutlined style={{ marginRight: 4 }} />{daysLeft} days remaining (due {app.iterationDue})
+        </antd.Tag>
+      </div>
+
+      <antd.Steps current={step} size="small" labelPlacement="vertical" responsive style={{ marginBottom: 24 }}
+        items={steps.map(s => ({ title: s }))} />
+
+      <antd.Card bordered>
+        {step === 0 && (
+          <div>
+            <antd.Alert
+              type="warning" showIcon
+              message={<b>Iteration Requested by {req.by} on {new Date(req.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</b>}
+              description="Please review and address all issues below before resubmitting. Failure to respond within the deadline will result in your application being closed."
+              style={{ marginBottom: 24 }}
+            />
+            <antd.Typography.Title level={5} style={{ marginBottom: 16 }}>Issues to Address</antd.Typography.Title>
+            <div style={{ display: 'grid', gap: 12, marginBottom: 24 }}>
+              {req.issues.map((issue, i) => (
+                <div key={issue.id} style={{
+                  padding: 16, borderRadius: 10,
+                  border: `1.5px solid ${issue.severity === 'error' ? 'var(--color-danger)' : 'var(--color-warning)'}`,
+                  background: issue.severity === 'error' ? 'rgba(198,40,40,0.04)' : 'rgba(184,114,0,0.04)',
+                  display: 'flex', gap: 12,
+                }}>
+                  <div style={{ color: issue.severity === 'error' ? 'var(--color-danger)' : 'var(--color-warning)', fontSize: 18, flexShrink: 0, marginTop: 2 }}>
+                    {issue.severity === 'error' ? <CloseCircleOutlined /> : <WarningOutlined />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <antd.Tag color={issue.severity === 'error' ? 'red' : 'gold'} style={{ marginBottom: 6, fontSize: 10, fontWeight: 700 }}>
+                      {issue.severity === 'error' ? 'MUST FIX' : 'RECOMMENDED'}
+                    </antd.Tag>
+                    <div style={{ fontSize: 13, lineHeight: 1.6 }}>{issue.text}</div>
+                  </div>
+                  <antd.Tag color="default" style={{ fontSize: 10, margin: 0, alignSelf: 'flex-start' }}>#{i + 1}</antd.Tag>
+                </div>
+              ))}
+            </div>
+            <antd.Divider />
+            <antd.Typography.Title level={5} style={{ marginBottom: 12 }}>Recommender's Message</antd.Typography.Title>
+            <div style={{ padding: 16, background: 'var(--color-bg-subtle)', borderRadius: 10, borderLeft: '3px solid var(--color-primary)', fontSize: 13, lineHeight: 1.6, color: 'var(--color-text-secondary)' }}>
+              "{req.message}"
+            </div>
+          </div>
+        )}
+
+        {step === 1 && (
+          <div>
+            <antd.Alert type="info" showIcon message="Upload revised documents to address the issues raised. All documents marked 'Required' must be uploaded before resubmission." style={{ marginBottom: 24 }} />
+            <antd.Typography.Title level={5} style={{ marginBottom: 16 }}>Documents</antd.Typography.Title>
+            <div style={{ display: 'grid', gap: 10, marginBottom: 24 }}>
+              {[
+                { key: 'purpose',  name: 'Revised Purpose Statement',        note: 'Clearly state the specific R&D use case, methodology, site, and expected duration', required: true  },
+                { key: 'mosti',    name: 'Updated MOSTI Endorsement Letter', note: 'Obtain updated letter explicitly authorising outdoor field testing at the stated site', required: true  },
+                { key: 'safecert', name: 'Equipment Safety Certificate',     note: 'Manufacturer declaration of conformity to IEC/EN safety standards', required: true  },
+                { key: 'bond',     name: 'Re-export / Destruction Bond',     note: 'Only if equipment disposal method has changed from original submission', required: false },
+              ].map(d => (
+                <div key={d.key} style={{ padding: 14, border: `1.5px solid ${revised[d.key] ? 'var(--color-success)' : 'var(--color-border)'}`, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 14, background: revised[d.key] ? 'rgba(27,127,72,0.04)' : '#fff' }}>
+                  <div style={{ fontSize: 24, flexShrink: 0 }}>{revised[d.key] ? '✅' : '📄'}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>
+                      {d.name}
+                      {d.required && <antd.Tag color="red" style={{ marginLeft: 8, fontSize: 10 }}>Required</antd.Tag>}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{d.note}</div>
+                    {revised[d.key] && <div style={{ fontSize: 11, color: 'var(--color-success)', marginTop: 2 }}>✓ Uploaded successfully</div>}
+                  </div>
+                  <antd.Button size="small" type={revised[d.key] ? 'default' : 'primary'} icon={<UploadOutlined />}
+                    loading={uploading[d.key]} onClick={() => simulateUpload(d.key)}>
+                    {revised[d.key] ? 'Replace' : 'Upload'}
+                  </antd.Button>
+                </div>
+              ))}
+            </div>
+            <antd.Divider />
+            <antd.Typography.Title level={5} style={{ marginBottom: 8 }}>Message to Recommender <antd.Typography.Text type="secondary" style={{ fontWeight: 400, fontSize: 13 }}>(optional)</antd.Typography.Text></antd.Typography.Title>
+            <antd.Input.TextArea rows={4} placeholder="Explain what was changed and how each issue was resolved…" value={reply} onChange={e => setReply(e.target.value)} maxLength={1000} showCount />
+          </div>
+        )}
+
+        {step === 2 && (
+          <div>
+            <antd.Alert type="success" showIcon message="Ready to resubmit — all required documents uploaded." style={{ marginBottom: 24 }} />
+            <antd.Typography.Title level={5} style={{ marginBottom: 16 }}>Resubmission Summary</antd.Typography.Title>
+            <antd.Descriptions bordered size="small" column={1} style={{ marginBottom: 24 }}>
+              <antd.Descriptions.Item label="SA Reference"><antd.Typography.Text code>{app.saRef}</antd.Typography.Text></antd.Descriptions.Item>
+              <antd.Descriptions.Item label="Product">{app.product}</antd.Descriptions.Item>
+              <antd.Descriptions.Item label="Purpose">{app.purpose}</antd.Descriptions.Item>
+              <antd.Descriptions.Item label="Iteration Due">{app.iterationDue} ({daysLeft} days remaining)</antd.Descriptions.Item>
+              <antd.Descriptions.Item label="Revised Documents">
+                <antd.Space wrap>
+                  {Object.keys(revised).map(k => <antd.Tag key={k} color="green">✓ Uploaded</antd.Tag>)}
+                  {Object.keys(revised).length === 0 && <antd.Typography.Text type="secondary">None (only existing docs will resubmit)</antd.Typography.Text>}
+                </antd.Space>
+              </antd.Descriptions.Item>
+              {reply && <antd.Descriptions.Item label="Your message">{reply}</antd.Descriptions.Item>}
+            </antd.Descriptions>
+            <antd.Alert type="info" showIcon message="What happens next?"
+              description="Your revised Special Approval application will re-enter the MCMC recommendation queue. The Recommender will review your changes and, if satisfied, forward their recommendation through the approval chain."
+              style={{ marginBottom: 24 }} />
+            <antd.Checkbox style={{ fontSize: 13 }}>
+              I confirm the revised information is accurate and complete to the best of my knowledge, and I understand that misrepresentation is an offence under the Communications &amp; Multimedia Act 1998.
+            </antd.Checkbox>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--color-divider)' }}>
+          <antd.Button disabled={step === 0} onClick={() => setStep(s => s - 1)} icon={<ArrowLeftOutlined />}>Back</antd.Button>
+          {step < steps.length - 1 && (
+            <antd.Button type="primary" onClick={() => setStep(s => s + 1)}>
+              {step === 0 ? 'Proceed to Upload →' : 'Review & Confirm →'}
+            </antd.Button>
+          )}
+          {step === steps.length - 1 && (
+            <antd.Button type="primary" loading={submitting}
+              onClick={() => { setSubmitting(true); setTimeout(() => { setSubmitting(false); setSubmitted(true); }, 1600); }}>
               Submit Revision
             </antd.Button>
           )}

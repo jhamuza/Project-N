@@ -134,6 +134,7 @@ window.MOCK = {
     { id: 'APP-0426-00088', rcn: null, scheme: 'B', status: 'draft', product: 'Huawei Mate 60 Pro', brand: 'Huawei', model: 'BRA-LX9', updated: '2026-04-17T09:15:00', aiScore: null, priority: 'normal' },
     { id: 'APP-0426-00085', rcn: 'RCN-0326-00449', scheme: 'C', status: 'approved', product: 'Mi Band 9 Pro', brand: 'Xiaomi', model: 'M2320B1', updated: '2026-04-10T16:45:00', submitted: '2026-04-08T11:00:00', aiScore: 94, priority: 'normal' },
     { id: 'APP-0426-00083', rcn: null, scheme: 'A', status: 'iteration_required', product: 'Apple Watch Ultra 3', brand: 'Apple', model: 'A3145', updated: '2026-04-09T13:20:00', submitted: '2026-04-05T10:15:00', aiScore: 62, priority: 'high', iterationDue: '2026-06-04' },
+    { id: 'APP-0426-00084', rcn: null, scheme: 'SA', status: 'iteration_required', product: '5G mmWave R&D Test Unit (Nokia AirScale)', brand: 'Nokia', model: 'AirScale-26G', updated: '2026-04-10T14:30:00', submitted: '2026-04-06T11:00:00', aiScore: 65, priority: 'high', iterationDue: '2026-06-06' },
     { id: 'APP-0426-00082', rcn: null, scheme: 'SA', status: 'rejected', product: 'Jammer Device (R&D)', brand: 'Unknown', model: 'JM-2024', updated: '2026-04-08T09:00:00', submitted: '2026-04-02T14:00:00', aiScore: 41, priority: 'critical' },
     { id: 'APP-0426-00079', rcn: 'RCN-0326-00442', scheme: 'A', status: 'approved', product: 'OPPO Find X7 Ultra', brand: 'OPPO', model: 'CPH2583', updated: '2026-04-05T12:00:00', submitted: '2026-04-01T09:30:00', aiScore: 91, priority: 'normal' },
   ],
