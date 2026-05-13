@@ -1,5 +1,4 @@
 const { chromium } = require('playwright');
-const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { execSync, spawn } = require('child_process');
@@ -118,9 +117,8 @@ const ROLES = [
 ];
 
 async function waitForApp(page) {
-  // Wait for React to mount (loading div disappears)
   await page.waitForFunction(
-    () => !document.getElementById('loading') || document.getElementById('loading').style.display === 'none',
+    () => { const el = document.getElementById('loading'); return !el || el.style.display === 'none'; },
     { timeout: 20000 }
   );
   await page.waitForTimeout(800);
